@@ -73,18 +73,18 @@ class PIIClassification(BaseModel):
     document_type: str = Field(..., description="Basic summary of document type classification")
     is_resume_cv: Optional[bool] = Field(..., description="True if the document is a page from a resume or cv")
 
-    is_academic_paper: bool
-    is_textbook: bool
-    is_news_article: bool
-    is_test_or_quiz: bool
-    is_homework_assignment: bool
-    is_class_syllabus: bool
-    is_meeting_minutes: bool
-    is_legal_contract: bool
-    is_form: bool
-    is_correspondence_or_letter: bool
-    is_public_order: bool
-    is_court_notice: bool
+    is_academic_paper: Optional[bool]
+    is_textbook: Optional[bool]
+    is_news_article: Optional[bool]
+    is_test_or_quiz: Optional[bool]
+    is_homework_assignment: Optional[bool]
+    is_class_syllabus: Optional[bool]
+    is_meeting_minutes: Optional[bool]
+    is_legal_contract: Optional[bool]
+    is_form: Optional[bool]
+    is_correspondence_or_letter: Optional[bool]
+    is_public_order: Optional[bool]
+    is_court_notice: Optional[bool]
 
     contains_pii: Optional[bool] = Field(..., description="True if document contains PII")
 
@@ -109,7 +109,7 @@ async def _process_single_page(page_text: str) -> PIIClassification:
                 ],
             }
         ],
-        "max_tokens": 100,
+        "max_tokens": 400,
         "temperature": 0.0,
         "response_format": {"type": "json_schema", "json_schema": {"name": "PIIClassification", "schema": PIIClassification.model_json_schema()}},
     }
@@ -249,7 +249,7 @@ async def process_dolma_document(args, dolma_doc, sem):
     text = dolma_doc.get("text", "") or ""
 
     # Create keys for all fields in PIIClassification
-    prefix = args.model.replace("/", "_")
+    prefix = args.model.replace("/", "_") + "_v2tag_"
     result_attributes = {}
 
     # Initialize attribute lists for all PIIClassification fields
@@ -651,7 +651,7 @@ def submit_beaker_job(args):
                     preemptible=True,
                 ),
                 image=ImageSource(beaker=beaker_image),
-                command=["python", "scripts/tagging_pipeline.py"] + args_list,
+                command=["python", "scripts/tagging_pipeline_v2.py"] + args_list,
                 env_vars=[EnvVar(name="BEAKER_JOB_NAME", value=task_name), EnvVar(name="OWNER", value=owner)] + env_var_secrets,
                 resources=TaskResources(gpu_count=1),
                 constraints=Constraints(cluster=args.beaker_cluster if isinstance(args.beaker_cluster, list) else [args.beaker_cluster]),
@@ -672,7 +672,7 @@ async def main():
     parser.add_argument("--workers", type=int, default=4, help="Number of concurrent workers")
     parser.add_argument("--parallel_requests", type=int, default=800, help="Max number of parallel requests to send to model")
     parser.add_argument("--model", default="google/gemma-3-4b-it", help="Model path or name, hugging face or local path format")
-    parser.add_argument("--attribute_name", default="model_pii_tagging", help="Path to use for attribute naming")
+    parser.add_argument("--attribute_name", default="model_pii_tagging_v2", help="Path to use for attribute naming")
 
     # Beaker/job running stuff
     parser.add_argument("--beaker", action="store_true", help="Submit this job to beaker instead of running locally")
