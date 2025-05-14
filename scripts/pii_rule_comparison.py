@@ -38,6 +38,7 @@ Rule expression syntax:
 
 import argparse
 import gzip
+import html as pyhtml
 import io
 import json
 import logging
@@ -1482,7 +1483,7 @@ def generate_html_report(docs, title, summary, output_path):
         html += f"""
             <div id="doc-{i}" class="document{selected_class}" tabindex="0">
                 <div class="document-id">Document ID: {doc_id}</div>
-                <div class="document-text">{doc_text}</div>
+                <pre class="document-text">{pyhtml.escape(doc_text)}</pre>
             </div>
 """
 
@@ -1735,15 +1736,20 @@ IoU: {iou:.4f}
 
     # True Positives
     generate_html_report(
-        true_positives, "True Positives - Documents matching both Reference and Hypothesis Rules", summary, os.path.join(args.output_dir, "true_positives.html")
+        true_positives[:1000],
+        "True Positives - Documents matching both Reference and Hypothesis Rules",
+        summary,
+        os.path.join(args.output_dir, "true_positives.html"),
     )
 
     # True Negatives
-    generate_html_report(true_negatives, "True Negatives - Documents not matching either Rule", summary, os.path.join(args.output_dir, "true_negatives.html"))
+    generate_html_report(
+        true_negatives[:1000], "True Negatives - Documents not matching either Rule", summary, os.path.join(args.output_dir, "true_negatives.html")
+    )
 
     # False Positives
     generate_html_report(
-        false_positives,
+        false_positives[:1000],
         "False Positives - Documents matching Hypothesis but not Reference Rule",
         summary,
         os.path.join(args.output_dir, "false_positives.html"),
@@ -1751,7 +1757,7 @@ IoU: {iou:.4f}
 
     # False Negatives
     generate_html_report(
-        false_negatives,
+        false_negatives[:1000],
         "False Negatives - Documents matching Reference but not Hypothesis Rule",
         summary,
         os.path.join(args.output_dir, "false_negatives.html"),
@@ -1878,6 +1884,20 @@ IoU: {iou:.4f}
     logger.info(f"Recall: {recall:.4f}")
     logger.info(f"F1 Score: {f1:.4f}")
     logger.info(f"IoU: {iou:.4f}")
+
+    # Output all available attributes that have been loaded
+    logger.info("\n--- AVAILABLE ATTRIBUTES ---")
+    all_attributes = set()
+    for doc in all_docs:
+        if "attributes" in doc and doc["attributes"]:
+            all_attributes.update(doc["attributes"].keys())
+
+    if all_attributes:
+        logger.info(f"Found {len(all_attributes)} unique attributes:")
+        for attr in sorted(all_attributes):
+            logger.info(f"  - {attr}")
+    else:
+        logger.info("No attributes found in any documents.")
 
     logger.info(f"\nResults saved to: {args.output_dir}/index.html")
 
