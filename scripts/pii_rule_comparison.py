@@ -50,7 +50,6 @@ from io import BytesIO
 from pathlib import Path
 
 import boto3
-import matplotlib.pyplot as plt
 import numpy as np
 import zstandard as zstd
 from matplotlib.figure import Figure
