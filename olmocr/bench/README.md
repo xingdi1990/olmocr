@@ -112,5 +112,5 @@ Several categories of tests have been made so far:
  - [X] Full review of old_scans, somehow, chatgpt or prolific
  - [X] Adjust scoring to weight each test category equally in final score distribution
  - [X] Double check marker inline math outputs
- - [ ] Remove any PII documents
+ - [X] Remove any PII documents
  - [ ] Run against final set of comparison tools, and check list of all-pass and all-fail tests
