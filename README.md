@@ -27,13 +27,18 @@ A toolkit for training language models to work with PDF documents in the wild.
 
 Try the online demo: [https://olmocr.allenai.org/](https://olmocr.allenai.org/)
 
-What is included:
+What is included here:
  - A prompting strategy to get really good natural text parsing using ChatGPT 4o - [buildsilver.py](https://github.com/allenai/olmocr/blob/main/olmocr/data/buildsilver.py)
  - An side-by-side eval toolkit for comparing different pipeline versions - [runeval.py](https://github.com/allenai/olmocr/blob/main/olmocr/eval/runeval.py)
  - Basic filtering by language and SEO spam removal - [filter.py](https://github.com/allenai/olmocr/blob/main/olmocr/filter/filter.py)
  - Finetuning code for Qwen2-VL and Molmo-O - [train.py](https://github.com/allenai/olmocr/blob/main/olmocr/train/train.py)
  - Processing millions of PDFs through a finetuned model using Sglang - [pipeline.py](https://github.com/allenai/olmocr/blob/main/olmocr/pipeline.py)
  - Viewing [Dolma docs](https://github.com/allenai/dolma) created from PDFs - [dolmaviewer.py](https://github.com/allenai/olmocr/blob/main/olmocr/viewer/dolmaviewer.py)
+
+See also:
+
+[**olmOCR-Bench**](https://github.com/allenai/olmocr/tree/main/olmocr/bench):
+A comprehensive benchmark suite covering over 1,400 documents to help measure performance of OCR systems
 
 ### Installation
 
