@@ -20,7 +20,6 @@ import random
 import re
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from itertools import combinations
 from typing import Dict, List, Tuple
 
 from pypdf import PdfReader
