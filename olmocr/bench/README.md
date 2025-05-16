@@ -9,6 +9,171 @@ We stay away from soft metrics like edit distance comparisons, because they may 
 
 olmOCR-bench operates on single page PDFs directly. We make this choice because PDFs do preserve some digital metadata and information which may be helpful to some OCR systems. Almost any other format can be converted to a PDF, but not the reverse, so we try to preserve these original documents where possible.
 
+## Results
+
+<table>
+  <thead>
+    <tr>
+      <th align="left"><strong>Model</strong></th>
+      <th align="center">AR</th>
+      <th align="center">OSM</th>
+      <th align="center">TA</th>
+      <th align="center">OS</th>
+      <th align="center">HF</th>
+      <th align="center">MC</th>
+      <th align="center">LTT</th>
+      <th align="center">Base</th>
+      <th align="center">Overall</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left">GOT OCR</td>
+      <td align="center">52.7</td>
+      <td align="center">52.0</td>
+      <td align="center">0.2</td>
+      <td align="center">22.1</td>
+      <td align="center">93.6</td>
+      <td align="center">42.0</td>
+      <td align="center">29.9</td>
+      <td align="center">94.0</td>
+      <td align="center">48.3 ± 1.1</td>
+    </tr>
+    <tr>
+      <td align="left">Marker v1.6.2</td>
+      <td align="center">24.3</td>
+      <td align="center">22.1</td>
+      <td align="center">69.8</td>
+      <td align="center">24.3</td>
+      <td align="center">87.1</td>
+      <td align="center">71.0</td>
+      <td align="center">76.9</td>
+      <td align="center"><strong>99.5</strong></td>
+      <td align="center">59.4 ± 1.1</td>
+    </tr>
+    <tr>
+      <td align="left">MinerU v1.3.10</td>
+      <td align="center">75.4</td>
+      <td align="center">47.4</td>
+      <td align="center">60.9</td>
+      <td align="center">17.3</td>
+      <td align="center"><strong>96.6</strong></td>
+      <td align="center">59.0</td>
+      <td align="center">39.1</td>
+      <td align="center">96.6</td>
+      <td align="center">61.5 ± 1.1</td>
+    </tr>
+    <tr>
+      <td align="left">Mistral OCR API</td>
+      <td align="center"><strong>77.2</strong></td>
+      <td align="center">67.5</td>
+      <td align="center">60.6</td>
+      <td align="center">29.3</td>
+      <td align="center">93.6</td>
+      <td align="center">71.3</td>
+      <td align="center">77.1</td>
+      <td align="center">99.4</td>
+      <td align="center">72.0 ± 1.1</td>
+    </tr>
+    <tr>
+      <td align="left">GPT-4o (No Anchor)</td>
+      <td align="center">51.5</td>
+      <td align="center"><strong>75.5</strong></td>
+      <td align="center">69.1</td>
+      <td align="center">40.9</td>
+      <td align="center">94.2</td>
+      <td align="center">68.9</td>
+      <td align="center">54.1</td>
+      <td align="center">96.7</td>
+      <td align="center">68.9 ± 1.1</td>
+    </tr>
+    <tr>
+      <td align="left">GPT-4o (Anchored)</td>
+      <td align="center">53.5</td>
+      <td align="center">74.5</td>
+      <td align="center">70.0</td>
+      <td align="center">40.7</td>
+      <td align="center">93.8</td>
+      <td align="center">69.3</td>
+      <td align="center">60.6</td>
+      <td align="center">96.8</td>
+      <td align="center">69.9 ± 1.1</td>
+    </tr>
+    <tr>
+      <td align="left">Gemini Flash 2 (No Anchor)</td>
+      <td align="center">32.1</td>
+      <td align="center">56.3</td>
+      <td align="center">61.4</td>
+      <td align="center">27.8</td>
+      <td align="center">48.0</td>
+      <td align="center">58.7</td>
+      <td align="center"><strong>84.4</strong></td>
+      <td align="center">94.0</td>
+      <td align="center">57.8 ± 1.1</td>
+    </tr>
+    <tr>
+      <td align="left">Gemini Flash 2 (Anchored)</td>
+      <td align="center">54.5</td>
+      <td align="center">56.1</td>
+      <td align="center"><strong>72.1</strong></td>
+      <td align="center">34.2</td>
+      <td align="center">64.7</td>
+      <td align="center">61.5</td>
+      <td align="center">71.5</td>
+      <td align="center">95.6</td>
+      <td align="center">63.8 ± 1.2</td>
+    </tr>
+    <tr>
+      <td align="left">Qwen 2 VL (No Anchor)</td>
+      <td align="center">19.7</td>
+      <td align="center">31.7</td>
+      <td align="center">24.2</td>
+      <td align="center">17.1</td>
+      <td align="center">88.9</td>
+      <td align="center">8.3</td>
+      <td align="center">6.8</td>
+      <td align="center">55.5</td>
+      <td align="center">31.5 ± 0.9</td>
+    </tr>
+    <tr>
+      <td align="left">Qwen 2.5 VL (No Anchor)</td>
+      <td align="center">63.1</td>
+      <td align="center">65.7</td>
+      <td align="center">67.3</td>
+      <td align="center">38.6</td>
+      <td align="center">73.6</td>
+      <td align="center">68.3</td>
+      <td align="center">49.1</td>
+      <td align="center">98.3</td>
+      <td align="center">65.5 ± 1.2</td>
+    </tr>
+    <tr>
+      <td align="left">olmOCR v0.1.68 (No Anchor)</td>
+      <td align="center">72.1</td>
+      <td align="center">74.7</td>
+      <td align="center">71.5</td>
+      <td align="center">43.7</td>
+      <td align="center">91.6</td>
+      <td align="center">78.5</td>
+      <td align="center">80.5</td>
+      <td align="center">98.1</td>
+      <td align="center">76.3 ± 1.1</td>
+    </tr>
+    <tr>
+      <td align="left">olmOCR v0.1.68 (Anchored)</td>
+      <td align="center">75.6</td>
+      <td align="center">75.1</td>
+      <td align="center">70.2</td>
+      <td align="center"><strong>44.5</strong></td>
+      <td align="center">93.4</td>
+      <td align="center"><strong>79.4</strong></td>
+      <td align="center">81.7</td>
+      <td align="center">99.0</td>
+      <td align="center"><strong>77.4 ± 1.0</strong></td>
+    </tr>
+  </tbody>
+</table>
+
 ## Benchmark Principles
 
 As we created olmOCR-bench, we also kept a few general rules in mind:
