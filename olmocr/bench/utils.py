@@ -23,7 +23,7 @@ def calculate_bootstrap_ci(test_scores: List[float], n_bootstrap: int = 1000, ci
 
     # Convert to numpy array for efficiency
     scores = np.array(test_scores)
-    
+
     # Simple case - no splits provided, use traditional bootstrap
     if splits is None:
         # Generate bootstrap samples
@@ -36,14 +36,14 @@ def calculate_bootstrap_ci(test_scores: List[float], n_bootstrap: int = 1000, ci
         # Validate splits
         if sum(splits) != len(scores):
             raise ValueError(f"Sum of splits ({sum(splits)}) must equal length of test_scores ({len(scores)})")
-        
+
         # Convert flat scores list to a list of category scores
         category_scores = []
         start_idx = 0
         for split_size in splits:
-            category_scores.append(scores[start_idx:start_idx + split_size])
+            category_scores.append(scores[start_idx : start_idx + split_size])
             start_idx += split_size
-        
+
         # Generate bootstrap samples respecting category structure
         bootstrap_means = []
         for _ in range(n_bootstrap):
@@ -54,7 +54,7 @@ def calculate_bootstrap_ci(test_scores: List[float], n_bootstrap: int = 1000, ci
                     # Sample with replacement within this category
                     cat_sample = np.random.choice(cat_scores, size=len(cat_scores), replace=True)
                     category_means.append(np.mean(cat_sample))
-            
+
             # Overall score is average of category means (if any categories have scores)
             if category_means:
                 bootstrap_means.append(np.mean(category_means))
@@ -67,8 +67,9 @@ def calculate_bootstrap_ci(test_scores: List[float], n_bootstrap: int = 1000, ci
     return (lower_bound, upper_bound)
 
 
-def perform_permutation_test(scores_a: List[float], scores_b: List[float], n_permutations: int = 10000, 
-                          splits_a: List[int] = None, splits_b: List[int] = None) -> Tuple[float, float]:
+def perform_permutation_test(
+    scores_a: List[float], scores_b: List[float], n_permutations: int = 10000, splits_a: List[int] = None, splits_b: List[int] = None
+) -> Tuple[float, float]:
     """
     Perform a permutation test to determine if there's a significant difference
     between two sets of test scores.
@@ -90,15 +91,15 @@ def perform_permutation_test(scores_a: List[float], scores_b: List[float], n_per
     def mean_of_category_means(scores, splits=None):
         if splits is None:
             return np.mean(scores)
-        
+
         category_means = []
         start_idx = 0
         for split_size in splits:
             if split_size > 0:
-                category_scores = scores[start_idx:start_idx + split_size]
+                category_scores = scores[start_idx : start_idx + split_size]
                 category_means.append(np.mean(category_scores))
             start_idx += split_size
-        
+
         return np.mean(category_means) if category_means else 0.0
 
     # Calculate observed difference in means using category structure if provided
@@ -135,54 +136,54 @@ def perform_permutation_test(scores_a: List[float], scores_b: List[float], n_per
             raise ValueError(f"Sum of splits_a ({sum(splits_a)}) must equal length of scores_a ({len(scores_a)})")
         if splits_b is not None and sum(splits_b) != len(scores_b):
             raise ValueError(f"Sum of splits_b ({sum(splits_b)}) must equal length of scores_b ({len(scores_b)})")
-            
+
         # Create category structures
         categories_a = []
         categories_b = []
-        
+
         if splits_a is not None:
             start_idx = 0
             for split_size in splits_a:
-                categories_a.append(scores_a[start_idx:start_idx + split_size])
+                categories_a.append(scores_a[start_idx : start_idx + split_size])
                 start_idx += split_size
         else:
             # If no splits for A, treat all scores as one category
             categories_a = [scores_a]
-            
+
         if splits_b is not None:
             start_idx = 0
             for split_size in splits_b:
-                categories_b.append(scores_b[start_idx:start_idx + split_size])
+                categories_b.append(scores_b[start_idx : start_idx + split_size])
                 start_idx += split_size
         else:
             # If no splits for B, treat all scores as one category
             categories_b = [scores_b]
-            
+
         # Perform permutation test maintaining category structure
         count_greater_or_equal = 0
         for _ in range(n_permutations):
             # For each category pair, shuffle and redistribute
             perm_categories_a = []
             perm_categories_b = []
-            
+
             for cat_a, cat_b in zip(categories_a, categories_b):
                 # Combine and shuffle
                 combined = np.concatenate([cat_a, cat_b])
                 np.random.shuffle(combined)
-                
+
                 # Redistribute maintaining original sizes
-                perm_categories_a.append(combined[:len(cat_a)])
-                perm_categories_b.append(combined[len(cat_a):])
-            
+                perm_categories_a.append(combined[: len(cat_a)])
+                perm_categories_b.append(combined[len(cat_a) :])
+
             # Flatten permuted categories
             perm_a = np.concatenate(perm_categories_a)
             perm_b = np.concatenate(perm_categories_b)
-            
+
             # Calculate difference in means respecting category structure
             perm_mean_a = mean_of_category_means(perm_a, splits_a)
             perm_mean_b = mean_of_category_means(perm_b, splits_b)
             perm_diff = perm_mean_a - perm_mean_b
-            
+
             # Count how many permuted differences are >= to observed difference in absolute value
             if abs(perm_diff) >= abs(observed_diff):
                 count_greater_or_equal += 1
