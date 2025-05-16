@@ -4,13 +4,13 @@ def build_basic_prompt() -> str:
 
 def build_openai_silver_data_prompt_no_document_anchoring(_base_text: str) -> str:
     return (
-        f"Below is the image of one page of a PDF document. "
-        f"Just return the plain text representation of this document as if you were reading it naturally.\n"
-        f"Turn equations into a LaTeX representation, and tables into markdown format. Remove the headers and footers, but keep references and footnotes.\n"
-        f"Read any natural handwriting.\n"
-        f"This is likely one page out of several in the document, so be sure to preserve any sentences that come from the previous page, or continue onto the next page, exactly as they are.\n"
-        f"If there is no text at all that you think you should read, you can output null.\n"
-        f"Do not hallucinate."
+        "Below is the image of one page of a PDF document. "
+        "Just return the plain text representation of this document as if you were reading it naturally.\n"
+        "Turn equations into a LaTeX representation, and tables into markdown format. Remove the headers and footers, but keep references and footnotes.\n"
+        "Read any natural handwriting.\n"
+        "This is likely one page out of several in the document, so be sure to preserve any sentences that come from the previous page, or continue onto the next page, exactly as they are.\n"
+        "If there is no text at all that you think you should read, you can output null.\n"
+        "Do not hallucinate."
     )
 
 

@@ -7,12 +7,11 @@ from google import genai
 from google.genai import types
 
 from olmocr.bench.prompts import (
-    build_basic_prompt,
     build_openai_silver_data_prompt_no_document_anchoring,
 )
 from olmocr.data.renderpdf import render_pdf_to_base64png
 from olmocr.prompts.anchor import get_anchor_text
-from olmocr.prompts.prompts import PageResponse, build_openai_silver_data_prompt
+from olmocr.prompts.prompts import build_openai_silver_data_prompt
 
 
 def run_gemini(
