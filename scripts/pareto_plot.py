@@ -7,11 +7,12 @@ Invocation:
 
 import argparse
 import os
+
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
 import pandas as pd
 from matplotlib import font_manager
-import matplotlib.ticker as ticker
 
 # Parse arguments
 ap = argparse.ArgumentParser()
@@ -33,7 +34,6 @@ if args.font_path:
 # Ensure output directory exists
 os.makedirs(args.output_dir, exist_ok=True)
 OUTPUT_PATHS = [f"{args.output_dir}/ocr_pareto.pdf", f"{args.output_dir}/ocr_pareto.png"]
-
 # Define column names
 MODEL_COLUMN_NAME = "Model"
 CATEGORY_COLUMN_NAME = "Category"
@@ -42,7 +42,6 @@ PERF_COLUMN_NAME = "Performance"
 COLOR_COLUMN_NAME = "Color"
 OFFSET_COLUMN_NAME = "Label_Offset"
 MARKER_COLUMN_NAME = "Marker"
-
 # Define colors
 DARK_BLUE = "#093235"
 DARK_GREEN = "#255457"
@@ -61,17 +60,18 @@ GREEN = "#0fcb8c"
 data = {
     MODEL_COLUMN_NAME: [
         "GPT-4o",
-        "GPT-4o Batch",
+        "GPT-4o (Batch)", 
         "Mistral OCR",
         "MinerU",
         "Gemini Flash 2",
-        "Gemini Flash 2 Batch",
-        "marker v1.6.2",
+        "Gemini Flash 2 (Batch)",
+        "Marker v1.6.2",
         "Ours (A100)",
-        "Ours (L40S)",
-        "Ours (H100)",
-        "Qwen2VL",
-        "Qwen2.5VL"
+        "Ours (H100,L40S)",
+        "Qwen 2 VL (A100)",
+        "Qwen 2 VL (H100,L40S)",
+        "Qwen 2.5 VL (A100)",
+        "Qwen 2.5 VL (H100,L40S)"
     ],
     COST_COLUMN_NAME: [
         12480,
@@ -83,9 +83,10 @@ data = {
         235,
         270,
         190,
-        190,
-        190,  # Same cost as Ours (L40S)
-        190   # Same cost as Ours (L40S)
+        270,  # Same cost as Ours
+        190,  # Same cost as Ours
+        270,  # Same cost as Ours
+        190   # Same cost as Ours
     ],
     PERF_COLUMN_NAME: [
         69.9,  # GPT-4o (Anchored)
@@ -97,8 +98,9 @@ data = {
         59.4,  # marker v1.6.2
         77.4,  # Ours (performance is the same across hardware)
         77.4,  # Ours (performance is the same across hardware)
-        77.4,  # Ours (performance is the same across hardware)
         31.5,  # Qwen2VL
+        31.5,  # Qwen2VL
+        65.5,  # Qwen2.5VL
         65.5   # Qwen2.5VL
     ]
 }
@@ -107,68 +109,78 @@ df = pd.DataFrame(data)
 
 # Add category information
 model_categories = {
-    "GPT-4o": "Commercial API",
-    "GPT-4o Batch": "Commercial API",
-    "Mistral OCR": "Commercial API",
-    "MinerU": "Open Source",
-    "Gemini Flash 2": "Commercial API",
-    "Gemini Flash 2 Batch": "Commercial API",
-    "marker v1.6.2": "Open Source",
+    "GPT-4o": "Commercial VLM",
+    "GPT-4o (Batch)": "Commercial VLM",
+    "Mistral OCR": "Commercial API Tool",
+    "MinerU": "Open Source Tool",
+    "Gemini Flash 2": "Commercial VLM",
+    "Gemini Flash 2 (Batch)": "Commercial VLM",
+    "Marker v1.6.2": "Open Source Tool",
     "Ours (A100)": "Ours",
-    "Ours (L40S)": "Ours",
-    "Ours (H100)": "Ours",
-    "Qwen2VL": "Open Source", 
-    "Qwen2.5VL": "Open Source"
+    "Ours (H100,L40S)": "Ours",
+    "Qwen 2 VL (A100)": "Open VLM",
+    "Qwen 2 VL (H100,L40S)": "Open VLM",
+    "Qwen 2.5 VL (A100)": "Open VLM",
+    "Qwen 2.5 VL (H100,L40S)": "Open VLM"
 }
 
 df[CATEGORY_COLUMN_NAME] = df[MODEL_COLUMN_NAME].map(model_categories)
 
 # Category colors
 category_colors = {
-    "Commercial API": DARK_BLUE,
-    "Open Source": LIGHT_GREEN,
-    "Ours": DARK_PINK
+    "Commercial API Tool": DARK_BLUE,
+    "Commercial VLM": DARK_GREEN,
+    "Open Source Tool": LIGHT_GREEN,
+    "Ours": DARK_PINK,
+    "Open VLM": PURPLE
 }
 
 df[COLOR_COLUMN_NAME] = df[CATEGORY_COLUMN_NAME].map(category_colors)
 
 # Define marker types
 category_markers = {
-    "Commercial API": "o",
-    "Open Source": "s",
-    "Ours": "*"
+    "Commercial API Tool": "o",
+    "Commercial VLM": "D",
+    "Open Source Tool": "s",
+    "Ours": "*",
+    "Open VLM": "^"
 }
 
 df[MARKER_COLUMN_NAME] = df[CATEGORY_COLUMN_NAME].map(category_markers)
 
-# Define marker sizes
+# Define marker sizes - increased sizes
 category_marker_sizes = {
-    "Commercial API": 60,
-    "Open Source": 70,
-    "Ours": 150
+    "Commercial API Tool": 120,
+    "Commercial VLM": 120,
+    "Open Source Tool": 140,
+    "Ours": 300,
+    "Open VLM": 140
 }
 
 # Define text colors
 category_text_colors = {
-    "Commercial API": DARK_TEAL,
-    "Open Source": DARK_TEAL,
-    "Ours": "#a51c5c"  # darker pink
+    "Commercial API Tool": DARK_TEAL,
+    "Commercial VLM": DARK_GREEN,
+    "Open Source Tool": DARK_TEAL,
+    "Ours": "#a51c5c",  # darker pink
+    "Open VLM": "#6f1188"  # darker purple
 }
 
 # Label offsets for better readability
 model_label_offsets = {
-    "GPT-4o": [10, 5],
-    "GPT-4o Batch": [10, 5],
+    "GPT-4o": [-35, 10],
+    "GPT-4o (Batch)": [-50, 10],
     "Mistral OCR": [-20, 10],
-    "MinerU": [-40, 5],
-    "Gemini Flash 2": [10, -10],
-    "Gemini Flash 2 Batch": [10, 0],
-    "marker v1.6.2": [-50, -10],
+    "MinerU": [-15, -20],
+    "Gemini Flash 2": [0, 10],
+    "Gemini Flash 2 (Batch)": [-50, -15],
+    "Marker v1.6.2": [-25, -20],
     "Ours (A100)": [-20, 10],
-    "Ours (L40S)": [10, 5],
-    "Ours (H100)": [-60, -5],
-    "Qwen2VL": [-50, 5],
-    "Qwen2.5VL": [10, -10]
+    "Ours (H100,L40S)": [-60, 25],
+    "Qwen 2 VL (A100)": [-20, 10],
+    "Qwen 2 VL (H100,L40S)": [-60, 25],
+    "Qwen 2.5 VL (A100)": [-20, 10],
+    "Qwen 2.5 VL (H100,L40S)": [-60, 25]
 }
 
 df[OFFSET_COLUMN_NAME] = df[MODEL_COLUMN_NAME].map(model_label_offsets)
@@ -191,8 +203,8 @@ for category in categories:
         s=category_marker_sizes[category],
     )
 
-# Add labels for each point
-FONTSIZE = 9
+# Add labels for each point with increased font size
+FONTSIZE = 12  # Increased from 9
 for idx, row in df.iterrows():
     plt.annotate(
         row[MODEL_COLUMN_NAME],
@@ -206,80 +218,37 @@ for idx, row in df.iterrows():
     )
 
 # Set up axes
+plt.ylim(25, 85)   # Set y-axis limits from 25 to 85 to include Qwen2VL
+plt.xlim(100, 15000)
 plt.xscale('log')  # Use log scale for cost
-plt.ylim(30, 80)   # Set y-axis limits from 30 to 80 to include Qwen2VL
 plt.grid(True, which="both", ls=":", color=TEAL, alpha=0.2)
 
 # Format y-axis to show percentages without scientific notation
 def percent_formatter(y, pos):
     return f'{y:.1f}%'
-
 plt.gca().yaxis.set_major_formatter(ticker.FuncFormatter(percent_formatter))
-
 # Format x-axis to show dollar amounts
 def dollar_formatter(x, pos):
     return f'${x:,.0f}'
 
+# Set specific x-axis ticks with increased font size
 plt.gca().xaxis.set_major_formatter(ticker.FuncFormatter(dollar_formatter))
+plt.gca().set_xticks([100, 200, 300, 500, 1000, 2000, 3000, 5000, 10000])
+plt.xticks(fontsize=12)  # Increased tick font size
+plt.yticks(fontsize=12)  # Increased tick font size
 
-# Add labels and title
-plt.xlabel("Cost per Million Pages (USD, log scale)", fontsize=10, weight="medium")
-plt.ylabel("Overall Performance (Pass Rate %)", fontsize=10, weight="medium")
-plt.title("OCR Engines: Performance vs. Cost", fontsize=12, weight="medium")
+# Add labels and title with increased font size
+plt.xlabel("Cost per Million Pages (USD, log scale)", fontsize=16, weight="medium")
+plt.ylabel("Overall Performance (Pass Rate %)", fontsize=16, weight="medium")
+# plt.title("OCR Engines: Performance vs. Cost", fontsize=12, weight="medium")
 
 # Remove spines
 plt.gca().spines['top'].set_visible(False)
 plt.gca().spines['right'].set_visible(False)
 
-# Create Pareto frontier
-# Sort by cost, ascending
-frontier_models = []
-pareto_df = df.copy()
-pareto_df = pareto_df.sort_values(by=COST_COLUMN_NAME)
-
-# Find Pareto optimal points
-max_perf = 0
-for idx, row in pareto_df.iterrows():
-    if row[PERF_COLUMN_NAME] > max_perf:
-        max_perf = row[PERF_COLUMN_NAME]
-        frontier_models.append(row[MODEL_COLUMN_NAME])
-
-# Get the frontier points
-frontier_df = df[df[MODEL_COLUMN_NAME].isin(frontier_models)].sort_values(by=COST_COLUMN_NAME)
-
-# Create and add the Pareto frontier polygon
-xmin, xmax = plt.gca().get_xlim()
-ymin, ymax = plt.gca().get_ylim()
-
-# Create polygon vertices for the Pareto frontier
-# Sort frontier_df by cost for correct polygon creation
-frontier_df = frontier_df.sort_values(by=COST_COLUMN_NAME)
-
-# Start with the points from the Pareto frontier
-X = []
-for _, row in frontier_df.iterrows():
-    X.append([row[COST_COLUMN_NAME], row[PERF_COLUMN_NAME]])
-
-# Convert to numpy array
-X = np.array(X)
-
-# Add points to close the polygon at the bottom
-bottom_y = 30  # Minimum y-value for the plot
-X = np.vstack([
-    X,                                 # Pareto optimal points
-    [X[-1, 0], bottom_y],              # Bottom right corner
-    [X[0, 0], bottom_y]                # Bottom left corner
-])
-
-# # Add the polygon
-# polygon = plt.Polygon(
-#     X, facecolor=YELLOW, alpha=0.15, zorder=-1, edgecolor=ORANGE, linestyle="--", linewidth=1.5
-# )
-# plt.gca().add_patch(polygon)
-
-# Add the legend with custom ordering
+# Add the legend with custom ordering and increased font size
 handles, labels = plt.gca().get_legend_handles_labels()
-desired_order = ["Ours", "Open Source", "Commercial API"]
+desired_order = ["Ours", "Open Source Tool", "Open VLM", "Commercial VLM", "Commercial API Tool"]
 label_to_handle = dict(zip(labels, handles))
 ordered_handles = [label_to_handle[label] for label in desired_order if label in label_to_handle]
 ordered_labels = [label for label in desired_order if label in labels]
@@ -287,8 +256,8 @@ ordered_labels = [label for label in desired_order if label in labels]
 plt.legend(
     ordered_handles,
     ordered_labels,
-    loc="upper right",
-    fontsize=10,
+    loc="lower right",
+    fontsize=12,  # Increased from 10
     frameon=True,
     framealpha=0.9,
     edgecolor=TEAL,
