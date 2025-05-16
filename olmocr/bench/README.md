@@ -58,13 +58,13 @@ cd olmocr
 
 pip install -e .[bench]
 
-# Now clone the benchmark data
-git clone https://huggingface.co/datasets/allenai/olmOCR-bench
+# Now clone the benchmark data from hugging face
+huggingface-cli download --repo-type dataset --resume-download allenai/olmOCR-bench --local-dir ./olmOCR-bench
 ```
 
 Convert your documents
 ```bash
-# convert using a single OCR-engine, see the olmocr/bench/runners directory for options
+# convert using the same engine as olmOCR pipeline.py uses, see the olmocr/bench/runners directory for options
 python -m olmocr.bench.convert olmocr_pipeline --dir ./olmOCR-bench/bench_data
 
 # or use convert_all.sh to run OCR with many common frameworks all at once, API keys will be required
@@ -98,19 +98,3 @@ Several categories of tests have been made so far:
 6. old_scans_math -> We found old math textbooks in the public domain from the Internet Archive. We then extracted random pages from them, OCRed them, filtered down to pages which contained equations, and picked several random equations from each page to use as test cases. We then manually checked each test case to see that it was accurate capturing what was on the page.
 7. long_tiny_text -> We found documents from the Internet Archive which contained a large amount of dense small print on a single page. Ex. pages from a dictionary, or pages of references from an academic paper. We then generated test cases using an LLM, and verified them manually.
 
-
-## TODO List for release
- - [X] Check all tests for duplicates
- - [X] Make absense tests not case sensitive by default
- - [X] Check that we have URLs for all tests
- - [X] Write a script to verify that all baseline tests that actually have weird unicodes have exemptions
- - [X] Review math equations in old_scans_math.jsonl using chat gpt script
- - [X] Add test category of long_texts which are still ~1 standard printed page, but with dense/small text
- - [X] Review multicolumn_tests, make sure they are correct, clean, and don't have order tests between regions
- - [X] Run automated check of multicolumn tests for: #1 sub/super scripts #2 max diffs calibrations #3 mixing across different distinct regions of text 
- - [X] Remove [] and other special symbols from old_scans
- - [X] Full review of old_scans, somehow, chatgpt or prolific
- - [X] Adjust scoring to weight each test category equally in final score distribution
- - [X] Double check marker inline math outputs
- - [X] Remove any PII documents
- - [ ] Run against final set of comparison tools, and check list of all-pass and all-fail tests
