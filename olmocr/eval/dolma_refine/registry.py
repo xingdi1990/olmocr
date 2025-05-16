@@ -91,18 +91,15 @@ class BaseRegistry(Generic[T]):
 
     @overload
     @classmethod
-    def get(cls, name: str) -> T:
-        ...
+    def get(cls, name: str) -> T: ...
 
     @overload
     @classmethod
-    def get(cls, name: str, raise_on_missing: Literal[True]) -> T:
-        ...
+    def get(cls, name: str, raise_on_missing: Literal[True]) -> T: ...
 
     @overload
     @classmethod
-    def get(cls, name: str, raise_on_missing: Literal[False]) -> Optional[T]:
-        ...
+    def get(cls, name: str, raise_on_missing: Literal[False]) -> Optional[T]: ...
 
     @classmethod
     def get(cls, name: str, raise_on_missing: bool = True) -> Optional[T]:
