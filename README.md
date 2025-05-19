@@ -23,22 +23,90 @@
   </a>
 </p>
 
-A toolkit for training language models to work with PDF documents in the wild.
+A toolkit for converting PDFs and other image-based document formats into clean, readable, plain text format.
 
 Try the online demo: [https://olmocr.allenai.org/](https://olmocr.allenai.org/)
 
-What is included here:
- - A prompting strategy to get really good natural text parsing using ChatGPT 4o - [buildsilver.py](https://github.com/allenai/olmocr/blob/main/olmocr/data/buildsilver.py)
- - An side-by-side eval toolkit for comparing different pipeline versions - [runeval.py](https://github.com/allenai/olmocr/blob/main/olmocr/eval/runeval.py)
- - Basic filtering by language and SEO spam removal - [filter.py](https://github.com/allenai/olmocr/blob/main/olmocr/filter/filter.py)
- - Finetuning code for Qwen2-VL and Molmo-O - [train.py](https://github.com/allenai/olmocr/blob/main/olmocr/train/train.py)
- - Processing millions of PDFs through a finetuned model using Sglang - [pipeline.py](https://github.com/allenai/olmocr/blob/main/olmocr/pipeline.py)
- - Viewing [Dolma docs](https://github.com/allenai/dolma) created from PDFs - [dolmaviewer.py](https://github.com/allenai/olmocr/blob/main/olmocr/viewer/dolmaviewer.py)
+Features:
+ - Convert PDF, PNG, and JPEG based documents into clean Markdown
+ - Support for equations, tables, handwriting, and complex formatting
+ - Automatically removes headers and footers
+ - Convert into text with a natural reading order, even in the presence of
+   figures, multi-column layouts, and insets
+ - Efficient, less than $200 USD per million pages converted
+ - (Based on a 7B parameter VLM, so it requires a GPU)
 
-See also:
+### Benchmark
 
 [**olmOCR-Bench**](https://github.com/allenai/olmocr/tree/main/olmocr/bench):
-A comprehensive benchmark suite covering over 1,400 documents to help measure performance of OCR systems
+We also ship a comprehensive benchmark suite covering over 7,000 test cases across 1,400 documents to help measure performance of OCR systems. 
+
+<table>
+  <thead>
+    <tr>
+      <th align="left"><strong>Model</strong></th>
+      <th align="center">AR</th>
+      <th align="center">OSM</th>
+      <th align="center">TA</th>
+      <th align="center">OS</th>
+      <th align="center">HF</th>
+      <th align="center">MC</th>
+      <th align="center">LTT</th>
+      <th align="center">Base</th>
+      <th align="center">Overall</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left">Marker v1.6.2</td>
+      <td align="center">24.3</td>
+      <td align="center">22.1</td>
+      <td align="center">69.8</td>
+      <td align="center">24.3</td>
+      <td align="center">87.1</td>
+      <td align="center">71.0</td>
+      <td align="center">76.9</td>
+      <td align="center"><strong>99.5</strong></td>
+      <td align="center">59.4 ± 1.1</td>
+    </tr>
+    <tr>
+      <td align="left">MinerU v1.3.10</td>
+      <td align="center">75.4</td>
+      <td align="center">47.4</td>
+      <td align="center">60.9</td>
+      <td align="center">17.3</td>
+      <td align="center"><strong>96.6</strong></td>
+      <td align="center">59.0</td>
+      <td align="center">39.1</td>
+      <td align="center">96.6</td>
+      <td align="center">61.5 ± 1.1</td>
+    </tr>
+    <tr>
+      <td align="left">Mistral OCR API</td>
+      <td align="center"><strong>77.2</strong></td>
+      <td align="center">67.5</td>
+      <td align="center">60.6</td>
+      <td align="center">29.3</td>
+      <td align="center">93.6</td>
+      <td align="center">71.3</td>
+      <td align="center">77.1</td>
+      <td align="center">99.4</td>
+      <td align="center">72.0 ± 1.1</td>
+    </tr>
+    <tr>
+      <td align="left">olmOCR v0.1.68 (pipeline.py)</td>
+      <td align="center">75.6</td>
+      <td align="center">75.1</td>
+      <td align="center">70.2</td>
+      <td align="center"><strong>44.5</strong></td>
+      <td align="center">93.4</td>
+      <td align="center"><strong>79.4</strong></td>
+      <td align="center">81.7</td>
+      <td align="center">99.0</td>
+      <td align="center"><strong>77.4 ± 1.0</strong></td>
+    </tr>
+  </tbody>
+</table>
 
 ### Installation
 
@@ -54,7 +122,8 @@ sudo apt-get update
 sudo apt-get install poppler-utils ttf-mscorefonts-installer msttcorefonts fonts-crosextra-caladea fonts-crosextra-carlito gsfonts lcdf-typetools
 ```
 
-Set up a conda environment and install olmocr
+Set up a conda environment and install olmocr. The requirements for running olmOCR
+are difficult to install in an existing python environment, so please do make a clean python environment to install into.
 ```bash
 conda create -n olmocr python=3.11
 conda activate olmocr
@@ -72,6 +141,7 @@ pip install -e .[gpu] --find-links https://flashinfer.ai/whl/cu124/torch2.4/flas
 ### Local Usage Example
 
 For quick testing, try the [web demo](https://olmocr.allen.ai/). To run locally, a GPU is required, as inference is powered by [sglang](https://github.com/sgl-project/sglang) under the hood.
+
 Convert a Single PDF:
 ```bash
 python -m olmocr.pipeline ./localworkspace --pdfs tests/gnarly_pdfs/horribleocr.pdf
@@ -186,6 +256,15 @@ options:
                         Beaker priority level for the job
 ```
 
+## Code overview
+
+There are some nice reusable pieces of the code that may be useful for your own projects:
+ - A prompting strategy to get really good natural text parsing using ChatGPT 4o - [buildsilver.py](https://github.com/allenai/olmocr/blob/main/olmocr/data/buildsilver.py)
+ - An side-by-side eval toolkit for comparing different pipeline versions - [runeval.py](https://github.com/allenai/olmocr/blob/main/olmocr/eval/runeval.py)
+ - Basic filtering by language and SEO spam removal - [filter.py](https://github.com/allenai/olmocr/blob/main/olmocr/filter/filter.py)
+ - Finetuning code for Qwen2-VL and Molmo-O - [train.py](https://github.com/allenai/olmocr/blob/main/olmocr/train/train.py)
+ - Processing millions of PDFs through a finetuned model using Sglang - [pipeline.py](https://github.com/allenai/olmocr/blob/main/olmocr/pipeline.py)
+ - Viewing [Dolma docs](https://github.com/allenai/dolma) created from PDFs - [dolmaviewer.py](https://github.com/allenai/olmocr/blob/main/olmocr/viewer/dolmaviewer.py)
 
 ## Team
 
