@@ -1,9 +1,7 @@
 <div align="center">
   <!-- <img src="https://github.com/allenai/OLMo/assets/8812459/774ac485-a535-4768-8f7c-db7be20f5cc3" width="300"/> -->
 <img src="https://github.com/user-attachments/assets/d70c8644-3e64-4230-98c3-c52fddaeccb6" alt="olmOCR Logo" width="300"/>
-<br/>
-  <br>
-  <h1>olmOCR</h1>
+<hr/>
 </div>
 <p align="center">
   <a href="https://github.com/allenai/OLMo/blob/main/LICENSE">
@@ -35,6 +33,11 @@ Features:
    figures, multi-column layouts, and insets
  - Efficient, less than $200 USD per million pages converted
  - (Based on a 7B parameter VLM, so it requires a GPU)
+
+### News
+ - May 19, 2025 - v0.1.68 - [olmOCR-Bench](https://github.com/allenai/olmocr/tree/main/olmocr/bench) launch, scoring 77.4. Launch includes 2 point performance boost in olmOCR pipeline due to bug fixes with prompts.
+ - Mar 17, 2025 - v0.1.60 - Performance improvements due to better temperature selection in sampling.
+ - Feb 25, 2025 - v0.1.58 -  Initial public launch and demo.
 
 ### Benchmark
 
