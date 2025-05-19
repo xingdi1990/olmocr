@@ -56,7 +56,7 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
       <th align="center">MC</th>
       <th align="center">LTT</th>
       <th align="center">Base</th>
-      <th align="center">Overall</th>
+      <th align="center">Overall Score</th>
     </tr>
   </thead>
   <tbody>
