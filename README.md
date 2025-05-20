@@ -131,14 +131,11 @@ are difficult to install in an existing python environment, so please do make a 
 conda create -n olmocr python=3.11
 conda activate olmocr
 
-git clone https://github.com/allenai/olmocr.git
-cd olmocr
-
-# For CPU-only operations, ex. running benchmarks
-pip install -e .
+# For CPU-only operations, ex running the benchmark
+pip install olmocr[bench]
 
 # For actually converting the files with your own GPU
-pip install -e .[gpu] --find-links https://flashinfer.ai/whl/cu124/torch2.4/flashinfer/
+pip install olmocr[gpu] --find-links https://flashinfer.ai/whl/cu124/torch2.4/flashinfer/
 ```
 
 ### Local Usage Example
