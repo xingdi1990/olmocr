@@ -226,7 +226,7 @@ curl -o olmocr-sample.pdf https://olmocr.allenai.org/papers/olmocr_3pg_sample.pd
 
 python -m olmocr.pipeline ./localworkspace --markdown --pdfs olmocr-sample.pdf
 ```
-
+> You can also visit our Docker repository on [Docker Hub](https://hub.docker.com/r/alleninstituteforai/olmocr).
 
 ### Full documentation for the pipeline
 
