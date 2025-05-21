@@ -172,11 +172,6 @@ The `./localworkspace/` workspace folder will then have both [Dolma](https://git
 cat localworkspace/markdown/olmocr-sample.md 
 ```
 
-<pre>
-olmOCR: Unlocking Trillions of Tokens in PDFs with Vision Language Models
-...
-</pre>
-
 
 ### Multi-node / Cluster Usage
 
@@ -203,6 +198,35 @@ For example:
 ```bash
 python -m olmocr.pipeline s3://my_s3_bucket/pdfworkspaces/exampleworkspace --pdfs s3://my_s3_bucket/jakep/gnarly_pdfs/*.pdf --beaker --beaker_gpus 4
 ```
+
+### Using Docker
+
+Pull the Docker image.
+```bash
+docker pull alleninstituteforai/olmocr:0.1.68
+```
+
+To run the container interactively:
+```bash
+docker run -it --gpus all --name olmocr_container alleninstituteforai/olmocr:0.1.68 /bin/bash
+```
+
+If you want to access your local files inside the container, use volume mounting:
+```bash
+docker run -it --gpus all \
+  -v /path/to/your/local/files:/workspace \
+  --name olmocr_container \
+  alleninstituteforai/olmocr:0.1.68 /bin/bash
+```
+
+All dependencies are already installed. Once you’re inside the container, you can run olmOCR commands. For example:
+
+```bash
+curl -o olmocr-sample.pdf https://olmocr.allenai.org/papers/olmocr_3pg_sample.pdf
+
+python -m olmocr.pipeline ./localworkspace --markdown --pdfs olmocr-sample.pdf
+```
+
 
 ### Full documentation for the pipeline
 
@@ -267,6 +291,8 @@ There are some nice reusable pieces of the code that may be useful for your own 
  - Finetuning code for Qwen2-VL and Molmo-O - [train.py](https://github.com/allenai/olmocr/blob/main/olmocr/train/train.py)
  - Processing millions of PDFs through a finetuned model using Sglang - [pipeline.py](https://github.com/allenai/olmocr/blob/main/olmocr/pipeline.py)
  - Viewing [Dolma docs](https://github.com/allenai/dolma) created from PDFs - [dolmaviewer.py](https://github.com/allenai/olmocr/blob/main/olmocr/viewer/dolmaviewer.py)
+
+
 
 ## Team
 
