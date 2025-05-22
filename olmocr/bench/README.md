@@ -263,6 +263,9 @@ huggingface-cli download --repo-type dataset --resume-download allenai/olmOCR-be
 
 Convert your documents
 ```bash
+# You will need to install the [gpu] subset of olmocr dependencies to run gpu inference
+pip install olmocr[gpu] --find-links https://flashinfer.ai/whl/cu124/torch2.4/flashinfer/
+
 # convert using the same engine as olmOCR pipeline.py uses, see the olmocr/bench/runners directory for options
 python -m olmocr.bench.convert olmocr_pipeline --dir ./olmOCR-bench/bench_data
 
