@@ -172,6 +172,10 @@ The `./localworkspace/` workspace folder will then have both [Dolma](https://git
 cat localworkspace/markdown/olmocr-sample.md 
 ```
 
+```
+olmOCR: Unlocking Trillions of Tokens in PDFs with Vision Language Models
+...
+```
 
 ### Multi-node / Cluster Usage
 
@@ -214,7 +218,7 @@ docker run -it --gpus all --name olmocr_container alleninstituteforai/olmocr:0.1
 If you want to access your local files inside the container, use volume mounting:
 ```bash
 docker run -it --gpus all \
-  -v /path/to/your/local/files:/workspace \
+  -v /path/to/your/local/files:/local_files \
   --name olmocr_container \
   alleninstituteforai/olmocr:0.1.68 /bin/bash
 ```

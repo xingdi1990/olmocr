@@ -37,11 +37,12 @@ COPY olmocr/version.py olmocr/version.py
 RUN /root/.local/bin/uv pip install --system --no-cache -e .
 RUN /root/.local/bin/uv pip install --system --no-cache ".[gpu]" --find-links https://flashinfer.ai/whl/cu124/torch2.4/flashinfer/
 RUN /root/.local/bin/uv pip install --system --no-cache ".[bench]"
-
+RUN playwright install-deps
+RUN playwright install chromium
 COPY olmocr olmocr
 
 WORKDIR /root
 COPY olmocr olmocr
 
-# RUN python3 -m sglang.launch_server --help
+RUN python3 -m sglang.launch_server --help
 RUN python3 -m olmocr.pipeline --help
