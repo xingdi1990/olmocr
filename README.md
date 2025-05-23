@@ -207,12 +207,12 @@ python -m olmocr.pipeline s3://my_s3_bucket/pdfworkspaces/exampleworkspace --pdf
 
 Pull the Docker image.
 ```bash
-docker pull alleninstituteforai/olmocr:0.1.68
+docker pull alleninstituteforai/olmocr:latest
 ```
 
 To run the container interactively:
 ```bash
-docker run -it --gpus all --name olmocr_container alleninstituteforai/olmocr:0.1.68 /bin/bash
+docker run -it --gpus all --name olmocr_container alleninstituteforai/olmocr:latest /bin/bash
 ```
 
 If you want to access your local files inside the container, use volume mounting:
@@ -220,7 +220,7 @@ If you want to access your local files inside the container, use volume mounting
 docker run -it --gpus all \
   -v /path/to/your/local/files:/local_files \
   --name olmocr_container \
-  alleninstituteforai/olmocr:0.1.68 /bin/bash
+  alleninstituteforai/olmocr:latest /bin/bash
 ```
 
 All dependencies are already installed. Once you’re inside the container, you can run olmOCR commands. For example:
