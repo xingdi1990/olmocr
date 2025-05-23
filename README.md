@@ -35,6 +35,7 @@ Features:
  - (Based on a 7B parameter VLM, so it requires a GPU)
 
 ### News
+ - May 23, 2025 - v0.1.70 - Official docker support and images are now available! [See Docker usage](#using-docker)
  - May 19, 2025 - v0.1.68 - [olmOCR-Bench](https://github.com/allenai/olmocr/tree/main/olmocr/bench) launch, scoring 77.4. Launch includes 2 point performance boost in olmOCR pipeline due to bug fixes with prompts.
  - Mar 17, 2025 - v0.1.60 - Performance improvements due to better temperature selection in sampling.
  - Feb 25, 2025 - v0.1.58 -  Initial public launch and demo.
