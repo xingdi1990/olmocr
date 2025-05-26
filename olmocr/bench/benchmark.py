@@ -20,7 +20,6 @@ import random
 import re
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from itertools import combinations
 from typing import Dict, List, Tuple
 
 from pypdf import PdfReader
@@ -28,7 +27,7 @@ from tqdm import tqdm
 
 from .report import generate_html_report
 from .tests import BaselineTest, BasePDFTest, load_tests, save_tests
-from .utils import calculate_bootstrap_ci, perform_permutation_test
+from .utils import calculate_bootstrap_ci
 
 
 def evaluate_candidate(
@@ -186,16 +185,6 @@ def main():
         default=0.95,
         help="Confidence level for interval calculation (default: 0.95 for 95% CI).",
     )
-    parser.add_argument(
-        "--permutation_tests",
-        nargs="?",
-        const="default",
-        help=(
-            "Run permutation testing. If provided without candidate names, run default tests. "
-            "If provided with a comma-separated list of candidate names (e.g. --permutation_tests asdf,qwe,ert), "
-            "run permutation tests on all pairs of the specified candidates."
-        ),
-    )
     # New arguments
     parser.add_argument("--sample", type=int, default=None, help="Randomly sample N tests to run instead of all tests.")
     parser.add_argument("--test_report", type=str, default=None, help="Generate an HTML report of test results. Provide a filename (e.g., results.html).")
@@ -300,16 +289,16 @@ def main():
         jsonl_results = {}
         jsonl_scores = []  # List to store scores by jsonl file for CI calculation
         jsonl_file_sizes = []  # List to store the number of tests per jsonl file
-        
+
         for test in all_tests:
             # Get the jsonl file this test came from
             jsonl_file = test_to_jsonl.get(test.id, "unknown")
-            
+
             if jsonl_file not in jsonl_results:
                 jsonl_results[jsonl_file] = {"total": 0, "passed": 0, "scores": []}
-            
+
             jsonl_results[jsonl_file]["total"] += 1
-            
+
             # Get the test result for this candidate if it exists
             if not candidate_errors and hasattr(test, "pdf") and hasattr(test, "page"):
                 pdf_name = test.pdf
@@ -323,13 +312,13 @@ def main():
                             if passed:
                                 jsonl_results[jsonl_file]["passed"] += 1
                             break
-        
+
         # Gather all the scores by jsonl file for CI calculation
         for jsonl_file, results in jsonl_results.items():
             if results["scores"]:
                 jsonl_file_sizes.append(len(results["scores"]))
                 jsonl_scores.extend(results["scores"])
-        
+
         # Calculate CI using the updated function with splits
         if jsonl_scores:
             ci = calculate_bootstrap_ci(jsonl_scores, n_bootstrap=n_bootstrap, ci_level=ci_level, splits=jsonl_file_sizes)
@@ -350,7 +339,7 @@ def main():
                 if results["total"] > 0:
                     pass_rate = results["passed"] / results["total"]
                     jsonl_pass_rates.append(pass_rate)
-            
+
             per_category_score = sum(jsonl_pass_rates) / len(jsonl_pass_rates) if jsonl_pass_rates else 0.0
             print(f"  Average Score: {per_category_score * 100:.1f}% (95% CI: [{ci[0] * 100:.1f}%, {ci[1] * 100:.1f}%]) over {total_tests} tests.")
 
@@ -417,161 +406,6 @@ def main():
                 pass_rate = (results["passed"] / results["total"]) * 100
                 print(f"        {jsonl_file:30s}: {pass_rate:0.1f}% ({results['passed']}/{results['total']} tests)")
         print("")
-
-    if args.permutation_tests is not None:
-        print("\n" + "=" * 60)
-        print("Pairwise Permutation Tests:")
-        valid_candidates = [c for c in summary if not c[3]]
-        if args.permutation_tests == "default":
-            olmocr_candidates = sorted([c for c in valid_candidates if "olmocr" in c[0].lower()], key=lambda x: x[1], reverse=True)
-            non_olmocr_candidates = sorted([c for c in valid_candidates if "olmocr" not in c[0].lower()], key=lambda x: x[1], reverse=True)
-            top_olmocr = olmocr_candidates[0] if olmocr_candidates else None
-            top_non_olmocr = non_olmocr_candidates[0] if non_olmocr_candidates else None
-            top_two_olmocr = olmocr_candidates[:2]
-
-            if top_olmocr and top_non_olmocr:
-                olmocr_name, olmocr_score = top_olmocr[0], top_olmocr[1]
-                non_olmocr_name, non_olmocr_score = top_non_olmocr[0], top_non_olmocr[1]
-                # Extract file sizes and scores for both candidates
-                olmocr_jsonl_sizes = []
-                non_olmocr_jsonl_sizes = []
-                
-                # Extract jsonl file sizes for each candidate
-                for test in all_tests:
-                    jsonl_file = test_to_jsonl.get(test.id, "unknown")
-                    # Process for top_olmocr
-                    if not top_olmocr[3] and hasattr(test, "pdf") and hasattr(test, "page"):
-                        pdf_name = test.pdf
-                        page = test.page
-                        if pdf_name in test_results_by_candidate.get(top_olmocr[0], {}) and page in test_results_by_candidate[top_olmocr[0]].get(pdf_name, {}):
-                            for t, _, _ in test_results_by_candidate[top_olmocr[0]][pdf_name][page]:
-                                if t.id == test.id:
-                                    if jsonl_file not in olmocr_jsonl_sizes:
-                                        olmocr_jsonl_sizes.append(len([t for t in all_tests if test_to_jsonl.get(t.id, "") == jsonl_file]))
-                                    break
-                
-                    # Process for top_non_olmocr
-                    if not top_non_olmocr[3] and hasattr(test, "pdf") and hasattr(test, "page"):
-                        pdf_name = test.pdf
-                        page = test.page
-                        if pdf_name in test_results_by_candidate.get(top_non_olmocr[0], {}) and page in test_results_by_candidate[top_non_olmocr[0]].get(pdf_name, {}):
-                            for t, _, _ in test_results_by_candidate[top_non_olmocr[0]][pdf_name][page]:
-                                if t.id == test.id:
-                                    if jsonl_file not in non_olmocr_jsonl_sizes:
-                                        non_olmocr_jsonl_sizes.append(len([t for t in all_tests if test_to_jsonl.get(t.id, "") == jsonl_file]))
-                                    break
-                
-                diff, p_value = perform_permutation_test(
-                    top_olmocr[7], top_non_olmocr[7],
-                    splits_a=olmocr_jsonl_sizes if olmocr_jsonl_sizes else None,
-                    splits_b=non_olmocr_jsonl_sizes if non_olmocr_jsonl_sizes else None
-                )
-                print("\nComparison 1: Top olmocr vs Top non-olmocr candidate")
-                print(f"  {olmocr_name} ({olmocr_score*100:.1f}%) vs {non_olmocr_name} ({non_olmocr_score*100:.1f}%)")
-                print(f"  Difference: {diff*100:.2f}% (positive means {olmocr_name} is better)")
-                print(f"  p-value: {p_value:.4f}")
-                if p_value < 0.05:
-                    print("  Result: Statistically significant difference (p < 0.05)")
-                else:
-                    print("  Result: No statistically significant difference (p ≥ 0.05)")
-            else:
-                print("\nCannot perform olmocr vs non-olmocr comparison: Missing candidates")
-
-            if len(top_two_olmocr) >= 2:
-                # Extract file sizes for each candidate
-                olmocr1_jsonl_sizes = []
-                olmocr2_jsonl_sizes = []
-                
-                # Extract jsonl file sizes for each candidate
-                for test in all_tests:
-                    jsonl_file = test_to_jsonl.get(test.id, "unknown")
-                    # Process for first olmocr candidate
-                    if not top_two_olmocr[0][3] and hasattr(test, "pdf") and hasattr(test, "page"):
-                        pdf_name = test.pdf
-                        page = test.page
-                        if pdf_name in test_results_by_candidate.get(top_two_olmocr[0][0], {}) and page in test_results_by_candidate[top_two_olmocr[0][0]].get(pdf_name, {}):
-                            for t, _, _ in test_results_by_candidate[top_two_olmocr[0][0]][pdf_name][page]:
-                                if t.id == test.id:
-                                    if jsonl_file not in olmocr1_jsonl_sizes:
-                                        olmocr1_jsonl_sizes.append(len([t for t in all_tests if test_to_jsonl.get(t.id, "") == jsonl_file]))
-                                    break
-                
-                    # Process for second olmocr candidate
-                    if not top_two_olmocr[1][3] and hasattr(test, "pdf") and hasattr(test, "page"):
-                        pdf_name = test.pdf
-                        page = test.page
-                        if pdf_name in test_results_by_candidate.get(top_two_olmocr[1][0], {}) and page in test_results_by_candidate[top_two_olmocr[1][0]].get(pdf_name, {}):
-                            for t, _, _ in test_results_by_candidate[top_two_olmocr[1][0]][pdf_name][page]:
-                                if t.id == test.id:
-                                    if jsonl_file not in olmocr2_jsonl_sizes:
-                                        olmocr2_jsonl_sizes.append(len([t for t in all_tests if test_to_jsonl.get(t.id, "") == jsonl_file]))
-                                    break
-                
-                diff, p_value = perform_permutation_test(
-                    top_two_olmocr[0][7], top_two_olmocr[1][7],
-                    splits_a=olmocr1_jsonl_sizes if olmocr1_jsonl_sizes else None,
-                    splits_b=olmocr2_jsonl_sizes if olmocr2_jsonl_sizes else None
-                )
-                print("\nComparison 2: Top two olmocr candidates")
-                print(f"  {top_two_olmocr[0][0]} ({top_two_olmocr[0][1]*100:.1f}%) vs {top_two_olmocr[1][0]} ({top_two_olmocr[1][1]*100:.1f}%)")
-                print(f"  Difference: {diff*100:.2f}% (positive means {top_two_olmocr[0][0]} is better)")
-                print(f"  p-value: {p_value:.4f}")
-                if p_value < 0.05:
-                    print("  Result: Statistically significant difference (p < 0.05)")
-                else:
-                    print("  Result: No statistically significant difference (p ≥ 0.05)")
-            else:
-                print("\nCannot perform top two olmocr comparison: Not enough olmocr candidates")
-        else:
-            candidate_names = [name.strip() for name in args.permutation_tests.split(",")]
-            selected_candidates = [c for c in valid_candidates if c[0] in candidate_names]
-            if len(selected_candidates) < 2:
-                print("\nNot enough valid candidates among the selected for permutation tests.")
-            else:
-                for cand1, cand2 in combinations(selected_candidates, 2):
-                    # Extract file sizes for each candidate
-                    cand1_jsonl_sizes = []
-                    cand2_jsonl_sizes = []
-                    
-                    # Extract jsonl file sizes for each candidate
-                    for test in all_tests:
-                        jsonl_file = test_to_jsonl.get(test.id, "unknown")
-                        # Process for first candidate
-                        if not cand1[3] and hasattr(test, "pdf") and hasattr(test, "page"):
-                            pdf_name = test.pdf
-                            page = test.page
-                            if pdf_name in test_results_by_candidate.get(cand1[0], {}) and page in test_results_by_candidate[cand1[0]].get(pdf_name, {}):
-                                for t, _, _ in test_results_by_candidate[cand1[0]][pdf_name][page]:
-                                    if t.id == test.id:
-                                        if jsonl_file not in cand1_jsonl_sizes:
-                                            cand1_jsonl_sizes.append(len([t for t in all_tests if test_to_jsonl.get(t.id, "") == jsonl_file]))
-                                        break
-                    
-                        # Process for second candidate
-                        if not cand2[3] and hasattr(test, "pdf") and hasattr(test, "page"):
-                            pdf_name = test.pdf
-                            page = test.page
-                            if pdf_name in test_results_by_candidate.get(cand2[0], {}) and page in test_results_by_candidate[cand2[0]].get(pdf_name, {}):
-                                for t, _, _ in test_results_by_candidate[cand2[0]][pdf_name][page]:
-                                    if t.id == test.id:
-                                        if jsonl_file not in cand2_jsonl_sizes:
-                                            cand2_jsonl_sizes.append(len([t for t in all_tests if test_to_jsonl.get(t.id, "") == jsonl_file]))
-                                        break
-                    
-                    diff, p_value = perform_permutation_test(
-                        cand1[7], cand2[7],
-                        splits_a=cand1_jsonl_sizes if cand1_jsonl_sizes else None,
-                        splits_b=cand2_jsonl_sizes if cand2_jsonl_sizes else None
-                    )
-                    print(f"\nComparison: {cand1[0]} vs {cand2[0]}")
-                    print(f"  {cand1[0]} ({cand1[1]*100:.1f}%) vs {cand2[0]} ({cand2[1]*100:.1f}%)")
-                    print(f"  Difference: {diff*100:.2f}% (positive means {cand1[0]} is better)")
-                    print(f"  p-value: {p_value:.4f}")
-                    if p_value < 0.05:
-                        print("  Result: Statistically significant difference (p < 0.05)")
-                    else:
-                        print("  Result: No statistically significant difference (p ≥ 0.05)")
-        print("=" * 60)
 
     # Generate HTML report if requested
     if args.test_report:

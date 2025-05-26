@@ -10,7 +10,6 @@ import os
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-import numpy as np
 import pandas as pd
 from matplotlib import font_manager
 
@@ -60,7 +59,7 @@ GREEN = "#0fcb8c"
 data = {
     MODEL_COLUMN_NAME: [
         "GPT-4o",
-        "GPT-4o (Batch)", 
+        "GPT-4o (Batch)",
         "Mistral OCR",
         "MinerU",
         "Gemini Flash 2",
@@ -137,13 +136,7 @@ category_markers = {
 df[MARKER_COLUMN_NAME] = df[CATEGORY_COLUMN_NAME].map(category_markers)
 
 # Define marker sizes - increased sizes
-category_marker_sizes = {
-    "Commercial API Tool": 120,
-    "Commercial VLM": 120,
-    "Open Source Tool": 140,
-    "Ours": 300,
-    "Open VLM": 140
-}
+category_marker_sizes = {"Commercial API Tool": 120, "Commercial VLM": 120, "Open Source Tool": 140, "Ours": 300, "Open VLM": 140}
 
 # Define text colors
 category_text_colors = {
@@ -203,18 +196,24 @@ for idx, row in df.iterrows():
     )
 
 # Set up axes
-plt.ylim(25, 85)   # Set y-axis limits from 25 to 85 to include Qwen2VL
+plt.ylim(25, 85)  # Set y-axis limits from 25 to 85 to include Qwen2VL
 plt.xlim(100, 15000)
-plt.xscale('log')  # Use log scale for cost
+plt.xscale("log")  # Use log scale for cost
 plt.grid(True, which="both", ls=":", color=TEAL, alpha=0.2)
+
 
 # Format y-axis to show percentages without scientific notation
 def percent_formatter(y, pos):
-    return f'{y:.1f}%'
+    return f"{y:.1f}%"
+
+
 plt.gca().yaxis.set_major_formatter(ticker.FuncFormatter(percent_formatter))
+
+
 # Format x-axis to show dollar amounts
 def dollar_formatter(x, pos):
-    return f'${x:,.0f}'
+    return f"${x:,.0f}"
+
 
 # Set specific x-axis ticks with increased font size
 plt.gca().xaxis.set_major_formatter(ticker.FuncFormatter(dollar_formatter))
@@ -228,8 +227,8 @@ plt.ylabel("Overall Performance (Pass Rate %)", fontsize=16, weight="medium")
 # plt.title("OCR Engines: Performance vs. Cost", fontsize=12, weight="medium")
 
 # Remove spines
-plt.gca().spines['top'].set_visible(False)
-plt.gca().spines['right'].set_visible(False)
+plt.gca().spines["top"].set_visible(False)
+plt.gca().spines["right"].set_visible(False)
 
 # Add the legend with custom ordering and increased font size
 handles, labels = plt.gca().get_legend_handles_labels()
@@ -239,14 +238,7 @@ ordered_handles = [label_to_handle[label] for label in desired_order if label in
 ordered_labels = [label for label in desired_order if label in labels]
 
 plt.legend(
-    ordered_handles,
-    ordered_labels,
-    loc="lower right",
-    fontsize=12,  # Increased from 10
-    frameon=True,
-    framealpha=0.9,
-    edgecolor=TEAL,
-    facecolor="white"
+    ordered_handles, ordered_labels, loc="lower right", fontsize=12, frameon=True, framealpha=0.9, edgecolor=TEAL, facecolor="white"  # Increased from 10
 )
 
 # Adjust layout
