@@ -16,6 +16,7 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
     ca-certificates \
     build-essential \
     curl \
+    wget \
     unzip
 
 RUN rm -rf /var/lib/apt/lists/* \
@@ -41,8 +42,10 @@ RUN playwright install-deps
 RUN playwright install chromium
 COPY olmocr olmocr
 
+COPY scripts scripts
 WORKDIR /root
 COPY olmocr olmocr
+COPY scripts scripts
 
 RUN python3 -m sglang.launch_server --help
 RUN python3 -m olmocr.pipeline --help
