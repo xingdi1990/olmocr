@@ -101,7 +101,7 @@ def create_markdown_files(entries, output_dir):
         for entry in pdf_entries:
             text = entry["text"]
             if text.strip():
-                source_file = entry["source_file"]
+                # source_file = entry["source_file"]
                 combined_text.append(text)
 
         with open(md_filepath, "w", encoding="utf-8") as f:
@@ -206,7 +206,7 @@ def main():
     if missing_pdfs:
         create_blank_markdown_files(missing_pdfs, output_dir)
 
-    print(f"\nSummary:")
+    print("\nSummary:")
     print(f"Created {len(created_files)} markdown files from JSONL data")
     print(f"Created {len(missing_pdfs)} blank markdown files for missing PDFs")
     print(f"Total markdown files: {len(created_files) + len(missing_pdfs)}")
