@@ -67,20 +67,9 @@ data = {
         "Marker v1.6.2",
         "Ours",
         "Qwen 2 VL",
-        "Qwen 2.5 VL"
+        "Qwen 2.5 VL",
     ],
-    COST_COLUMN_NAME: [
-        12480,
-        6240,
-        1000,
-        596,
-        499,
-        249,
-        235,
-        178,
-        178,  # Same cost as Ours
-        178   # Same cost as Ours
-    ],
+    COST_COLUMN_NAME: [12480, 6240, 1000, 596, 499, 249, 235, 178, 178, 178],  # Same cost as Ours  # Same cost as Ours
     PERF_COLUMN_NAME: [
         69.9,  # GPT-4o (Anchored)
         69.9,  # Same performance for batch
@@ -92,7 +81,7 @@ data = {
         77.4,  # Ours (performance is the same across hardware)
         31.5,  # Qwen2VL
         65.5,  # Qwen2.5VL
-    ]
+    ],
 }
 
 df = pd.DataFrame(data)
@@ -108,30 +97,18 @@ model_categories = {
     "Marker v1.6.2": "Open Source Tool",
     "Ours": "Ours",
     "Qwen 2 VL": "Open VLM",
-    "Qwen 2.5 VL": "Open VLM"
+    "Qwen 2.5 VL": "Open VLM",
 }
 
 df[CATEGORY_COLUMN_NAME] = df[MODEL_COLUMN_NAME].map(model_categories)
 
 # Category colors
-category_colors = {
-    "Commercial API Tool": DARK_GREEN,
-    "Commercial VLM": DARK_GREEN,
-    "Open Source Tool": PURPLE,
-    "Ours": DARK_PINK,
-    "Open VLM": PURPLE
-}
+category_colors = {"Commercial API Tool": DARK_GREEN, "Commercial VLM": DARK_GREEN, "Open Source Tool": PURPLE, "Ours": DARK_PINK, "Open VLM": PURPLE}
 
 df[COLOR_COLUMN_NAME] = df[CATEGORY_COLUMN_NAME].map(category_colors)
 
 # Define marker types
-category_markers = {
-    "Commercial API Tool": "o",
-    "Commercial VLM": "^",
-    "Open Source Tool": "o",
-    "Ours": "*",
-    "Open VLM": "^"
-}
+category_markers = {"Commercial API Tool": "o", "Commercial VLM": "^", "Open Source Tool": "o", "Ours": "*", "Open VLM": "^"}
 
 df[MARKER_COLUMN_NAME] = df[CATEGORY_COLUMN_NAME].map(category_markers)
 
@@ -144,7 +121,7 @@ category_text_colors = {
     "Commercial VLM": DARK_GREEN,
     "Open Source Tool": PURPLE,  # darker purple
     "Ours": DARK_PINK,  # darker pink
-    "Open VLM": PURPLE  # darker purple
+    "Open VLM": PURPLE,  # darker purple
 }
 
 # Label offsets for better readability
@@ -158,7 +135,7 @@ model_label_offsets = {
     "Marker v1.6.2": [-35, -20],
     "Ours": [-20, 10],
     "Qwen 2 VL": [-35, 10],
-    "Qwen 2.5 VL": [-35, 10]
+    "Qwen 2.5 VL": [-35, 10],
 }
 
 df[OFFSET_COLUMN_NAME] = df[MODEL_COLUMN_NAME].map(model_label_offsets)

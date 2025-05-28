@@ -1,5 +1,5 @@
 from pdfminer.high_level import extract_pages
-from pdfminer.layout import LTChar, LTFigure, LTImage, LTTextBox, LTTextLine
+from pdfminer.layout import LTChar
 
 
 def extract_chars_with_transforms(pdf_path, page_num=0):
