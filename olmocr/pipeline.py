@@ -218,6 +218,7 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
     MAX_RETRIES = args.max_page_retries
     TEMPERATURE_BY_ATTEMPT = [0.1, 0.1, 0.2, 0.3, 0.5, 0.8, 0.1, 0.8]
     FORCE_NO_DOCUMENT_ANCHORING_BY_ATTEMPT = [False, False, False, False, False, False, True, True]
+    assert len(TEMPERATURE_BY_ATTEMPT) == len(FORCE_NO_DOCUMENT_ANCHORING_BY_ATTEMPT)
     exponential_backoffs = 0
     local_anchor_text_len = args.target_anchor_text_len
     local_image_rotation = 0
@@ -225,14 +226,14 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
     await tracker.track_work(worker_id, f"{pdf_orig_path}-{page_num}", "started")
 
     while attempt < MAX_RETRIES:
+        lookup_attempt = min(attempt, len(FORCE_NO_DOCUMENT_ANCHORING_BY_ATTEMPT) - 1)
         query = await build_page_query(pdf_local_path,
                                        page_num, 
                                        args.target_longest_image_dim,
-                                       local_anchor_text_len if not FORCE_NO_DOCUMENT_ANCHORING_BY_ATTEMPT[ min(attempt, len(FORCE_NO_DOCUMENT_ANCHORING_BY_ATTEMPT) - 1)] else -1,
+                                       local_anchor_text_len if not FORCE_NO_DOCUMENT_ANCHORING_BY_ATTEMPT[lookup_attempt] else -1,
                                        image_rotation=local_image_rotation)
-        query["temperature"] = TEMPERATURE_BY_ATTEMPT[
-            min(attempt, len(TEMPERATURE_BY_ATTEMPT) - 1)
-        ]  # Change temperature as number of attempts increases to overcome repetition issues at expense of quality
+        # Change temperature as number of attempts increases to overcome repetition issues at expense of quality
+        query["temperature"] = TEMPERATURE_BY_ATTEMPT[lookup_attempt]
 
         logger.info(f"Built page query for {pdf_orig_path}-{page_num}")
 
