@@ -106,7 +106,7 @@ class PageResult:
 
 
 async def build_page_query(local_pdf_path: str, page: int, target_longest_image_dim: int, target_anchor_text_len: int, image_rotation: int = 0) -> dict:
-    MAX_TOKENS = 5000
+    MAX_TOKENS = 4500
     assert image_rotation in [0, 90, 180, 270], "Invalid image rotation provided in build_page_query"
 
     # Allow the page rendering to process in the background while we get the anchor text (which blocks the main thread)
@@ -294,6 +294,10 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
             raise
         except json.JSONDecodeError as e:
             logger.warning(f"JSON decode error on attempt {attempt} for {pdf_orig_path}-{page_num}: {e}")
+
+            local_anchor_text_len = max(1, local_anchor_text_len // 2)
+            logger.info(f"Reducing anchor text len to {local_anchor_text_len} for {pdf_orig_path}-{page_num}")
+
             attempt += 1
         except ValueError as e:
             logger.warning(f"ValueError on attempt {attempt} for {pdf_orig_path}-{page_num}: {type(e)} - {e}")
