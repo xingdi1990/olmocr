@@ -1,17 +1,21 @@
+import base64
 import glob
 import io
 import json
 import os
 import re
-import unittest
 import tempfile
-import base64
+import unittest
 
 from pypdf import PdfReader
 
-from olmocr.data.renderpdf import get_pdf_media_box_width_height, render_pdf_to_base64png
-from olmocr.prompts.anchor import _linearize_pdf_report, _pdf_report, get_anchor_text
+from olmocr.data.renderpdf import (
+    get_pdf_media_box_width_height,
+    render_pdf_to_base64png,
+)
 from olmocr.image_utils import convert_image_to_pdf_bytes
+from olmocr.prompts.anchor import _linearize_pdf_report, _pdf_report, get_anchor_text
+
 
 class AnchorTest(unittest.TestCase):
     def testExtractText(self):
@@ -177,38 +181,34 @@ class AnchorTest(unittest.TestCase):
 
         # Parse page dimensions from both anchors and check with tolerance
         # Extract page dimensions and image bounds
-        img_lines = image_only_anchor.strip().split('\n')
-        len_lines = lenneg1_anchor.strip().split('\n')
-        
-        img_page_match = re.search(r'Page dimensions: ([\d.]+)x([\d.]+)', img_lines[0])
-        img_image_match = re.search(r'\[Image \d+x\d+ to (\d+)x(\d+)\]', img_lines[1])
-        
-        len_page_match = re.search(r'Page dimensions: ([\d.]+)x([\d.]+)', len_lines[0])
-        len_image_match = re.search(r'\[Image \d+x\d+ to (\d+)x(\d+)\]', len_lines[1])
-        
+        img_lines = image_only_anchor.strip().split("\n")
+        len_lines = lenneg1_anchor.strip().split("\n")
+
+        img_page_match = re.search(r"Page dimensions: ([\d.]+)x([\d.]+)", img_lines[0])
+        img_image_match = re.search(r"\[Image \d+x\d+ to (\d+)x(\d+)\]", img_lines[1])
+
+        len_page_match = re.search(r"Page dimensions: ([\d.]+)x([\d.]+)", len_lines[0])
+        len_image_match = re.search(r"\[Image \d+x\d+ to (\d+)x(\d+)\]", len_lines[1])
+
         self.assertIsNotNone(img_page_match, f"Could not parse image anchor page dims: {image_only_anchor}")
         self.assertIsNotNone(img_image_match, f"Could not parse image anchor image dims: {image_only_anchor}")
         self.assertIsNotNone(len_page_match, f"Could not parse lenneg1 anchor page dims: {lenneg1_anchor}")
         self.assertIsNotNone(len_image_match, f"Could not parse lenneg1 anchor image dims: {lenneg1_anchor}")
-        
+
         img_page_w, img_page_h = float(img_page_match.group(1)), float(img_page_match.group(2))
         img_img_w, img_img_h = int(img_image_match.group(1)), int(img_image_match.group(2))
-        
+
         len_page_w, len_page_h = float(len_page_match.group(1)), float(len_page_match.group(2))
         len_img_w, len_img_h = int(len_image_match.group(1)), int(len_image_match.group(2))
-        
+
         # Check page dimensions are within 1.4 tolerance
-        self.assertAlmostEqual(img_page_w, len_page_w, delta=1.4, 
-                              msg=f"Page width mismatch: {img_page_w} vs {len_page_w}")
-        self.assertAlmostEqual(img_page_h, len_page_h, delta=1.4,
-                              msg=f"Page height mismatch: {img_page_h} vs {len_page_h}")
-        
+        self.assertAlmostEqual(img_page_w, len_page_w, delta=1.4, msg=f"Page width mismatch: {img_page_w} vs {len_page_w}")
+        self.assertAlmostEqual(img_page_h, len_page_h, delta=1.4, msg=f"Page height mismatch: {img_page_h} vs {len_page_h}")
+
         # Check image dimensions are within 1 point tolerance
-        self.assertAlmostEqual(img_img_w, len_img_w, delta=1,
-                              msg=f"Image width mismatch: {img_img_w} vs {len_img_w}")
-        self.assertAlmostEqual(img_img_h, len_img_h, delta=1,
-                              msg=f"Image height mismatch: {img_img_h} vs {len_img_h}")
-        
+        self.assertAlmostEqual(img_img_w, len_img_w, delta=1, msg=f"Image width mismatch: {img_img_w} vs {len_img_w}")
+        self.assertAlmostEqual(img_img_h, len_img_h, delta=1, msg=f"Image height mismatch: {img_img_h} vs {len_img_h}")
+
         self.assertEqual(image_only_anchor[:5], lenneg1_anchor[:5])
         self.assertEqual(image_only_anchor[-1:], lenneg1_anchor[-1:])
 
