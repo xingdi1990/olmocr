@@ -10,6 +10,7 @@ RUN apt-get update -y && apt-get install -y poppler-utils ttf-mscorefonts-instal
 
 RUN apt-get update -y && apt-get install -y --no-install-recommends \
     git \
+    git-lfs \
     python3.11 \
     python3.11-dev \
     python3.11-distutils \

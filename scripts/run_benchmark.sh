@@ -58,7 +58,8 @@ experiment_spec = ExperimentSpec(
             command=[
                 "bash", "-c",
                 " && ".join([
-                    "huggingface-cli download --repo-type dataset --resume-download allenai/olmOCR-bench --local-dir ./olmOCR-bench",
+                    "git clone https://huggingface.co/datasets/allenai/olmOCR-bench",
+                    "cd olmOCR-bench && git lfs pull && cd ..",
                     "python -m olmocr.pipeline ./localworkspace --markdown --pdfs './olmOCR-bench/bench_data/pdfs/**/*.pdf'",
                     "python olmocr/bench/scripts/workspace_to_bench.py localworkspace/ olmOCR-bench/bench_data/markdown_output --bench-path ./olmOCR-bench/",
                     "python -m olmocr.bench.benchmark --dir ./olmOCR-bench/bench_data"
