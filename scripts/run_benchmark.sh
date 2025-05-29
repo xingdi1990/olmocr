@@ -69,7 +69,7 @@ experiment_spec = ExperimentSpec(
                 preemptible=True,
             ),
             resources=TaskResources(gpu_count=1),
-            #constraints=Constraint(cluster=["ai2/pluto-cirrascale", "ai2/jupiter-cirrascale"]),
+            constraints=Constraint(cluster=["ai2/ceres-cirrascale", "ai2/jupiter-cirrascale"]),
             result=ResultSpec(path="/noop-results"),
         )
     ],
