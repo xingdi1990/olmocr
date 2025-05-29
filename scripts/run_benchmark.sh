@@ -67,7 +67,7 @@ experiment_spec = ExperimentSpec(
                     "git clone https://huggingface.co/datasets/allenai/olmOCR-bench",
                     "cd olmOCR-bench && git lfs pull && cd ..",
                     "python -m olmocr.pipeline ./localworkspace --markdown --pdfs ./olmOCR-bench/bench_data/pdfs/**/*.pdf",
-                    "python olmocr/bench/scripts/workspace_to_bench.py localworkspace/ olmOCR-bench/bench_data/markdown_output --bench-path ./olmOCR-bench/",
+                    "python olmocr/bench/scripts/workspace_to_bench.py localworkspace/ olmOCR-bench/bench_data/olmocr --bench-path ./olmOCR-bench/",
                     "python -m olmocr.bench.benchmark --dir ./olmOCR-bench/bench_data"
                 ])
             ],
