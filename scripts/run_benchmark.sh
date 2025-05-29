@@ -45,7 +45,7 @@ image_tag = sys.argv[1]
 beaker_user = sys.argv[2]
 
 # Initialize Beaker client
-b = Beaker.from_env(default_workspace="ai2/oe-data-pdf")
+b = Beaker.from_env(default_workspace="ai2/olmocr")
 
 # Create experiment spec
 experiment_spec = ExperimentSpec(
@@ -69,14 +69,14 @@ experiment_spec = ExperimentSpec(
                 preemptible=True,
             ),
             resources=TaskResources(gpu_count=1),
-            constraints=Constraint(cluster=["ai2/ceres-cirrascale", "ai2/jupiter-cirrascale"]),
+            constraints=Constraints(cluster=["ai2/ceres-cirrascale", "ai2/jupiter-cirrascale"]),
             result=ResultSpec(path="/noop-results"),
         )
     ],
 )
 
 # Create the experiment
-experiment = b.experiment.create(spec=experiment_spec, workspace="ai2/oe-data-pdf")
+experiment = b.experiment.create(spec=experiment_spec, workspace="ai2/olmocr")
 print(f"Created experiment: {experiment.id}")
 print(f"View at: https://beaker.org/ex/{experiment.id}")
 EOF
