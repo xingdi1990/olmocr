@@ -106,7 +106,7 @@ class PageResult:
 
 
 async def build_page_query(local_pdf_path: str, page: int, target_longest_image_dim: int, target_anchor_text_len: int, image_rotation: int = 0) -> dict:
-    MAX_TOKENS = 5000
+    MAX_TOKENS = 4000
     assert image_rotation in [0, 90, 180, 270], "Invalid image rotation provided in build_page_query"
 
     # Allow the page rendering to process in the background while we get the anchor text (which blocks the main thread)
@@ -218,7 +218,9 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
     MAX_RETRIES = args.max_page_retries
     TEMPERATURE_BY_ATTEMPT = [0.1, 0.1, 0.2, 0.3, 0.5, 0.8, 0.1, 0.8]
     FORCE_NO_DOCUMENT_ANCHORING_BY_ATTEMPT = [False, False, False, False, False, False, True, True]
+    REPETITION_PENALTY_BY_ATTEMPT = [None, None, None, None, None, 1.05, 1.05, 1.05]
     assert len(TEMPERATURE_BY_ATTEMPT) == len(FORCE_NO_DOCUMENT_ANCHORING_BY_ATTEMPT)
+    assert len(TEMPERATURE_BY_ATTEMPT) == len(REPETITION_PENALTY_BY_ATTEMPT)
     exponential_backoffs = 0
     local_anchor_text_len = args.target_anchor_text_len
     local_image_rotation = 0
@@ -234,6 +236,10 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
                                        image_rotation=local_image_rotation)
         # Change temperature as number of attempts increases to overcome repetition issues at expense of quality
         query["temperature"] = TEMPERATURE_BY_ATTEMPT[lookup_attempt]
+
+        # Add a small repetition penalty similar to other qwen models on later retries
+        if REPETITION_PENALTY_BY_ATTEMPT[lookup_attempt] is not None:
+            query["repetition_penalty"] = REPETITION_PENALTY_BY_ATTEMPT[lookup_attempt]
 
         logger.info(f"Built page query for {pdf_orig_path}-{page_num}")
 
