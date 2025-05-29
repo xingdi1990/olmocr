@@ -45,7 +45,6 @@ COPY olmocr olmocr
 COPY scripts scripts
 WORKDIR /root
 COPY olmocr olmocr
-COPY scripts scripts
 
 RUN python3 -m sglang.launch_server --help
 RUN python3 -m olmocr.pipeline --help
