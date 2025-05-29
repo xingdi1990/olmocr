@@ -19,6 +19,10 @@ echo "OlmOCR version: $VERSION"
 GIT_HASH=$(git rev-parse HEAD | cut -c1-10)
 echo "Git hash: $GIT_HASH"
 
+# Get current git branch name
+GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+echo "Git branch: $GIT_BRANCH"
+
 # Create full image tag
 IMAGE_TAG="olmocr-benchmark-${VERSION}-${GIT_HASH}"
 echo "Building Docker image with tag: $IMAGE_TAG"
@@ -40,16 +44,18 @@ cat << 'EOF' > /tmp/run_benchmark_experiment.py
 import sys
 from beaker import Beaker, ExperimentSpec, TaskSpec, TaskContext, ResultSpec, TaskResources, ImageSource, Priority, Constraints
 
-# Get image tag and beaker user from command line
+# Get image tag, beaker user, git branch, and git hash from command line
 image_tag = sys.argv[1]
 beaker_user = sys.argv[2]
+git_branch = sys.argv[3]
+git_hash = sys.argv[4]
 
 # Initialize Beaker client
 b = Beaker.from_env(default_workspace="ai2/olmocr")
 
 # Create experiment spec
 experiment_spec = ExperimentSpec(
-    description="OlmOCR Benchmark Run",
+    description=f"OlmOCR Benchmark Run - Branch: {git_branch}, Commit: {git_hash}",
     budget="ai2/oe-data",
     tasks=[
         TaskSpec(
@@ -84,7 +90,7 @@ EOF
 
 # Run the Python script to create the experiment
 echo "Creating Beaker experiment..."
-$PYTHON /tmp/run_benchmark_experiment.py $IMAGE_TAG $BEAKER_USER
+$PYTHON /tmp/run_benchmark_experiment.py $IMAGE_TAG $BEAKER_USER $GIT_BRANCH $GIT_HASH
 
 # Clean up temporary file
 rm /tmp/run_benchmark_experiment.py
