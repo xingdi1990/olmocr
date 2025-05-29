@@ -36,20 +36,15 @@ def parse_jsonl_entries(jsonl_files):
                 if not line:
                     continue
 
-                try:
-                    entry = json.loads(line)
-                    text = entry.get("text", "")
-                    metadata = entry.get("metadata", {})
-                    source_file = metadata.get("Source-File", "")
+                entry = json.loads(line)
+                text = entry.get("text", "")
+                metadata = entry.get("metadata", {})
+                source_file = metadata.get("Source-File", "")
 
-                    if source_file:
-                        pdf_sources.add(source_file)
+                if source_file:
+                    pdf_sources.add(source_file)
 
-                    all_entries.append({"text": text, "source_file": source_file, "metadata": metadata, "entry": entry})
-
-                except json.JSONDecodeError as e:
-                    print(f"Error parsing line {line_num} in {jsonl_file.name}: {e}")
-                    continue
+                all_entries.append({"text": text, "source_file": source_file, "metadata": metadata, "entry": entry})
 
     print(f"Loaded {len(all_entries)} entries from JSONL files")
     print(f"Found {len(pdf_sources)} unique PDF sources")
@@ -64,14 +59,11 @@ def get_subdir_and_pdf_name(source_file_path):
 
     path_parts = Path(source_file_path).parts
 
-    try:
-        pdfs_index = path_parts.index("pdfs")
-        if pdfs_index + 1 < len(path_parts):
-            subdir = path_parts[pdfs_index + 1]
-            pdf_name = Path(source_file_path).stem
-            return subdir, pdf_name
-    except ValueError:
-        pass
+    pdfs_index = path_parts.index("pdfs")
+    if pdfs_index + 1 < len(path_parts):
+        subdir = path_parts[pdfs_index + 1]
+        pdf_name = Path(source_file_path).stem
+        return subdir, pdf_name
 
     return None, None
 
@@ -81,6 +73,7 @@ def create_markdown_files(entries, output_dir):
     output_path = Path(output_dir)
 
     subdir_pdf_to_entries = defaultdict(list)
+    blank_files = 0
 
     for entry in entries:
         subdir, pdf_name = get_subdir_and_pdf_name(entry["source_file"])
@@ -96,21 +89,21 @@ def create_markdown_files(entries, output_dir):
 
         md_filename = f"{pdf_name}_pg1_repeat1.md"
         md_filepath = subdir_path / md_filename
-        combined_text = []
 
-        for entry in pdf_entries:
-            text = entry["text"]
-            if text.strip():
-                # source_file = entry["source_file"]
-                combined_text.append(text)
+        assert len(pdf_entries) == 1, "Expecting just one entry mapping to each file, otherwise something is wrong"
+        file_text = pdf_entries[0]["text"]
 
         with open(md_filepath, "w", encoding="utf-8") as f:
-            f.write("\n".join(combined_text))
+            f.write(file_text)
+
+        if not file_text.strip():
+            blank_files += 1
 
         created_files.add((subdir, pdf_name))
         print(f"Created: {subdir}/{md_filename}_pg1_repeat1")
 
     print(f"Created {len(created_files)} markdown files from JSONL data")
+    print(f"{blank_files} of those had empty content")
     return created_files
 
 
