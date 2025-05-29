@@ -27,6 +27,10 @@ echo "Building Docker image with tag: $IMAGE_TAG"
 echo "Building Docker image..."
 docker build --platform linux/amd64 -f ./Dockerfile -t $IMAGE_TAG .
 
+# Get Beaker username
+BEAKER_USER=$(beaker account whoami --format json | jq -r '.[0].name')
+echo "Beaker user: $BEAKER_USER"
+
 # Push image to beaker
 echo "Pushing image to Beaker..."
 beaker image create --workspace ai2/oe-data-pdf --name $IMAGE_TAG $IMAGE_TAG
@@ -36,8 +40,9 @@ cat << 'EOF' > /tmp/run_benchmark_experiment.py
 import sys
 from beaker import Beaker, ExperimentSpec, TaskSpec, TaskContext, ResultSpec, TaskResources, ImageSource, Priority, Constraints
 
-# Get image tag from command line
+# Get image tag and beaker user from command line
 image_tag = sys.argv[1]
+beaker_user = sys.argv[2]
 
 # Initialize Beaker client
 b = Beaker.from_env(default_workspace="ai2/oe-data-pdf")
@@ -49,7 +54,7 @@ experiment_spec = ExperimentSpec(
     tasks=[
         TaskSpec(
             name="olmocr-benchmark",
-            image=ImageSource(beaker=f"ai2/oe-data-pdf/{image_tag}"),
+            image=ImageSource(beaker=f"{beaker_user}/{image_tag}"),
             command=[
                 "bash", "-c",
                 " && ".join([
@@ -78,7 +83,7 @@ EOF
 
 # Run the Python script to create the experiment
 echo "Creating Beaker experiment..."
-$PYTHON /tmp/run_benchmark_experiment.py $IMAGE_TAG
+$PYTHON /tmp/run_benchmark_experiment.py $IMAGE_TAG $BEAKER_USER
 
 # Clean up temporary file
 rm /tmp/run_benchmark_experiment.py
