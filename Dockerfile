@@ -31,6 +31,7 @@ ADD --chmod=755 https://astral.sh/uv/install.sh /install.sh
 RUN /install.sh && rm /install.sh
 
 ENV PYTHONUNBUFFERED=1
+
 WORKDIR /root
 COPY pyproject.toml pyproject.toml
 COPY olmocr/version.py olmocr/version.py
@@ -41,10 +42,7 @@ RUN /root/.local/bin/uv pip install --system --no-cache ".[bench]"
 RUN playwright install-deps
 RUN playwright install chromium
 COPY olmocr olmocr
-
 COPY scripts scripts
-WORKDIR /root
-COPY olmocr olmocr
 
 RUN python3 -m sglang.launch_server --help
 RUN python3 -m olmocr.pipeline --help
