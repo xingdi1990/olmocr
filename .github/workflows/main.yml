@@ -273,13 +273,11 @@ jobs:
 
       - name: Setup Beaker CLI
         uses: allenai/setup-beaker@v2
-        if: ${{ secrets.BEAKER_TOKEN != '' }}
         with:
           token: ${{ secrets.BEAKER_TOKEN }}
           version: latest
 
       - name: Push to Beaker
-        if: ${{ secrets.BEAKER_TOKEN != '' }}
         env:
           BEAKER_TOKEN: ${{ secrets.BEAKER_TOKEN }}
         run: |
