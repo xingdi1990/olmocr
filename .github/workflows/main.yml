@@ -271,6 +271,25 @@ jobs:
           outputs: type=registry
           no-cache: true
 
+      - name: Push to Beaker
+        env:
+          BEAKER_TOKEN: ${{ secrets.BEAKER_TOKEN }}
+        if: env.BEAKER_TOKEN != ''
+        run: |
+          # Install beaker CLI
+          curl -s https://beaker-docs.apps.allenai.org/scripts/download-beaker.sh -o download-beaker.sh
+          chmod +x download-beaker.sh
+          ./download-beaker.sh
+          
+          # Get the version tag
+          VERSION=${GITHUB_REF#refs/tags/v}
+          
+          # Push the Docker image to Beaker
+          beaker image create \
+            --name "olmocr-inference-$VERSION" \
+            --workspace ai2/olmocr \
+            "docker://${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$VERSION"
+          
       - name: Clean up after build
         if: always()
         run: |
