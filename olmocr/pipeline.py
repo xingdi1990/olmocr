@@ -57,8 +57,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 logger.propagate = False
 
-sglang_logger = logging.getLogger("sglang")
-sglang_logger.propagate = False
+server_logger = logging.getLogger("vllm")
+server_logger.propagate = False
 
 file_handler = logging.FileHandler("olmocr-pipeline-debug.log", mode="a")
 file_handler.setLevel(logging.DEBUG)
@@ -71,7 +71,7 @@ console_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(level
 # Add handlers to the logger
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
-sglang_logger.addHandler(file_handler)
+server_logger.addHandler(file_handler)
 
 # Quiet logs from pypdf
 logging.getLogger("pypdf").setLevel(logging.ERROR)
@@ -91,7 +91,7 @@ process_pool = ProcessPoolExecutor(max_workers=min(multiprocessing.cpu_count() /
 get_pdf_filter = cache(lambda: PdfFilter(languages_to_keep={Language.ENGLISH, None}, apply_download_spam_check=True, apply_form_check=True))
 
 # Specify a default port, but it can be overridden by args
-SGLANG_SERVER_PORT = 30024
+BASE_SERVER_PORT = 30024
 
 
 @dataclass(frozen=True)
@@ -214,7 +214,7 @@ async def apost(url, json_data):
 
 
 async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path: str, page_num: int) -> PageResult:
-    COMPLETION_URL = f"http://localhost:{SGLANG_SERVER_PORT}/v1/chat/completions"
+    COMPLETION_URL = f"http://localhost:{BASE_SERVER_PORT}/v1/chat/completions"
     MAX_RETRIES = args.max_page_retries
     TEMPERATURE_BY_ATTEMPT = [0.1, 0.1, 0.2, 0.3, 0.5, 0.8, 0.1, 0.8]
     FORCE_NO_DOCUMENT_ANCHORING_BY_ATTEMPT = [False, False, False, False, False, False, True, True]
@@ -257,8 +257,8 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
                 raise ValueError("Response exceeded model_max_context, cannot use this response")
 
             metrics.add_metrics(
-                sglang_input_tokens=base_response_data["usage"].get("prompt_tokens", 0),
-                sglang_output_tokens=base_response_data["usage"].get("completion_tokens", 0),
+                server_input_tokens=base_response_data["usage"].get("prompt_tokens", 0),
+                server_output_tokens=base_response_data["usage"].get("completion_tokens", 0),
             )
 
             model_response_json = json.loads(base_response_data["choices"][0]["message"]["content"])
@@ -284,7 +284,7 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
             logger.warning(f"Client error on attempt {attempt} for {pdf_orig_path}-{page_num}: {type(e)} {e}")
 
             # Now we want to do exponential backoff, and not count this as an actual page retry
-            # Page retrys are supposed to be for fixing bad results from the model, but actual requests to sglang
+            # Page retrys are supposed to be for fixing bad results from the model, but actual requests to vllm
             # are supposed to work. Probably this means that the server is just restarting
             sleep_delay = 10 * (2**exponential_backoffs)
             exponential_backoffs += 1
@@ -561,24 +561,19 @@ async def worker(args, work_queue: WorkQueue, semaphore, worker_id):
             semaphore.release()
 
 
-async def sglang_server_task(model_name_or_path, args, semaphore):
+async def vllm_server_task(model_name_or_path, args, semaphore):
     # Check GPU memory, lower mem devices need a bit less KV cache space because the VLM takes additional memory
     gpu_memory = torch.cuda.get_device_properties(0).total_memory / (1024**3)  # Convert to GB
-    mem_fraction_arg = ["--mem-fraction-static", "0.80"] if gpu_memory < 60 else []
+    mem_fraction_arg = ["--gpu-memory-utilization", "0.80"] if gpu_memory < 60 else []
 
     cmd = [
-        "python3",
-        "-m",
-        "sglang.launch_server",
-        "--model-path",
+        "vllm",
+        "serve",
         model_name_or_path,
-        "--chat-template",
-        args.model_chat_template,
-        # "--context-length", str(args.model_max_context),  # Commented out due to crashes
-        "--port",
-        str(SGLANG_SERVER_PORT),
-        "--log-level-http",
-        "warning",
+        "--port", str(BASE_SERVER_PORT),
+        "--disable-log-requests",
+        "--uvicorn-log-level", "warning",
+        "--served-model-name", "Qwen/Qwen2-VL-7B-Instruct",
     ]
     cmd.extend(mem_fraction_arg)
 
@@ -601,7 +596,7 @@ async def sglang_server_task(model_name_or_path, args, semaphore):
 
     async def process_line(line):
         nonlocal last_running_req, last_queue_req, last_semaphore_release, server_printed_ready_message
-        sglang_logger.info(line)
+        server_logger.info(line)
 
         # if the server hasn't initialized yet, log all the lines to the main logger also, so that the user
         # can see any warnings/errors more easily
@@ -612,23 +607,18 @@ async def sglang_server_task(model_name_or_path, args, semaphore):
             logger.error("Cannot continue, sampling errors detected, model is probably corrupt")
             sys.exit(1)
 
-        # TODO, need to trace down this issue in sglang itself, but it will otherwise cause the server to lock up
-        if "IndexError: list index out of range" in line:
-            logger.error("IndexError in model, restarting server")
-            proc.terminate()
-
         if not server_printed_ready_message and "The server is fired up and ready to roll!" in line:
             server_printed_ready_message = True
             last_semaphore_release = time.time()
 
-        match = re.search(r"#running-req: (\d+)", line)
+        match = re.search(r'Running: (\d+)', line)
         if match:
             last_running_req = int(match.group(1))
 
-        match = re.search(r"#queue-req: (\d+)", line)
+        match = re.search(r'Pending: (\d+)', line)
         if match:
             last_queue_req = int(match.group(1))
-            logger.info(f"sglang running req: {last_running_req} queue req: {last_queue_req}")
+            logger.info(f"vllm running req: {last_running_req} queue req: {last_queue_req}")
 
     async def read_stream(stream):
         while True:
@@ -661,7 +651,7 @@ async def sglang_server_task(model_name_or_path, args, semaphore):
     try:
         await proc.wait()
     except asyncio.CancelledError:
-        logger.info("Got cancellation request for SGLang server")
+        logger.info("Got cancellation request for VLLM server")
         proc.terminate()
         raise
 
@@ -669,26 +659,26 @@ async def sglang_server_task(model_name_or_path, args, semaphore):
     await asyncio.gather(stdout_task, stderr_task, timeout_task, return_exceptions=True)
 
 
-async def sglang_server_host(model_name_or_path, args, semaphore):
+async def vllm_server_host(model_name_or_path, args, semaphore):
     MAX_RETRIES = 5
     retry = 0
 
     while retry < MAX_RETRIES:
-        await sglang_server_task(model_name_or_path, args, semaphore)
-        logger.warning("SGLang server task ended")
+        await vllm_server_task(model_name_or_path, args, semaphore)
+        logger.warning("VLLM server task ended")
         retry += 1
 
     if retry >= MAX_RETRIES:
-        logger.error(f"Ended up starting the sglang server more than {retry} times, cancelling pipeline")
+        logger.error(f"Ended up starting the vllm server more than {retry} times, cancelling pipeline")
         logger.error("")
-        logger.error("Please make sure sglang is installed according to the latest instructions here: https://docs.sglang.ai/start/install.html")
+        logger.error("Please make sure vllm is installed according to the latest instructions here: https://docs.vllm.ai/en/stable/getting_started/installation/gpu.html")
         sys.exit(1)
 
 
-async def sglang_server_ready():
+async def vllm_server_ready():
     max_attempts = 300
     delay_sec = 1
-    url = f"http://localhost:{SGLANG_SERVER_PORT}/v1/models"
+    url = f"http://localhost:{BASE_SERVER_PORT}/v1/models"
 
     for attempt in range(1, max_attempts + 1):
         try:
@@ -696,16 +686,16 @@ async def sglang_server_ready():
                 response = await session.get(url)
 
                 if response.status_code == 200:
-                    logger.info("sglang server is ready.")
+                    logger.info("vllm server is ready.")
                     return
                 else:
                     logger.info(f"Attempt {attempt}: Unexpected status code {response.status_code}")
         except Exception:
-            logger.warning(f"Attempt {attempt}: Please wait for sglang server to become ready...")
+            logger.warning(f"Attempt {attempt}: Please wait for vllm server to become ready...")
 
         await asyncio.sleep(delay_sec)
 
-    raise Exception("sglang server did not become ready after waiting.")
+    raise Exception("vllm server did not become ready after waiting.")
 
 
 async def download_model(model_name_or_path: str):
@@ -997,7 +987,7 @@ async def main():
         default="allenai/olmOCR-7B-0225-preview",
     )
     parser.add_argument("--model_max_context", type=int, default="8192", help="Maximum context length that the model was fine tuned under")
-    parser.add_argument("--model_chat_template", type=str, default="qwen2-vl", help="Chat template to pass to sglang server")
+    parser.add_argument("--model_chat_template", type=str, default="qwen2-vl", help="Chat template to pass to vllm server")
     parser.add_argument("--target_longest_image_dim", type=int, help="Dimension on longest side to use for rendering the pdf pages", default=1024)
     parser.add_argument("--target_anchor_text_len", type=int, help="Maximum amount of anchor text to use (characters)", default=6000)
 
@@ -1011,17 +1001,17 @@ async def main():
     )
     parser.add_argument("--beaker_gpus", type=int, default=1, help="Number of gpu replicas to run")
     parser.add_argument("--beaker_priority", type=str, default="normal", help="Beaker priority level for the job")
-    parser.add_argument("--port", type=int, default=30024, help="Port to use for the SGLang server")
+    parser.add_argument("--port", type=int, default=30024, help="Port to use for the VLLM server")
     args = parser.parse_args()
 
     global workspace_s3, pdf_s3
-    # set the global SGLANG_SERVER_PORT from args
-    global SGLANG_SERVER_PORT
-    SGLANG_SERVER_PORT = args.port
+    # set the global BASE_SERVER_PORT from args
+    global BASE_SERVER_PORT
+    BASE_SERVER_PORT = args.port
 
     # setup the job to work in beaker environment, load secrets, adjust logging, etc.
     if "BEAKER_JOB_NAME" in os.environ:
-        sglang_logger.addHandler(console_handler)
+        server_logger.addHandler(console_handler)
         cred_path = os.path.join(os.path.expanduser("~"), ".aws", "credentials")
         os.makedirs(os.path.dirname(cred_path), exist_ok=True)
         with open(cred_path, "w") as f:
@@ -1133,7 +1123,7 @@ async def main():
         return
 
     # If you get this far, then you are doing inference and need a GPU
-    check_sglang_version()
+    #check_sglang_version()
     check_torch_gpu_available()
 
     logger.info(f"Starting pipeline with PID {os.getpid()}")
@@ -1153,9 +1143,9 @@ async def main():
     # As soon as one worker is no longer saturating the gpu, the next one can start sending requests
     semaphore = asyncio.Semaphore(1)
 
-    sglang_server = asyncio.create_task(sglang_server_host(model_name_or_path, args, semaphore))
+    vllm_server = asyncio.create_task(vllm_server_host(model_name_or_path, args, semaphore))
 
-    await sglang_server_ready()
+    await vllm_server_ready()
 
     metrics_task = asyncio.create_task(metrics_reporter(work_queue))
 
@@ -1171,7 +1161,7 @@ async def main():
     # Wait for server to stop
     process_pool.shutdown(wait=False)
 
-    sglang_server.cancel()
+    vllm_server.cancel()
     metrics_task.cancel()
     logger.info("Work done")
 
