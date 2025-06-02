@@ -1176,23 +1176,17 @@ async def main():
     total_metrics = metrics_summary['total_metrics']
     rates = metrics_summary['rates']
     
-    # Calculate total tokens (input + output)
-    total_tokens = total_metrics.get('server_input_tokens', 0) + total_metrics.get('server_output_tokens', 0)
-    total_finished_tokens = total_metrics.get('finished_input_tokens', 0) + total_metrics.get('finished_output_tokens', 0)
+    logger.info(f"Total Server Input tokens: {total_metrics.get('server_input_tokens', 0):,}")
+    logger.info(f"Total Server Output tokens: {total_metrics.get('server_output_tokens', 0):,}")
     
-    logger.info(f"Total tokens processed: {total_tokens:,}")
-    logger.info(f"  - Input tokens: {total_metrics.get('server_input_tokens', 0):,}")
-    logger.info(f"  - Output tokens: {total_metrics.get('server_output_tokens', 0):,}")
-    
-    logger.info(f"Total tokens in finished documents: {total_finished_tokens:,}")
-    logger.info(f"  - Finished input tokens: {total_metrics.get('finished_input_tokens', 0):,}")
-    logger.info(f"  - Finished output tokens: {total_metrics.get('finished_output_tokens', 0):,}")
+    logger.info(f"Finished input tokens: {total_metrics.get('finished_input_tokens', 0):,}")
+    logger.info(f"Finished output tokens: {total_metrics.get('finished_output_tokens', 0):,}")
     
     # Output rates
-    if 'server_output_tokens_per_sec' in rates:
-        logger.info(f"Output tokens/sec rate: {rates['server_output_tokens_per_sec']:.2f}")
     if 'server_input_tokens_per_sec' in rates:
         logger.info(f"Input tokens/sec rate: {rates['server_input_tokens_per_sec']:.2f}")
+    if 'server_output_tokens_per_sec' in rates:
+        logger.info(f"Output tokens/sec rate: {rates['server_output_tokens_per_sec']:.2f}")
     
     logger.info("=" * 80)
     logger.info("Work done")
