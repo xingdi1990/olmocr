@@ -740,8 +740,7 @@ def submit_beaker_job(args):
     b = Beaker.from_env(default_workspace=args.beaker_workspace)
     account = b.account.whoami()
     owner = account.name
-    #beaker_image = f"jakep/olmocr-inference-{VERSION}"
-    beaker_image = "jakep/olmocr-benchmark-0.1.71-d71703317d"
+    beaker_image = f"jakep/olmocr-inference-{VERSION}"
 
     task_name = f"olmocr-{os.path.basename(args.workspace.rstrip('/'))}"
 
