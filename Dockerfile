@@ -49,6 +49,9 @@ WORKDIR /root
 COPY pyproject.toml pyproject.toml
 COPY olmocr/version.py olmocr/version.py
 
+# Needed to resolve setuptools dependencies
+ENV UV_INDEX_STRATEGY="unsafe-best-match"
+
 RUN uv pip install --system --no-cache -e .
 RUN uv pip install --system --no-cache ".[gpu]" --extra-index-url https://download.pytorch.org/whl/cu128
 RUN uv pip install --system --no-cache ".[bench]"
@@ -57,5 +60,4 @@ RUN playwright install chromium
 COPY olmocr olmocr
 COPY scripts scripts
 
-RUN python3 -m sglang.launch_server --help
 RUN python3 -m olmocr.pipeline --help
