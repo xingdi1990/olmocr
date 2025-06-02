@@ -607,7 +607,7 @@ async def vllm_server_task(model_name_or_path, args, semaphore):
             logger.error("Cannot continue, sampling errors detected, model is probably corrupt")
             sys.exit(1)
 
-        if not server_printed_ready_message and ("The server is fired up and ready to roll!" in line or "vllm server is ready" in line):
+        if not server_printed_ready_message and ("The server is fired up and ready to roll!" in line or "Starting vLLM API server" in line):
             server_printed_ready_message = True
             last_semaphore_release = time.time()
 
