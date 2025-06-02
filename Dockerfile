@@ -42,6 +42,13 @@ RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula sele
     # Restore our Python 3.12 symlink
     update-alternatives --set python3 /usr/bin/python${PYTHON_VERSION}
 
+# Install some helper utilities for things like the benchmark
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
+    git \
+    git-lfs \
+    curl \
+    wget \
+    unzip
 
 ENV PYTHONUNBUFFERED=1
 
