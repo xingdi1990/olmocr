@@ -1,4 +1,6 @@
-FROM --platform=linux/amd64 nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04
+ARG CUDA_VERSION=12.8.1
+
+FROM --platform=linux/amd64 nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
 
 RUN apt-get update -y && apt-get install -y software-properties-common \
     && add-apt-repository ppa:deadsnakes/ppa \
@@ -38,7 +40,7 @@ COPY pyproject.toml pyproject.toml
 COPY olmocr/version.py olmocr/version.py
 
 RUN /root/.local/bin/uv pip install --system --no-cache -e .
-RUN /root/.local/bin/uv pip install --system --no-cache ".[gpu]" --find-links https://flashinfer.ai/whl/cu124/torch2.4/flashinfer/
+RUN /root/.local/bin/uv pip install --system --no-cache ".[gpu]" --extra-index-url https://download.pytorch.org/whl/cu128
 RUN /root/.local/bin/uv pip install --system --no-cache ".[bench]"
 RUN playwright install-deps
 RUN playwright install chromium
