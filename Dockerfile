@@ -2,36 +2,46 @@ ARG CUDA_VERSION=12.8.1
 
 FROM --platform=linux/amd64 nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
 
-RUN apt-get update -y && apt-get install -y software-properties-common \
-    && add-apt-repository ppa:deadsnakes/ppa \
-    && apt-get -y update
+# Needs to be repeated below the FROM, or else it's not picked up
+ARG PYTHON_VERSION=3.12
+ARG CUDA_VERSION=12.8.1
 
-RUN apt-get update && apt-get -y install python3-apt
-RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections
-RUN apt-get update -y && apt-get install -y poppler-utils ttf-mscorefonts-installer msttcorefonts fonts-crosextra-caladea fonts-crosextra-carlito gsfonts lcdf-typetools
+# Set environment variable to prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update -y && apt-get install -y --no-install-recommends \
-    git \
-    git-lfs \
-    python3.11 \
-    python3.11-dev \
-    python3.11-distutils \
-    ca-certificates \
-    build-essential \
-    curl \
-    wget \
-    unzip
+# From original VLLM dockerfile https://github.com/vllm-project/vllm/blob/main/docker/Dockerfile
+# Install Python and other dependencies
+RUN echo 'tzdata tzdata/Areas select America' | debconf-set-selections \
+    && echo 'tzdata tzdata/Zones/America select Los_Angeles' | debconf-set-selections \
+    && apt-get update -y \
+    && apt-get install -y ccache software-properties-common git curl sudo python3-apt \
+    && for i in 1 2 3; do \
+        add-apt-repository -y ppa:deadsnakes/ppa && break || \
+        { echo "Attempt $i failed, retrying in 5s..."; sleep 5; }; \
+    done \
+    && apt-get update -y \
+    && apt-get install -y python${PYTHON_VERSION} python${PYTHON_VERSION}-dev python${PYTHON_VERSION}-venv \
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python${PYTHON_VERSION} 1 \
+    && update-alternatives --set python3 /usr/bin/python${PYTHON_VERSION} \
+    && ln -sf /usr/bin/python${PYTHON_VERSION}-config /usr/bin/python3-config \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python${PYTHON_VERSION} \
+    && python3 --version && python3 -m pip --version
 
-RUN rm -rf /var/lib/apt/lists/* \
-    && unlink /usr/bin/python3 \
-    && ln -s /usr/bin/python3.11 /usr/bin/python3 \
-    && ln -s /usr/bin/python3 /usr/bin/python \
-    && curl -sS https://bootstrap.pypa.io/get-pip.py | python \
-    && pip3 install -U pip   
+# Install uv for faster pip installs
+RUN --mount=type=cache,target=/root/.cache/uv \
+    python3 -m pip install uv
 
-RUN apt-get update && apt-get -y install python3.11-venv 
-ADD --chmod=755 https://astral.sh/uv/install.sh /install.sh
-RUN /install.sh && rm /install.sh
+# olmOCR Specific Installs
+# Install fonts with workaround for update-notifier issue
+RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections && \
+    apt-get update -y && \
+    apt-get install -y --no-install-recommends poppler-utils fonts-crosextra-caladea fonts-crosextra-carlito gsfonts lcdf-typetools && \
+    # Temporarily fix the python symlink for the installer
+    ln -sf /usr/bin/python3.8 /usr/bin/python3 && \
+    apt-get install -y --no-install-recommends ttf-mscorefonts-installer && \
+    # Restore our Python 3.12 symlink
+    update-alternatives --set python3 /usr/bin/python${PYTHON_VERSION}
+
 
 ENV PYTHONUNBUFFERED=1
 
@@ -39,9 +49,9 @@ WORKDIR /root
 COPY pyproject.toml pyproject.toml
 COPY olmocr/version.py olmocr/version.py
 
-RUN /root/.local/bin/uv pip install --system --no-cache -e .
-RUN /root/.local/bin/uv pip install --system --no-cache ".[gpu]" --extra-index-url https://download.pytorch.org/whl/cu128
-RUN /root/.local/bin/uv pip install --system --no-cache ".[bench]"
+RUN uv pip install --system --no-cache -e .
+RUN uv pip install --system --no-cache ".[gpu]" --extra-index-url https://download.pytorch.org/whl/cu128
+RUN uv pip install --system --no-cache ".[bench]"
 RUN playwright install-deps
 RUN playwright install chromium
 COPY olmocr olmocr
