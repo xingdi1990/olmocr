@@ -58,8 +58,10 @@ BEAKER_USER=$(beaker account whoami --format json | jq -r '.[0].name')
 echo "Beaker user: $BEAKER_USER"
 
 # Push image to beaker
-echo "Pushing image to Beaker..."
-beaker image create --workspace ai2/oe-data-pdf --name $IMAGE_TAG $IMAGE_TAG
+echo "Trying to push image to Beaker..."
+if ! beaker image create --workspace ai2/oe-data-pdf --name $IMAGE_TAG $IMAGE_TAG 2>/dev/null; then
+    echo "Warning: Beaker image with tag $IMAGE_TAG already exists. Using existing image."
+fi
 
 # Create Python script to run beaker experiment
 cat << 'EOF' > /tmp/run_benchmark_experiment.py
