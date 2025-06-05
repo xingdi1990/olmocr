@@ -909,6 +909,7 @@ def print_stats(args, root_work_queue):
             logger.warning(f"Error processing {s3_path}: {e}")
             return 0, 0, 0, 0, 0, set(), 0, 0
 
+    print(f"\nCompleted work items {completed_items:,} out of {total_items:,}: {completed_items/total_items*100:.2f}%")
     print("\nProcessing output files...")
     docs_total = 0
     input_tokens_total = 0
