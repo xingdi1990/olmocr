@@ -1,6 +1,28 @@
 #!/bin/bash
 
+# Runs an olmocr-bench run using the full pipeline (no fallback)
+#  Without model parameter (default behavior):, uses the default image from hugging face
+#   ./scripts/run_benchmark.sh
+#  With model parameter: for testing custom models
+#   ./scripts/run_benchmark.sh --model your-model-name
+
 set -e
+
+# Parse command line arguments
+MODEL=""
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --model)
+            MODEL="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Usage: $0 [--model MODEL_NAME]"
+            exit 1
+            ;;
+    esac
+done
 
 # Use conda environment Python if available, otherwise use system Python
 if [ -n "$CONDA_PREFIX" ]; then
@@ -44,14 +66,20 @@ cat << 'EOF' > /tmp/run_benchmark_experiment.py
 import sys
 from beaker import Beaker, ExperimentSpec, TaskSpec, TaskContext, ResultSpec, TaskResources, ImageSource, Priority, Constraints
 
-# Get image tag, beaker user, git branch, and git hash from command line
+# Get image tag, beaker user, git branch, git hash, and optional model from command line
 image_tag = sys.argv[1]
 beaker_user = sys.argv[2]
 git_branch = sys.argv[3]
 git_hash = sys.argv[4]
+model = sys.argv[5] if len(sys.argv) > 5 else None
 
 # Initialize Beaker client
 b = Beaker.from_env(default_workspace="ai2/olmocr")
+
+# Build the pipeline command with optional model parameter
+pipeline_cmd = "python -m olmocr.pipeline ./localworkspace --markdown --pdfs ./olmOCR-bench/bench_data/pdfs/**/*.pdf"
+if model:
+    pipeline_cmd += f" --model {model}"
 
 # Create experiment spec
 experiment_spec = ExperimentSpec(
@@ -66,7 +94,7 @@ experiment_spec = ExperimentSpec(
                 " && ".join([
                     "git clone https://huggingface.co/datasets/allenai/olmOCR-bench",
                     "cd olmOCR-bench && git lfs pull && cd ..",
-                    "python -m olmocr.pipeline ./localworkspace --markdown --pdfs ./olmOCR-bench/bench_data/pdfs/**/*.pdf",
+                    pipeline_cmd,
                     "python olmocr/bench/scripts/workspace_to_bench.py localworkspace/ olmOCR-bench/bench_data/olmocr --bench-path ./olmOCR-bench/",
                     "python -m olmocr.bench.benchmark --dir ./olmOCR-bench/bench_data"
                 ])
@@ -90,7 +118,12 @@ EOF
 
 # Run the Python script to create the experiment
 echo "Creating Beaker experiment..."
-$PYTHON /tmp/run_benchmark_experiment.py $IMAGE_TAG $BEAKER_USER $GIT_BRANCH $GIT_HASH
+if [ -n "$MODEL" ]; then
+    echo "Using model: $MODEL"
+    $PYTHON /tmp/run_benchmark_experiment.py $IMAGE_TAG $BEAKER_USER $GIT_BRANCH $GIT_HASH "$MODEL"
+else
+    $PYTHON /tmp/run_benchmark_experiment.py $IMAGE_TAG $BEAKER_USER $GIT_BRANCH $GIT_HASH
+fi
 
 # Clean up temporary file
 rm /tmp/run_benchmark_experiment.py
