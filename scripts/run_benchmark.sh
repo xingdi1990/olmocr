@@ -76,7 +76,7 @@ fi
 # Create Python script to run beaker experiment
 cat << 'EOF' > /tmp/run_benchmark_experiment.py
 import sys
-from beaker import Beaker, ExperimentSpec, TaskSpec, TaskContext, ResultSpec, TaskResources, ImageSource, Priority, Constraints
+from beaker import Beaker, ExperimentSpec, TaskSpec, TaskContext, ResultSpec, TaskResources, ImageSource, Priority, Constraints, EnvVar
 
 # Get image tag, beaker user, git branch, git hash, and optional model from command line
 image_tag = sys.argv[1]
@@ -93,33 +93,60 @@ pipeline_cmd = "python -m olmocr.pipeline ./localworkspace --markdown --pdfs ./o
 if model:
     pipeline_cmd += f" --model {model}"
 
+# Check if AWS credentials secret exists
+aws_creds_secret = f"{beaker_user}-AWS_CREDENTIALS_FILE"
+try:
+    # Try to get the secret to see if it exists
+    b.secret.get(aws_creds_secret, workspace="ai2/olmocr")
+    has_aws_creds = True
+    print(f"Found AWS credentials secret: {aws_creds_secret}")
+except:
+    has_aws_creds = False
+    print(f"AWS credentials secret not found: {aws_creds_secret}")
+
+# Build commands list
+commands = []
+if has_aws_creds:
+    commands.extend([
+        "mkdir -p /home/ubuntu/.aws",
+        'echo "$AWS_CREDENTIALS_FILE" > /home/ubuntu/.aws/credentials'
+    ])
+commands.extend([
+    "git clone https://huggingface.co/datasets/allenai/olmOCR-bench",
+    "cd olmOCR-bench && git lfs pull && cd ..",
+    pipeline_cmd,
+    "python olmocr/bench/scripts/workspace_to_bench.py localworkspace/ olmOCR-bench/bench_data/olmocr --bench-path ./olmOCR-bench/",
+    "python -m olmocr.bench.benchmark --dir ./olmOCR-bench/bench_data"
+])
+
+# Build task spec with optional env vars
+task_spec_args = {
+    "name": "olmocr-benchmark",
+    "image": ImageSource(beaker=f"{beaker_user}/{image_tag}"),
+    "command": [
+        "bash", "-c",
+        " && ".join(commands)
+    ],
+    "context": TaskContext(
+        priority=Priority.normal,
+        preemptible=True,
+    ),
+    "resources": TaskResources(gpu_count=1),
+    "constraints": Constraints(cluster=["ai2/ceres-cirrascale", "ai2/jupiter-cirrascale-2"]),
+    "result": ResultSpec(path="/noop-results"),
+}
+
+# Add env vars if AWS credentials exist
+if has_aws_creds:
+    task_spec_args["env_vars"] = [
+        EnvVar(name="AWS_CREDENTIALS_FILE", secret=aws_creds_secret)
+    ]
+
 # Create experiment spec
 experiment_spec = ExperimentSpec(
     description=f"OlmOCR Benchmark Run - Branch: {git_branch}, Commit: {git_hash}",
     budget="ai2/oe-data",
-    tasks=[
-        TaskSpec(
-            name="olmocr-benchmark",
-            image=ImageSource(beaker=f"{beaker_user}/{image_tag}"),
-            command=[
-                "bash", "-c",
-                " && ".join([
-                    "git clone https://huggingface.co/datasets/allenai/olmOCR-bench",
-                    "cd olmOCR-bench && git lfs pull && cd ..",
-                    pipeline_cmd,
-                    "python olmocr/bench/scripts/workspace_to_bench.py localworkspace/ olmOCR-bench/bench_data/olmocr --bench-path ./olmOCR-bench/",
-                    "python -m olmocr.bench.benchmark --dir ./olmOCR-bench/bench_data"
-                ])
-            ],
-            context=TaskContext(
-                priority=Priority.normal,
-                preemptible=True,
-            ),
-            resources=TaskResources(gpu_count=1),
-            constraints=Constraints(cluster=["ai2/ceres-cirrascale", "ai2/jupiter-cirrascale-2"]),
-            result=ResultSpec(path="/noop-results"),
-        )
-    ],
+    tasks=[TaskSpec(**task_spec_args)],
 )
 
 # Create the experiment
