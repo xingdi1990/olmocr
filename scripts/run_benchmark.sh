@@ -108,8 +108,8 @@ except:
 commands = []
 if has_aws_creds:
     commands.extend([
-        "mkdir -p /home/ubuntu/.aws",
-        'echo "$AWS_CREDENTIALS_FILE" > /home/ubuntu/.aws/credentials'
+        "mkdir -p ~/.aws",
+        'echo "$AWS_CREDENTIALS_FILE" > ~/.aws/credentials'
     ])
 commands.extend([
     "git clone https://huggingface.co/datasets/allenai/olmOCR-bench",
@@ -132,7 +132,7 @@ task_spec_args = {
         preemptible=True,
     ),
     "resources": TaskResources(gpu_count=1),
-    "constraints": Constraints(cluster=["ai2/ceres-cirrascale", "ai2/jupiter-cirrascale-2"]),
+    "constraints": Constraints(cluster=["ai2/ceres-cirrascale", "ai2/jupiter-cirrascale-2", "ai2/saturn-cirrascale", "ai2/neptune-cirrascale"]),
     "result": ResultSpec(path="/noop-results"),
 }
 
