@@ -28,9 +28,12 @@ done \
 RUN --mount=type=cache,target=/root/.cache/uv \
 python3 -m pip install uv
 # olmOCR Specific Installs
-# Install fonts - Ubuntu 22.04 has Python 3.10 by default, so the workaround might not be needed
+# Install fonts with fix for Python apt module
 RUN echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | debconf-set-selections && \
 apt-get update -y && \
+# First install python3-apt for the system Python (3.10) that update-notifier-common needs
+apt-get install -y python3-apt && \
+# Now install the fonts and other packages
 apt-get install -y --no-install-recommends poppler-utils fonts-crosextra-caladea fonts-crosextra-carlito gsfonts lcdf-typetools ttf-mscorefonts-installer
 # Install some helper utilities for things like the benchmark
 RUN apt-get update -y && apt-get install -y --no-install-recommends \
