@@ -18,7 +18,7 @@ def run_marker(pdf_path: str, page_num: int = 1) -> str:
     if _marker_converter is None:
         # Create a configuration dictionary with the necessary settings
         config = {
-            "format_lines": True,  # This enables conversion of inline math to LaTeX
+            "force_ocr": True,  # This enables conversion of inline math to LaTeX
             "use_llm": google_key_exists, # Activate LLM mode if google key is specified
             "disable_tqdm": True,  # Disable tqdm for cleaner output
             "recognition_batch_size": 256,

@@ -69,7 +69,7 @@ data = {
         "Qwen 2 VL",
         "Qwen 2.5 VL",
     ],
-    COST_COLUMN_NAME: [12480, 6240, 1000, 596, 499, 249, 235, 178, 178, 178],  # Same cost as Ours  # Same cost as Ours
+    COST_COLUMN_NAME: [12480, 6240, 1000, 596, 499, 249, 75, 178, 178, 178],  # Same cost as Ours  # Same cost as Ours
     PERF_COLUMN_NAME: [
         69.9,  # GPT-4o (Anchored)
         69.9,  # Same performance for batch
@@ -77,7 +77,7 @@ data = {
         61.5,  # MinerU
         63.8,  # Gemini Flash 2 (Anchored)
         63.8,  # Same performance for batch
-        74.3,  # marker v1.7.4 hybrid
+        70.0,  # marker v1.7.4 base
         77.4,  # Ours (performance is the same across hardware)
         31.5,  # Qwen2VL
         65.5,  # Qwen2.5VL
