@@ -1,6 +1,6 @@
 ARG CUDA_VERSION=12.8.1
 
-FROM --platform=linux/amd64 nvidia/cuda:${CUDA_VERSION}-devel-ubuntu20.04
+FROM --platform=linux/amd64 nvidia/cuda:${CUDA_VERSION}-devel-ubuntu22.04
 
 # Needs to be repeated below the FROM, or else it's not picked up
 ARG PYTHON_VERSION=3.12
