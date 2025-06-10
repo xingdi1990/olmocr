@@ -574,7 +574,6 @@ async def vllm_server_task(model_name_or_path, args, semaphore):
         "--disable-log-requests",
         "--uvicorn-log-level", "warning",
         "--served-model-name", "Qwen/Qwen2-VL-7B-Instruct",
-        "--dtype", args.dtype,
     ]
     cmd.extend(mem_fraction_arg)
 
@@ -987,7 +986,6 @@ async def main():
         help="List of paths where you can find the model to convert this pdf. You can specify several different paths here, and the script will try to use the one which is fastest to access",
         default="allenai/olmOCR-7B-0225-preview",
     )
-    parser.add_argument("--dtype", type=str, default="bfloat16", help="Data type for model weights")
     parser.add_argument("--model_max_context", type=int, default="8192", help="Maximum context length that the model was fine tuned under")
     parser.add_argument("--model_chat_template", type=str, default="qwen2-vl", help="Chat template to pass to vllm server")
     parser.add_argument("--target_longest_image_dim", type=int, help="Dimension on longest side to use for rendering the pdf pages", default=1024)
