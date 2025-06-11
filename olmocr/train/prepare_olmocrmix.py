@@ -72,34 +72,39 @@ def prepare_olmocr_mix(dataset_path: str, subset: str, split: str, destination: 
         extracted_dir = pdf_tarballs_dir / "extracted"
         extracted_dir.mkdir(exist_ok=True)
         
-        # Find all tarball files
-        tarball_files = list(pdf_tarballs_dir.glob("*.tar*")) + list(pdf_tarballs_dir.glob("*.tgz"))
-        
-        if tarball_files:
-            print(f"\nFound {len(tarball_files)} PDF tarballs to extract...")
+        # Check if PDFs are already extracted
+        existing_pdfs = list(extracted_dir.glob("*.pdf"))
+        if existing_pdfs:
+            print(f"Found {len(existing_pdfs)} already extracted PDFs in {extracted_dir}, skipping extraction step")
+        else:
+            # Find all tarball files
+            tarball_files = list(pdf_tarballs_dir.glob("*.tar*")) + list(pdf_tarballs_dir.glob("*.tgz"))
             
-            # Use ProcessPoolExecutor for parallel extraction
-            with ProcessPoolExecutor() as executor:
-                # Submit all tasks
-                future_to_tarball = {}
-                for tarball in tarball_files:
-                    future = executor.submit(extract_tarball, tarball, extracted_dir)
-                    future_to_tarball[future] = tarball
+            if tarball_files:
+                print(f"\nFound {len(tarball_files)} PDF tarballs to extract...")
                 
-                # Process results as they complete with progress bar
-                total_files_extracted = 0
-                with tqdm(total=len(tarball_files), desc="Extracting tarballs") as pbar:
-                    for future in as_completed(future_to_tarball):
-                        tarball = future_to_tarball[future]
-                        try:
-                            files_extracted = future.result()
-                            total_files_extracted += files_extracted
-                            pbar.set_postfix({"files": total_files_extracted})
-                        except Exception as e:
-                            print(f"\nError with {tarball.name}: {e}")
-                        pbar.update(1)
-            
-            print(f"Extracted {total_files_extracted} files from tarballs to {extracted_dir}")
+                # Use ProcessPoolExecutor for parallel extraction
+                with ProcessPoolExecutor() as executor:
+                    # Submit all tasks
+                    future_to_tarball = {}
+                    for tarball in tarball_files:
+                        future = executor.submit(extract_tarball, tarball, extracted_dir)
+                        future_to_tarball[future] = tarball
+                    
+                    # Process results as they complete with progress bar
+                    total_files_extracted = 0
+                    with tqdm(total=len(tarball_files), desc="Extracting tarballs") as pbar:
+                        for future in as_completed(future_to_tarball):
+                            tarball = future_to_tarball[future]
+                            try:
+                                files_extracted = future.result()
+                                total_files_extracted += files_extracted
+                                pbar.set_postfix({"files": total_files_extracted})
+                            except Exception as e:
+                                print(f"\nError with {tarball.name}: {e}")
+                            pbar.update(1)
+                
+                print(f"Extracted {total_files_extracted} files from tarballs to {extracted_dir}")
     else:
         print(f"No PDF tarballs directory found at {pdf_tarballs_dir}")
     
@@ -154,6 +159,19 @@ def prepare_olmocr_mix(dataset_path: str, subset: str, split: str, destination: 
                     
                     # Write natural text
                     f.write(natural_text)
+            
+                # Look for matching PDF in extracted directory and create symlinks
+                extracted_pdfs_dir = dest_path / "hugging_face" / "pdf_tarballs" / "extracted"
+
+                # Find PDFs that match the ID pattern
+                matched_pdf_path = extracted_pdfs_dir / f"{doc_id}.pdf"
+                assert matched_pdf_path.exists(), "Matching PDF not found"
+
+                symlink_path = output_dir / f"{doc_id[4:]}.pdf"
+                
+                # Create relative symlink to the PDF
+                if not symlink_path.exists():
+                    symlink_path.symlink_to(matched_pdf_path)
                 
                 total_processed += 1
                 if total_processed % 1000 == 0:
