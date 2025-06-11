@@ -1,28 +1,40 @@
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional, Type
 import base64
 from io import BytesIO
 from PIL import Image
 from torch.utils.data import Dataset
 from pypdf import PdfReader
 from tqdm import tqdm
+from dataclasses import dataclass, fields
 
 from olmocr.data.renderpdf import render_pdf_to_base64png
 
+@dataclass(frozen=True)
+class StandardFrontMatter:
+    primary_language: Optional[str]
+    is_rotation_valid: bool
+    rotation_correction: int
+    is_table: bool
+    is_diagram: bool
+
 
 class MarkdownPDFDocumentDataset(Dataset):
-    def __init__(self, root_dir: str | PathLike, target_longest_image_dim: int, image_transform=None):
+    def __init__(self, root_dir: str | PathLike, target_longest_image_dim: int, image_transform=None, front_matter_class=None):
         """
         Initialize the dataset by finding all markdown files with corresponding PDFs.
         
         Args:
             root_dir: Path to the root folder containing processed markdown and PDF files
+            target_longest_image_dim: Target dimension for the longest side of the image
             image_transform: Optional transform to apply to the PDF images
+            front_matter_class: Optional dataclass type to validate front matter against
         """
         self.root_dir = Path(root_dir)
         self.image_transform = image_transform
         self.target_longest_image_dim = target_longest_image_dim
+        self.front_matter_class = front_matter_class
         self.samples = []
         
         # Find all markdown files recursively
@@ -72,6 +84,70 @@ class MarkdownPDFDocumentDataset(Dataset):
             if len(invalid_pdfs) > 5:
                 print(f"  ... and {len(invalid_pdfs) - 5} more")
     
+    def _extract_front_matter_and_text(self, markdown_content: str) -> tuple[str, str]:
+        """Extract raw front matter string and text from markdown content."""
+        if markdown_content.startswith('---\n'):
+            parts = markdown_content.split('---\n', 2)
+            if len(parts) >= 3:
+                return parts[1].strip(), parts[2].strip()
+        
+        return '', markdown_content
+    
+    def _parse_front_matter_string(self, front_matter_str: str) -> Dict[str, Any]:
+        """Parse front matter string into a dictionary."""
+        front_matter = {}
+        
+        if not front_matter_str:
+            return front_matter
+            
+        for line in front_matter_str.split('\n'):
+            if ': ' in line:
+                key, value = line.split(': ', 1)
+                # Simple type inference
+                if value.lower() == 'true':
+                    front_matter[key] = True
+                elif value.lower() == 'false':
+                    front_matter[key] = False
+                elif value.isdigit():
+                    front_matter[key] = int(value)
+                else:
+                    front_matter[key] = value
+        
+        return front_matter
+    
+    def _parse_front_matter(self, front_matter_dict: Dict[str, Any]) -> Any:
+        """Parse front matter dictionary into dataclass instance if front_matter_class is specified."""
+        if not self.front_matter_class:
+            return front_matter_dict
+            
+        # Get field names and types from the dataclass
+        field_info = {f.name: f.type for f in fields(self.front_matter_class)}
+        
+        # Validate and convert values
+        kwargs = {}
+        for field_name, field_type in field_info.items():
+            if field_name not in front_matter_dict:
+                raise ValueError(f"Missing required field '{field_name}' in front matter")
+                
+            value = front_matter_dict[field_name]
+            
+            # Handle type conversions
+            if field_type == int and isinstance(value, str):
+                kwargs[field_name] = int(value)
+            elif field_type == bool and isinstance(value, str):
+                kwargs[field_name] = value.lower() == 'true'
+            elif field_type == Optional[str]:
+                kwargs[field_name] = value if value else None
+            else:
+                kwargs[field_name] = value
+                
+        # Check for extra fields
+        extra_fields = set(front_matter_dict.keys()) - set(field_info.keys())
+        if extra_fields:
+            raise ValueError(f"Unexpected fields in front matter: {extra_fields}")
+            
+        return self.front_matter_class(**kwargs)
+    
     def __len__(self) -> int:
         return len(self.samples)
     
@@ -88,32 +164,10 @@ class MarkdownPDFDocumentDataset(Dataset):
         """
         sample = self.samples[idx]
         
-        # Read markdown file
+        # Read and parse markdown file
         markdown_content = sample['markdown_path'].read_text(encoding='utf-8')
-        
-        # Parse front matter and extract text
-        front_matter = {}
-        text = markdown_content
-        
-        if markdown_content.startswith('---\n'):
-            # Find the closing --- for front matter
-            parts = markdown_content.split('---\n', 2)
-            if len(parts) >= 3:
-                # Parse front matter
-                front_matter_text = parts[1]
-                for line in front_matter_text.strip().split('\n'):
-                    if ': ' in line:
-                        key, value = line.split(': ', 1)
-                        # Try to parse boolean values
-                        if value.lower() == 'true':
-                            front_matter[key] = True
-                        elif value.lower() == 'false':
-                            front_matter[key] = False
-                        else:
-                            front_matter[key] = value
-                
-                # Get text without front matter
-                text = parts[2].strip()
+        front_matter_str, text = self._extract_front_matter_and_text(markdown_content)
+        front_matter = self._parse_front_matter_string(front_matter_str)
         
         # Render PDF to image
         base64_png = render_pdf_to_base64png(str(sample['pdf_path']), page_num=1, target_longest_image_dim=self.target_longest_image_dim)
@@ -124,11 +178,17 @@ class MarkdownPDFDocumentDataset(Dataset):
         if self.image_transform:
             image = self.image_transform(image)
         
+        # Parse front matter to dataclass if specified
+        try:
+            parsed_front_matter = self._parse_front_matter(front_matter)
+        except Exception as e:
+            raise ValueError(f"Error parsing front matter for {sample['markdown_path']}: {e}")
+        
         return {
             'image': image,
             'pdf_path': str(sample['pdf_path']),
             'text': text,
-            'front_matter': front_matter
+            'front_matter': parsed_front_matter
         }
 
 
@@ -180,3 +240,24 @@ if __name__ == "__main__":
         transformed_sample = dataset_with_transform[0]
         print(f"Transformed image type: {type(transformed_sample['image'])}")
         print(f"Transformed image shape: {transformed_sample['image'].shape}")
+        
+        # Test with front matter validation
+        print("\n\nTesting with front matter validation:")
+        dataset_with_validation = MarkdownPDFDocumentDataset(
+            args.root_dir, 
+            target_longest_image_dim=1024,
+            front_matter_class=StandardFrontMatter
+        )
+        
+        validated_sample = dataset_with_validation[0]
+        print(f"Front matter type: {type(validated_sample['front_matter'])}")
+        print(f"Front matter: {validated_sample['front_matter']}")
+        
+        # Access fields directly
+        fm = validated_sample['front_matter']
+        print(f"\nAccessing fields:")
+        print(f"  primary_language: {fm.primary_language}")
+        print(f"  is_rotation_valid: {fm.is_rotation_valid}")
+        print(f"  rotation_correction: {fm.rotation_correction}")
+        print(f"  is_table: {fm.is_table}")
+        print(f"  is_diagram: {fm.is_diagram}")
