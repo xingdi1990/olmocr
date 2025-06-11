@@ -11,31 +11,9 @@ from dataclasses import dataclass, fields
 from abc import ABC, abstractmethod
 
 from olmocr.data.renderpdf import render_pdf_to_base64png
+from olmocr.prompts.prompts import PageResponse, build_finetuning_prompt
 
-@dataclass(frozen=True)
-class StandardFrontMatter:
-    primary_language: Optional[str]
-    is_rotation_valid: bool
-    rotation_correction: int
-    is_table: bool
-    is_diagram: bool
-
-    def __post_init__(self):
-        # Validate rotation_correction is one of the allowed values
-        if self.rotation_correction not in {0, 90, 180, 270}:
-            raise ValueError("rotation_correction must be one of [0, 90, 180, 270].")
-
-        # Type checks
-        if not isinstance(self.primary_language, (str, type(None))):
-            raise TypeError("primary_language must be of type Optional[str].")
-        if not isinstance(self.is_rotation_valid, bool):
-            raise TypeError("is_rotation_valid must be of type bool.")
-        if not isinstance(self.rotation_correction, int):
-            raise TypeError("rotation_correction must be of type int.")
-        if not isinstance(self.is_table, bool):
-            raise TypeError("is_table must be of type bool.")
-        if not isinstance(self.is_diagram, bool):
-            raise TypeError("is_diagram must be of type bool.")
+# Import PageResponse from prompts.py instead of defining StandardFrontMatter here
 
 
 class PipelineStep(ABC):
@@ -84,7 +62,7 @@ class FrontMatterParser(PipelineStep):
         
         return front_matter
     
-    def _parse_front_matter(self, front_matter_dict: Dict[str, Any]) -> Any:
+    def _parse_front_matter(self, front_matter_dict: Dict[str, Any], text: str) -> Any:
         """Parse front matter dictionary into dataclass instance if front_matter_class is specified."""
         if not self.front_matter_class:
             return front_matter_dict
@@ -95,6 +73,11 @@ class FrontMatterParser(PipelineStep):
         # Validate and convert values
         kwargs = {}
         for field_name, field_type in field_info.items():
+            # Special handling for natural_text field in PageResponse
+            if field_name == 'natural_text' and self.front_matter_class == PageResponse:
+                kwargs[field_name] = text if text else None
+                continue
+                
             if field_name not in front_matter_dict:
                 raise ValueError(f"Missing required field '{field_name}' in front matter")
                 
@@ -110,8 +93,11 @@ class FrontMatterParser(PipelineStep):
             else:
                 kwargs[field_name] = value
                 
-        # Check for extra fields
-        extra_fields = set(front_matter_dict.keys()) - set(field_info.keys())
+        # Check for extra fields (excluding natural_text if it's PageResponse)
+        expected_fields = set(field_info.keys())
+        if self.front_matter_class == PageResponse:
+            expected_fields.discard('natural_text')
+        extra_fields = set(front_matter_dict.keys()) - expected_fields
         if extra_fields:
             raise ValueError(f"Unexpected fields in front matter: {extra_fields}")
             
@@ -129,7 +115,7 @@ class FrontMatterParser(PipelineStep):
         
         # Parse front matter to dataclass if specified
         try:
-            parsed_front_matter = self._parse_front_matter(front_matter)
+            parsed_front_matter = self._parse_front_matter(front_matter, text)
         except Exception as e:
             raise ValueError(f"Error parsing front matter for {sample['markdown_path']}: {e}")
         
@@ -307,7 +293,7 @@ if __name__ == "__main__":
     pipeline_dataset = BaseMarkdownPDFDataset(
         args.root_dir,
         pipeline_steps=[
-            FrontMatterParser(StandardFrontMatter),
+            FrontMatterParser(PageResponse),
             PDFRenderer(target_longest_image_dim=1024)
         ]
     )
@@ -325,7 +311,7 @@ if __name__ == "__main__":
     dataset = MarkdownPDFDocumentDataset(
         args.root_dir, 
         target_longest_image_dim=1024, 
-        front_matter_class=StandardFrontMatter, 
+        front_matter_class=PageResponse, 
         image_transform=None
     )
     
@@ -345,4 +331,6 @@ if __name__ == "__main__":
         print(f"Image size: {first_sample['image'].size}")
         print(f"PDF Path: {first_sample['pdf_path']}")
         print(f"Front Matter: {first_sample['front_matter']}")
-        print(f"Text: {first_sample['text'][:200]}...")
+        print(f"Text (first 200 chars): {first_sample['text'][:200]}...")
+        if hasattr(first_sample['front_matter'], 'natural_text'):
+            print(f"Natural Text from PageResponse: {first_sample['front_matter'].natural_text[:200] if first_sample['front_matter'].natural_text else 'None'}...")
