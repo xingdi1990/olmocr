@@ -1,7 +1,12 @@
 from os import PathLike
 from pathlib import Path
 from typing import Dict, Any
+import base64
+from io import BytesIO
+from PIL import Image
 from torch.utils.data import Dataset
+
+from olmocr.data.renderpdf import render_pdf_to_base64png
 
 
 class MarkdownPDFDocumentDataset(Dataset):
@@ -49,6 +54,7 @@ class MarkdownPDFDocumentDataset(Dataset):
         
         Returns:
             dict containing:
+                - 'image': PIL Image of the rendered PDF page
                 - 'pdf_path': Path to the PDF file
                 - 'text': Text content without front matter
                 - 'front_matter': Dict with parsed front matter
@@ -82,7 +88,17 @@ class MarkdownPDFDocumentDataset(Dataset):
                 # Get text without front matter
                 text = parts[2].strip()
         
+        # Render PDF to image
+        base64_png = render_pdf_to_base64png(str(sample['pdf_path']), page_num=1)
+        png_bytes = base64.b64decode(base64_png)
+        image = Image.open(BytesIO(png_bytes))
+        
+        # Apply transform if provided
+        if self.transform:
+            image = self.transform(image)
+        
         return {
+            'image': image,
             'pdf_path': str(sample['pdf_path']),
             'text': text,
             'front_matter': front_matter
@@ -118,6 +134,22 @@ if __name__ == "__main__":
         # Test __getitem__
         print("\nTesting __getitem__ on first sample:")
         first_sample = dataset[0]
+        print(f"Image type: {type(first_sample['image'])}")
+        print(f"Image size: {first_sample['image'].size}")
         print(f"PDF Path: {first_sample['pdf_path']}")
         print(f"Front Matter: {first_sample['front_matter']}")
-        print(f"Text preview: {first_sample['text']}")
+        print(f"Text preview (first 200 chars): {first_sample['text'][:200]}...")
+        
+        # Test with transforms
+        print("\nTesting with torchvision transforms:")
+        import torchvision.transforms as transforms
+        
+        transform = transforms.Compose([
+            transforms.Resize((1024, 1024)),
+            transforms.ToTensor(),
+        ])
+        
+        dataset_with_transform = MarkdownPDFDocumentDataset(args.root_dir, transform=transform)
+        transformed_sample = dataset_with_transform[0]
+        print(f"Transformed image type: {type(transformed_sample['image'])}")
+        print(f"Transformed image shape: {transformed_sample['image'].shape}")
