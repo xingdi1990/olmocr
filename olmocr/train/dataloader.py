@@ -5,6 +5,8 @@ import base64
 from io import BytesIO
 from PIL import Image
 from torch.utils.data import Dataset
+from pypdf import PdfReader
+from tqdm import tqdm
 
 from olmocr.data.renderpdf import render_pdf_to_base64png
 
@@ -27,7 +29,11 @@ class MarkdownPDFDocumentDataset(Dataset):
         md_files = list(self.root_dir.rglob("*.md"))
         
         # Verify each markdown file has a corresponding PDF
-        for md_path in md_files:
+        valid_count = 0
+        invalid_pdfs = []
+        
+        print(f"Validating {len(md_files)} markdown-PDF pairs...")
+        for md_path in tqdm(md_files, desc="Validating PDFs"):
             # Look for PDF with same stem (filename without extension)
             pdf_path = md_path.with_suffix('.pdf')
             
@@ -38,12 +44,32 @@ class MarkdownPDFDocumentDataset(Dataset):
                     
                 # Verify the resolved path exists
                 if pdf_path.exists():
-                    self.samples.append({
-                        'markdown_path': md_path,
-                        'pdf_path': pdf_path
-                    })
+                    # Validate PDF - check it loads and has exactly one page
+                    try:
+                        reader = PdfReader(str(pdf_path))
+                        num_pages = len(reader.pages)
+                        
+                        if num_pages != 1:
+                            invalid_pdfs.append((pdf_path, f"Expected 1 page, found {num_pages}"))
+                            continue
+                            
+                        self.samples.append({
+                            'markdown_path': md_path,
+                            'pdf_path': pdf_path
+                        })
+                        valid_count += 1
+                        
+                    except Exception as e:
+                        invalid_pdfs.append((pdf_path, f"Failed to load: {str(e)}"))
         
-        print(f"Found {len(self.samples)} valid markdown-PDF pairs")
+        print(f"Found {valid_count} valid markdown-PDF pairs")
+        
+        if invalid_pdfs:
+            print(f"\nWarning: {len(invalid_pdfs)} invalid PDFs found:")
+            for pdf_path, reason in invalid_pdfs[:5]:  # Show first 5
+                print(f"  - {pdf_path.name}: {reason}")
+            if len(invalid_pdfs) > 5:
+                print(f"  ... and {len(invalid_pdfs) - 5} more")
     
     def __len__(self) -> int:
         return len(self.samples)
