@@ -1,8 +1,11 @@
 from os import PathLike
 from pathlib import Path
-from typing import Dict, Any, Optional, Type, List, Callable
+from typing import Dict, Any, Optional, Type, List, Callable, TypeAlias
 import base64
 from io import BytesIO
+from functools import reduce
+import logging
+import yaml
 from PIL import Image
 from torch.utils.data import Dataset
 from pypdf import PdfReader
@@ -13,54 +16,128 @@ from abc import ABC, abstractmethod
 from olmocr.data.renderpdf import render_pdf_to_base64png
 from olmocr.prompts.prompts import PageResponse, build_finetuning_prompt
 
-# Import PageResponse from prompts.py instead of defining StandardFrontMatter here
+# Type alias for samples
+Sample: TypeAlias = Dict[str, Any]
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True, slots=True)
 class PipelineStep(ABC):
     """Abstract base class for pipeline steps."""
     
     @abstractmethod
-    def process(self, sample: Dict[str, Any]) -> Dict[str, Any]:
+    def __call__(self, sample: Sample) -> Sample:
         """Process a sample and return the modified sample."""
-        pass
+        ...
 
 
-class FrontMatterParser(PipelineStep):
-    """Pipeline step that parses front matter from markdown content."""
+class BaseMarkdownPDFDataset(Dataset):
+    """Base dataset class that loads and verifies markdown-PDF pairs."""
     
-    def __init__(self, front_matter_class: Optional[Type] = None):
-        self.front_matter_class = front_matter_class
-    
-    def _extract_front_matter_and_text(self, markdown_content: str) -> tuple[str, str]:
-        """Extract raw front matter string and text from markdown content."""
-        if markdown_content.startswith('---\n'):
-            parts = markdown_content.split('---\n', 2)
-            if len(parts) >= 3:
-                return parts[1].strip(), parts[2].strip()
+    def __init__(self, root_dir: str | PathLike, pipeline_steps: Optional[List[PipelineStep]] = None):
+        """
+        Initialize the dataset by finding all markdown files with corresponding PDFs.
         
-        return '', markdown_content
-    
-    def _parse_front_matter_string(self, front_matter_str: str) -> Dict[str, Any]:
-        """Parse front matter string into a dictionary."""
-        front_matter = {}
+        Args:
+            root_dir: Path to the root folder containing processed markdown and PDF files
+            pipeline_steps: Optional list of pipeline steps to apply to each sample
+        """
+        self.root_dir = Path(root_dir)
+        self.pipeline_steps = pipeline_steps or []
+        self.samples = []
         
-        if not front_matter_str:
-            return front_matter
+        # Find all markdown files recursively
+        logger.info(f"Scanning for markdown files in {self.root_dir}...")
+        md_files = list(self.root_dir.rglob("*.md"))
+        
+        # Verify each markdown file has a corresponding PDF
+        valid_count = 0
+        invalid_pdfs = []
+        
+        logger.info(f"Validating {len(md_files)} markdown-PDF pairs...")
+        for md_path in tqdm(md_files, desc="Validating PDFs"):
+            # Look for PDF with same stem (filename without extension)
+            pdf_path = md_path.with_suffix('.pdf')
             
-        for line in front_matter_str.split('\n'):
-            if ': ' in line:
-                key, value = line.split(': ', 1)
-                # Simple type inference
-                if value.lower() == 'true':
-                    front_matter[key] = True
-                elif value.lower() == 'false':
-                    front_matter[key] = False
-                elif value.isdigit():
-                    front_matter[key] = int(value)
-                else:
-                    front_matter[key] = value
+            if pdf_path.exists() or pdf_path.is_symlink():
+                # Resolve symlink if it is one
+                if pdf_path.is_symlink():
+                    pdf_path = pdf_path.resolve()
+                    
+                # Verify the resolved path exists
+                if pdf_path.exists():
+                    # Validate PDF - check it loads and has exactly one page
+                    try:
+                        reader = PdfReader(str(pdf_path))
+                        num_pages = len(reader.pages)
+                        
+                        if num_pages != 1:
+                            invalid_pdfs.append((pdf_path, f"Expected 1 page, found {num_pages}"))
+                            continue
+                            
+                        self.samples.append({
+                            'markdown_path': md_path,
+                            'pdf_path': pdf_path
+                        })
+                        valid_count += 1
+                        
+                    except Exception as e:
+                        invalid_pdfs.append((pdf_path, f"Failed to load: {str(e)}"))
         
-        return front_matter
+        logger.info(f"Found {valid_count} valid markdown-PDF pairs")
+        
+        if invalid_pdfs:
+            logger.warning(f"{len(invalid_pdfs)} invalid PDFs found:")
+            for pdf_path, reason in invalid_pdfs[:5]:  # Show first 5
+                logger.warning(f"  - {pdf_path.name}: {reason}")
+            if len(invalid_pdfs) > 5:
+                logger.warning(f"  ... and {len(invalid_pdfs) - 5} more")
+    
+    def __len__(self) -> int:
+        return len(self.samples)
+    
+    def __getitem__(self, idx: int) -> Dict[str, Any]:
+        """
+        Get a single sample from the dataset.
+        
+        Returns:
+            dict containing at minimum:
+                - 'markdown_path': Path to the markdown file
+                - 'pdf_path': Path to the PDF file
+                
+            Additional fields will be added by pipeline steps.
+        """
+        # Start with basic sample info
+        sample = self.samples[idx].copy()
+        
+        # Apply pipeline steps using reduce
+        return reduce(lambda s, f: f(s), self.pipeline_steps, sample)
+    
+
+@dataclass(frozen=True, slots=True)
+class FrontMatterParser(PipelineStep):
+    """Pipeline step that parses YAML front matter from markdown content."""
+    front_matter_class: Optional[Type] = None
+    
+    def _extract_front_matter_and_text(self, markdown_content: str) -> tuple[Dict[str, Any], str]:
+        """Extract YAML front matter and text from markdown content."""
+        if markdown_content.startswith('---\n'):
+            try:
+                # Find the closing --- delimiter
+                end_index = markdown_content.find('\n---\n', 4)
+                if end_index != -1:
+                    front_matter_str = markdown_content[4:end_index]
+                    text = markdown_content[end_index + 5:].strip()
+                    
+                    # Parse YAML
+                    front_matter = yaml.safe_load(front_matter_str) or {}
+                    return front_matter, text
+            except yaml.YAMLError as e:
+                logger.warning(f"Failed to parse YAML front matter: {e}")
+        
+        return {}, markdown_content.strip()
     
     def _parse_front_matter(self, front_matter_dict: Dict[str, Any], text: str) -> Any:
         """Parse front matter dictionary into dataclass instance if front_matter_class is specified."""
@@ -103,15 +180,14 @@ class FrontMatterParser(PipelineStep):
             
         return self.front_matter_class(**kwargs)
     
-    def process(self, sample: Dict[str, Any]) -> Dict[str, Any]:
+    def __call__(self, sample: Sample) -> Sample:
         """Parse front matter from markdown content."""
         # Read markdown content if not already loaded
         if 'markdown_content' not in sample:
             sample['markdown_content'] = sample['markdown_path'].read_text(encoding='utf-8')
         
         # Extract and parse front matter
-        front_matter_str, text = self._extract_front_matter_and_text(sample['markdown_content'])
-        front_matter = self._parse_front_matter_string(front_matter_str)
+        front_matter, text = self._extract_front_matter_and_text(sample['markdown_content'])
         
         # Parse front matter to dataclass if specified
         try:
@@ -126,14 +202,13 @@ class FrontMatterParser(PipelineStep):
         return sample
 
 
+@dataclass(frozen=True, slots=True)
 class PDFRenderer(PipelineStep):
     """Pipeline step that renders PDF to image."""
+    target_longest_image_dim: int
+    image_transform: Optional[Callable] = None
     
-    def __init__(self, target_longest_image_dim: int, image_transform: Optional[Callable] = None):
-        self.target_longest_image_dim = target_longest_image_dim
-        self.image_transform = image_transform
-    
-    def process(self, sample: Dict[str, Any]) -> Dict[str, Any]:
+    def __call__(self, sample: Sample) -> Sample:
         """Render PDF to image."""
         # Render PDF to image
         base64_png = render_pdf_to_base64png(
@@ -152,91 +227,17 @@ class PDFRenderer(PipelineStep):
         sample['image'] = image
         
         return sample
+    
 
-
-class BaseMarkdownPDFDataset(Dataset):
-    """Base dataset class that loads and verifies markdown-PDF pairs."""
+@dataclass(frozen=True, slots=True)
+class PromptBuilder(PipelineStep):
+    """Pipeline step that builds prompts using the finetuning prompt template."""
+    base_text_field: str = 'text'
     
-    def __init__(self, root_dir: str | PathLike, pipeline_steps: Optional[List[PipelineStep]] = None):
-        """
-        Initialize the dataset by finding all markdown files with corresponding PDFs.
-        
-        Args:
-            root_dir: Path to the root folder containing processed markdown and PDF files
-            pipeline_steps: Optional list of pipeline steps to apply to each sample
-        """
-        self.root_dir = Path(root_dir)
-        self.pipeline_steps = pipeline_steps or []
-        self.samples = []
-        
-        # Find all markdown files recursively
-        print(f"Scanning for markdown files in {self.root_dir}...")
-        md_files = list(self.root_dir.rglob("*.md"))
-        
-        # Verify each markdown file has a corresponding PDF
-        valid_count = 0
-        invalid_pdfs = []
-        
-        print(f"Validating {len(md_files)} markdown-PDF pairs...")
-        for md_path in tqdm(md_files, desc="Validating PDFs"):
-            # Look for PDF with same stem (filename without extension)
-            pdf_path = md_path.with_suffix('.pdf')
-            
-            if pdf_path.exists() or pdf_path.is_symlink():
-                # Resolve symlink if it is one
-                if pdf_path.is_symlink():
-                    pdf_path = pdf_path.resolve()
-                    
-                # Verify the resolved path exists
-                if pdf_path.exists():
-                    # Validate PDF - check it loads and has exactly one page
-                    try:
-                        reader = PdfReader(str(pdf_path))
-                        num_pages = len(reader.pages)
-                        
-                        if num_pages != 1:
-                            invalid_pdfs.append((pdf_path, f"Expected 1 page, found {num_pages}"))
-                            continue
-                            
-                        self.samples.append({
-                            'markdown_path': md_path,
-                            'pdf_path': pdf_path
-                        })
-                        valid_count += 1
-                        
-                    except Exception as e:
-                        invalid_pdfs.append((pdf_path, f"Failed to load: {str(e)}"))
-        
-        print(f"Found {valid_count} valid markdown-PDF pairs")
-        
-        if invalid_pdfs:
-            print(f"\nWarning: {len(invalid_pdfs)} invalid PDFs found:")
-            for pdf_path, reason in invalid_pdfs[:5]:  # Show first 5
-                print(f"  - {pdf_path.name}: {reason}")
-            if len(invalid_pdfs) > 5:
-                print(f"  ... and {len(invalid_pdfs) - 5} more")
-    
-    def __len__(self) -> int:
-        return len(self.samples)
-    
-    def __getitem__(self, idx: int) -> Dict[str, Any]:
-        """
-        Get a single sample from the dataset.
-        
-        Returns:
-            dict containing at minimum:
-                - 'markdown_path': Path to the markdown file
-                - 'pdf_path': Path to the PDF file
-                
-            Additional fields will be added by pipeline steps.
-        """
-        # Start with basic sample info
-        sample = self.samples[idx].copy()
-        
-        # Apply pipeline steps
-        for step in self.pipeline_steps:
-            sample = step.process(sample)
-        
+    def __call__(self, sample: Sample) -> Sample:
+        """Build prompt from base text."""
+        base_text = sample.get(self.base_text_field, '')
+        sample['prompt'] = build_finetuning_prompt(base_text)
         return sample
 
 
@@ -266,6 +267,9 @@ class MarkdownPDFDocumentDataset(BaseMarkdownPDFDataset):
 if __name__ == "__main__":
     import argparse
     
+    # Set up logging for testing
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    
     parser = argparse.ArgumentParser(description="Test MarkdownPDFDocumentDataset")
     parser.add_argument(
         "--root-dir",
@@ -293,8 +297,9 @@ if __name__ == "__main__":
     pipeline_dataset = BaseMarkdownPDFDataset(
         args.root_dir,
         pipeline_steps=[
-            FrontMatterParser(PageResponse),
-            PDFRenderer(target_longest_image_dim=1024)
+            FrontMatterParser(front_matter_class=PageResponse),
+            PDFRenderer(target_longest_image_dim=1024),
+            PromptBuilder()
         ]
     )
     
@@ -305,6 +310,7 @@ if __name__ == "__main__":
         print(f"  Front Matter: {sample['front_matter']}")
         print(f"  Image size: {sample['image'].size}")
         print(f"  Text preview: {sample['text'][:100]}...")
+        print(f"  Prompt preview: {sample.get('prompt', 'No prompt')[:200]}...")
     
     # Test the convenience dataset class
     print(f"\n=== Testing MarkdownPDFDocumentDataset (convenience class) ===")
