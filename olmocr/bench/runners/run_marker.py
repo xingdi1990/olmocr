@@ -13,13 +13,11 @@ _marker_converter = None
 def run_marker(pdf_path: str, page_num: int = 1) -> str:
     global _marker_converter
 
-    google_key_exists = os.getenv("GOOGLE_API_KEY") is not None
-
     if _marker_converter is None:
         # Create a configuration dictionary with the necessary settings
         config = {
             "force_ocr": True,  # This enables conversion of inline math to LaTeX
-            "use_llm": google_key_exists, # Activate LLM mode if google key is specified
+            "use_llm": False, # We would prefer to run just plain marker for reporting bench results, not hybrid mode
             "disable_tqdm": True,  # Disable tqdm for cleaner output
             "recognition_batch_size": 256,
             "layout_batch_size": 48,
@@ -33,7 +31,6 @@ def run_marker(pdf_path: str, page_num: int = 1) -> str:
         _marker_converter = PdfConverter(
             artifact_dict=create_model_dict(),
             config=config_parser.generate_config_dict(),
-            llm_service=config_parser.get_llm_service(),
         )
 
     # Extract the specific page from the PDF
