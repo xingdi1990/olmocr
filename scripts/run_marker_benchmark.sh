@@ -151,7 +151,9 @@ perf_commands.extend([
     "pip install --upgrade torchvision",
     "pip install awscli",
     "aws s3 cp --recursive s3://ai2-oe-data/jakep/olmocr/olmOCR-mix-0225/benchmark_set/ /root/olmOCR-mix-0225_benchmark_set/",
-    "time marker --force_ocr /root/olmOCR-mix-0225_benchmark_set/ --output_dir /root/olmOCR-mix-0225_benchmark_set_marker --workers 8"
+    # Tried with workers 8, but it was taking a really huge amount of time
+    #"time marker --force_ocr /root/olmOCR-mix-0225_benchmark_set/ --output_dir /root/olmOCR-mix-0225_benchmark_set_marker --workers 8"
+    "time marker --force_ocr /root/olmOCR-mix-0225_benchmark_set/ --output_dir /root/olmOCR-mix-0225_benchmark_set_marker"
 ])
 
 # Build performance task spec
