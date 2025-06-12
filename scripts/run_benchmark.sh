@@ -153,9 +153,11 @@ experiment_spec = ExperimentSpec(
 experiment = b.experiment.create(spec=experiment_spec, workspace="ai2/olmocr")
 print(f"Created benchmark experiment: {experiment.id}")
 print(f"View at: https://beaker.org/ex/{experiment.id}")
+print("-------")
+print("")
 
 # Second experiment: Performance test job
-perf_pipeline_cmd = "python -m olmocr.pipeline ./localworkspace --markdown --pdfs s3://ai2-oe-data/jakep/olmocr/olmOCR-mix-0225/benchmark_set/"
+perf_pipeline_cmd = "python -m olmocr.pipeline ./localworkspace --markdown --pdfs s3://ai2-oe-data/jakep/olmocr/olmOCR-mix-0225/benchmark_set/*.pdf"
 if model:
     perf_pipeline_cmd += f" --model {model}"
 
