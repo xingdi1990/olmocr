@@ -148,7 +148,7 @@ if has_aws_creds:
 perf_commands.extend([
     f"pip install marker-pdf=={marker_version}",
     "s5cmd cp s3://ai2-oe-data/jakep/olmocr/olmOCR-mix-0225/benchmark_set/* /root/olmOCR-mix-0225_benchmark_set/",
-    "marker --force_ocr /root/olmOCR-mix-0225_benchmark_set/ --output_dir /root/olmOCR-mix-0225_benchmark_set_marker --workers 8"
+    "time marker --force_ocr /root/olmOCR-mix-0225_benchmark_set/ --output_dir /root/olmOCR-mix-0225_benchmark_set_marker --workers 8"
 ])
 
 # Build performance task spec
