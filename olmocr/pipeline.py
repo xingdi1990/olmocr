@@ -403,6 +403,7 @@ async def process_pdf(args, worker_id: int, pdf_orig_path: str):
         if os.path.exists(tf.name):
             os.unlink(tf.name)
 
+
 def build_dolma_document(pdf_orig_path, page_results):
     # Build the document text and page spans
     document_text = ""
@@ -711,7 +712,7 @@ async def sglang_server_ready():
     raise Exception("sglang server did not become ready after waiting.")
 
 
-async def download_model(model_name_or_path: str, max_retries: int=5):
+async def download_model(model_name_or_path: str, max_retries: int = 5):
     for retry in range(max_retries):
         try:
             if model_name_or_path.startswith("s3://") or model_name_or_path.startswith("gs://") or model_name_or_path.startswith("weka://"):
@@ -731,7 +732,7 @@ async def download_model(model_name_or_path: str, max_retries: int=5):
                 return model_name_or_path
         except Exception:
             if retry == max_retries - 1:
-                raise # Raise on final attempt and fail the job
+                raise  # Raise on final attempt and fail the job
 
             sleep_time = random.randrange(2, 20) * 2**retry
             logger.exception(f"Could not download model, sleeping for {sleep_time} seconds to retry ({retry + 1}/{max_retries})")
