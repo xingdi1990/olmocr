@@ -96,7 +96,7 @@ if has_aws_creds:
 commands.extend([
     "git clone https://huggingface.co/datasets/allenai/olmOCR-bench",
     "cd olmOCR-bench && git lfs pull && cd ..",
-    f"pip install marker=={marker_version}",
+    f"pip install marker-pdf=={marker_version}",
     "python -m olmocr.bench.convert marker --dir ./olmOCR-bench/bench_data",
     "python -m olmocr.bench.benchmark --dir ./olmOCR-bench/bench_data"
 ])
@@ -146,7 +146,7 @@ if has_aws_creds:
         'echo "$AWS_CREDENTIALS_FILE" > ~/.aws/credentials'
     ])
 perf_commands.extend([
-    f"pip install marker=={marker_version}",
+    f"pip install marker-pdf=={marker_version}",
     "s5cmd cp s3://ai2-oe-data/jakep/olmocr/olmOCR-mix-0225/benchmark_set/* /root/olmOCR-mix-0225_benchmark_set/",
     "marker --force_ocr /root/olmOCR-mix-0225_benchmark_set/ --output_dir /root/olmOCR-mix-0225_benchmark_set_marker --workers 8"
 ])
