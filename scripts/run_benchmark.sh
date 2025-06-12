@@ -104,7 +104,7 @@ except:
     has_aws_creds = False
     print(f"AWS credentials secret not found: {aws_creds_secret}")
 
-# Build commands list
+# First experiment: Original benchmark job
 commands = []
 if has_aws_creds:
     commands.extend([
@@ -142,21 +142,69 @@ if has_aws_creds:
         EnvVar(name="AWS_CREDENTIALS_FILE", secret=aws_creds_secret)
     ]
 
-# Create experiment spec
+# Create first experiment spec
 experiment_spec = ExperimentSpec(
     description=f"OlmOCR Benchmark Run - Branch: {git_branch}, Commit: {git_hash}",
     budget="ai2/oe-data",
     tasks=[TaskSpec(**task_spec_args)],
 )
 
-# Create the experiment
+# Create the first experiment
 experiment = b.experiment.create(spec=experiment_spec, workspace="ai2/olmocr")
-print(f"Created experiment: {experiment.id}")
+print(f"Created benchmark experiment: {experiment.id}")
 print(f"View at: https://beaker.org/ex/{experiment.id}")
+
+# Second experiment: Performance test job
+perf_pipeline_cmd = "python -m olmocr.pipeline ./localworkspace --markdown --pdfs s3://ai2-oe-data/jakep/olmocr/olmOCR-mix-0225/benchmark_set/"
+if model:
+    perf_pipeline_cmd += f" --model {model}"
+
+perf_commands = []
+if has_aws_creds:
+    perf_commands.extend([
+        "mkdir -p ~/.aws",
+        'echo "$AWS_CREDENTIALS_FILE" > ~/.aws/credentials'
+    ])
+perf_commands.append(perf_pipeline_cmd)
+
+# Build performance task spec
+perf_task_spec_args = {
+    "name": "olmocr-performance",
+    "image": ImageSource(beaker=f"{beaker_user}/{image_tag}"),
+    "command": [
+        "bash", "-c",
+        " && ".join(perf_commands)
+    ],
+    "context": TaskContext(
+        priority=Priority.normal,
+        preemptible=True,
+    ),
+    "resources": TaskResources(gpu_count=1),
+    "constraints": Constraints(cluster=["ai2/ceres-cirrascale", "ai2/jupiter-cirrascale-2"]),
+    "result": ResultSpec(path="/noop-results"),
+}
+
+# Add env vars if AWS credentials exist
+if has_aws_creds:
+    perf_task_spec_args["env_vars"] = [
+        EnvVar(name="AWS_CREDENTIALS_FILE", secret=aws_creds_secret)
+    ]
+
+# Create performance experiment spec
+perf_experiment_spec = ExperimentSpec(
+    description=f"OlmOCR Performance Test - Branch: {git_branch}, Commit: {git_hash}",
+    budget="ai2/oe-data",
+    tasks=[TaskSpec(**perf_task_spec_args)],
+)
+
+# Create the performance experiment
+perf_experiment = b.experiment.create(spec=perf_experiment_spec, workspace="ai2/olmocr")
+print(f"Created performance experiment: {perf_experiment.id}")
+print(f"View at: https://beaker.org/ex/{perf_experiment.id}")
 EOF
 
-# Run the Python script to create the experiment
-echo "Creating Beaker experiment..."
+# Run the Python script to create the experiments
+echo "Creating Beaker experiments..."
 if [ -n "$MODEL" ]; then
     echo "Using model: $MODEL"
     $PYTHON /tmp/run_benchmark_experiment.py $IMAGE_TAG $BEAKER_USER $GIT_BRANCH $GIT_HASH "$MODEL"
@@ -167,4 +215,4 @@ fi
 # Clean up temporary file
 rm /tmp/run_benchmark_experiment.py
 
-echo "Benchmark experiment submitted successfully!"
+echo "Benchmark experiments submitted successfully!"
