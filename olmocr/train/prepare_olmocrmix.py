@@ -59,9 +59,9 @@ def prepare_olmocr_mix(dataset_path: str, subset: str, split: str, destination: 
         parquet_files = [dest_path / "hugging_face" / "train-s2pdf.parquet"]
     elif subset == "00_documents" and split == "eval_s2pdf":
         parquet_files = [dest_path / "hugging_face" / "eval-s2pdf.parquet"]
-    elif subset == "01_books" and split == "train_s2pdf":
+    elif subset == "01_books" and split == "train_iabooks":
         parquet_files = [dest_path / "hugging_face" / "train-iabooks.parquet"]        
-    elif subset == "01_books" and split == "train_s2pdf":
+    elif subset == "01_books" and split == "eval_iabooks":
         parquet_files = [dest_path / "hugging_face" / "eval-iabooks.parquet"]
     else:
         raise NotImplementedError()
