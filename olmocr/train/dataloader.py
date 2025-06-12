@@ -18,11 +18,6 @@ from olmocr.data.renderpdf import render_pdf_to_base64png
 from olmocr.prompts.prompts import PageResponse, build_finetuning_prompt
 from olmocr.prompts.anchor import get_anchor_text
 
-try:
-    import numpy as np
-except ImportError:
-    np = None
-
 # Type alias for samples
 Sample: TypeAlias = Dict[str, Any]
 
@@ -261,7 +256,7 @@ class FrontMatterOutputFormat(PipelineStep):
         page_data = sample["page_data"]
         assert type(page_data) == PageResponse
         
-        sample["output"] = f"""---
+        sample["response"] = f"""---
 primary_language: {page_data.primary_language}
 is_rotation_valid: {page_data.is_rotation_valid}
 rotation_correction: {page_data.rotation_correction}
@@ -275,32 +270,19 @@ is_diagram: {page_data.is_diagram}
     
 
 @dataclass(frozen=True, slots=True)
-class InstructMessages(PipelineStep):
+class InstructUserMessages(PipelineStep):
     """Creates instruction-following messages format for training."""
     def __call__(self, sample: Sample) -> Sample:
-        # Convert PIL image to base64 string
-        if 'image' in sample:
-            buffered = BytesIO()
-            sample['image'].save(buffered, format="PNG")
-            base64_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
-        else:
-            raise ValueError("Image not found in sample. Make sure PDFRenderer runs before InstructMessages.")
-        
         # Prepare messages
-        messages = [
-            {
+        messages = {
                 "role": "user",
                 "content": [
-                    {"type": "image", "image": base64_image},
+                    {"type": "image", "image": sample["image"]},
                     {"type": "text", "text": sample["instruction_prompt"]},
                 ],
-            },
-            {
-                "role": "assistant",
-                "content": sample["output"]
             }
-        ]
-        sample["messages"] = messages
+
+        sample["user_messages"] = messages
 
         return sample
     
@@ -316,17 +298,21 @@ class Tokenizer(PipelineStep):
         if np is None:
             raise ImportError("numpy is required for Tokenizer step")
             
-        messages = sample["messages"]
-        main_image = sample["image"]
-        
-        # Apply chat template to full conversation
+        # Extract user message and response
+        user_messages = sample["user_messages"]
+        response = sample["response"]
+
+        # Apply chat template to user message only with generation prompt
+        # user_messages is a single dict, so wrap it in a list
         text = self.processor.apply_chat_template(
-            messages, 
+            [user_messages], 
             tokenize=False, 
-            add_generation_prompt=False  # Don't add prompt since we have the response
+            add_generation_prompt=True
         )
         
-        # Process everything together
+        main_image = user_messages["content"][0]["image"]
+        
+        # Process inputs using processor
         inputs = self.processor(
             text=[text],
             images=[main_image],
@@ -334,32 +320,38 @@ class Tokenizer(PipelineStep):
             return_tensors="np",
         )
         
-        # Create labels by copying input_ids and masking the prompt portion
-        labels = inputs.input_ids.copy()
+        # Get labels by tokenizing the output text
+        labels = self.processor(text=[response], padding=True, return_tensors="np")
         
-        # Find where the assistant response starts
-        # This assumes the processor adds some delimiter between user and assistant
-        # You might need to adjust based on your specific chat template
-
-        assistant_token = self.processor.tokenizer.encode("assistant", add_special_tokens=False)[0]
-        assistant_start_idx = np.where(inputs.input_ids[0] == assistant_token)[0]
+        # Append <|im_end|>\n to the labels
+        im_end_tokens = self.processor.tokenizer("<|im_end|>\n", add_special_tokens=False)["input_ids"]
+        im_end_tokens = np.array(im_end_tokens, dtype=inputs.input_ids.dtype)
         
-        if len(assistant_start_idx) > 0:
-            # Mask everything before the assistant's actual response content
-            # Usually there's a few tokens after "assistant" role marker
-            response_start = assistant_start_idx[-1] + 2  # Adjust offset as needed
-            labels[0, :response_start] = self.masking_index
+        # Handle the case where labels['input_ids'] is empty
+        if labels["input_ids"].shape[1] == 0:
+            labels_input_ids_0 = np.array([], dtype=inputs.input_ids.dtype)
         else:
-            raise Exception("Could not find assistant tokens")
-
-        # Add tokenized data to sample
-        sample["input_ids"] = inputs.input_ids[0]
-        sample["attention_mask"] = inputs.attention_mask[0]
-        sample["labels"] = labels[0]
+            labels_input_ids_0 = labels["input_ids"][0].astype(inputs.input_ids.dtype)
         
-        # Add image-related tensors if present
-        if hasattr(inputs, 'pixel_values'):
-            sample["pixel_values"] = inputs.pixel_values
+        labels["input_ids"] = np.concatenate([labels_input_ids_0, im_end_tokens])
+        labels["input_ids"] = np.expand_dims(labels["input_ids"], axis=0)
+        
+        # Concatenate input_ids and labels
+        input_ids = np.concatenate([inputs.input_ids[0], labels.input_ids[0]], axis=0)
+        
+        # All columns will participate in attention fully
+        attention_mask = np.ones_like(input_ids)
+        
+        # Create labels, masking the input portion with -100
+        labels_full = np.full_like(input_ids, fill_value=self.masking_index)
+        labels_full[len(inputs.input_ids[0]):] = labels.input_ids[0]
+        
+        # Return as dict, including pixel_values
+        sample["input_ids"] = input_ids
+        sample["attention_mask"] = attention_mask
+        sample["labels"] = labels_full
+        sample["pixel_values"] = inputs.pixel_values
+        
         if hasattr(inputs, 'image_grid_thw'):
             sample["image_grid_thw"] = inputs.image_grid_thw[0]
             
@@ -386,7 +378,7 @@ class MarkdownPDFDocumentDataset(BaseMarkdownPDFDataset):
             StaticLengthDocumentAnchoring(target_anchor_text_len=6000),
             FinetuningPrompt(),
             FrontMatterOutputFormat(),
-            InstructMessages(),
+            InstructUserMessages(),
         ]
         
         # Initialize base class with pipeline
@@ -440,28 +432,7 @@ if __name__ == "__main__":
         
         # Pretty print the message structure
         print("\n=== Message Structure ===")
-        messages = first_sample['messages']
-        
-        for i, msg in enumerate(messages):
-            print(f"\nMessage {i + 1}:")
-            print(f"  role: {msg['role']}")
-            
-            if msg['role'] == 'user':
-                print("  content:")
-                for j, content_item in enumerate(msg['content']):
-                    if content_item['type'] == 'image':
-                        # Show that there's an image without the base64 data
-                        image_data = content_item['image']
-                        print(f"    [{j}] type: image")
-                        print(f"        image: <base64 PNG data, {len(image_data)} chars>")
-                    elif content_item['type'] == 'text':
-                        text_preview = content_item['text'][:200].replace('\n', '\n            ')
-                        print(f"    [{j}] type: text")
-                        print(f"        text: {text_preview}...")
-            else:
-                # Assistant message
-                content_preview = msg['content'][:300].replace('\n', '\n        ')
-                print(f"  content: {content_preview}...")
+        # TODO
         
         print("\n=== Sample Metadata ===")
         print(f"PDF: {Path(first_sample['pdf_path']).name}")
@@ -486,7 +457,7 @@ if __name__ == "__main__":
                     StaticLengthDocumentAnchoring(target_anchor_text_len=1000),
                     FinetuningPrompt(),
                     FrontMatterOutputFormat(),
-                    InstructMessages(),
+                    InstructUserMessages(),
                     Tokenizer(processor),
                 ]
             )
