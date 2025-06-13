@@ -38,7 +38,7 @@ from olmocr.check import (
 from olmocr.data.renderpdf import render_pdf_to_base64png
 from olmocr.filter.filter import Language, PdfFilter
 from olmocr.image_utils import convert_image_to_pdf_bytes, is_jpeg, is_png
-from olmocr.metrics import MetricsKeeper, WorkerTracker
+from olmocr.metrics import MetricsKeeper, WorkerTracker, cpu_vs_wall
 from olmocr.prompts import PageResponse, build_finetuning_prompt
 from olmocr.prompts.anchor import get_anchor_text
 from olmocr.s3_utils import (
@@ -271,6 +271,7 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
                 local_image_rotation = page_response.rotation_correction
                 raise ValueError(f"invalid_page rotation for {pdf_orig_path}-{page_num}")
 
+            metrics.add_metrics(completed_pages=1)
             await tracker.track_work(worker_id, f"{pdf_orig_path}-{page_num}", "finished")
             return PageResult(
                 pdf_orig_path,
@@ -309,6 +310,7 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
             attempt += 1
 
     logger.error(f"Failed to process {pdf_orig_path}-{page_num} after {MAX_RETRIES} attempts.")
+    metrics.add_metrics(failed_pages=1)
     await tracker.track_work(worker_id, f"{pdf_orig_path}-{page_num}", "errored")
 
     return PageResult(
@@ -570,10 +572,13 @@ async def vllm_server_task(model_name_or_path, args, semaphore):
         "vllm",
         "serve",
         model_name_or_path,
-        "--port", str(BASE_SERVER_PORT),
+        "--port",
+        str(BASE_SERVER_PORT),
         "--disable-log-requests",
-        "--uvicorn-log-level", "warning",
-        "--served-model-name", "Qwen/Qwen2-VL-7B-Instruct",
+        "--uvicorn-log-level",
+        "warning",
+        "--served-model-name",
+        "Qwen/Qwen2-VL-7B-Instruct",
     ]
     cmd.extend(mem_fraction_arg)
 
@@ -611,11 +616,11 @@ async def vllm_server_task(model_name_or_path, args, semaphore):
             server_printed_ready_message = True
             last_semaphore_release = time.time()
 
-        match = re.search(r'Running: (\d+)', line)
+        match = re.search(r"Running: (\d+)", line)
         if match:
             last_running_req = int(match.group(1))
 
-        match = re.search(r'Waiting: (\d+)', line)
+        match = re.search(r"Waiting: (\d+)", line)
         if match:
             last_queue_req = int(match.group(1))
             logger.info(f"vllm running req: {last_running_req} queue req: {last_queue_req}")
@@ -671,7 +676,9 @@ async def vllm_server_host(model_name_or_path, args, semaphore):
     if retry >= MAX_RETRIES:
         logger.error(f"Ended up starting the vllm server more than {retry} times, cancelling pipeline")
         logger.error("")
-        logger.error("Please make sure vllm is installed according to the latest instructions here: https://docs.vllm.ai/en/stable/getting_started/installation/gpu.html")
+        logger.error(
+            "Please make sure vllm is installed according to the latest instructions here: https://docs.vllm.ai/en/stable/getting_started/installation/gpu.html"
+        )
         sys.exit(1)
 
 
@@ -1123,7 +1130,7 @@ async def main():
         return
 
     # If you get this far, then you are doing inference and need a GPU
-    #check_sglang_version()
+    # check_sglang_version()
     check_torch_gpu_available()
 
     logger.info(f"Starting pipeline with PID {os.getpid()}")
@@ -1148,6 +1155,7 @@ async def main():
     await vllm_server_ready()
 
     metrics_task = asyncio.create_task(metrics_reporter(work_queue))
+    cpu_monitor_task = asyncio.create_task(cpu_vs_wall(10))
 
     # Create worker tasks to process the queue concurrently.
     worker_tasks = []
@@ -1163,32 +1171,39 @@ async def main():
 
     vllm_server.cancel()
     metrics_task.cancel()
-    
+    cpu_monitor_task.cancel()
+
     # Output final metrics summary
     metrics_summary = metrics.get_metrics_summary()
     logger.info("=" * 80)
     logger.info("FINAL METRICS SUMMARY")
     logger.info("=" * 80)
     logger.info(f"Total elapsed time: {metrics_summary['elapsed_time_seconds']:.2f} seconds")
-    
+
     # Output token counts and rates
-    total_metrics = metrics_summary['total_metrics']
-    rates = metrics_summary['rates']
-    
+    total_metrics = metrics_summary["total_metrics"]
+    rates = metrics_summary["rates"]
+
     logger.info(f"Total Server Input tokens: {total_metrics.get('server_input_tokens', 0):,}")
     logger.info(f"Total Server Output tokens: {total_metrics.get('server_output_tokens', 0):,}")
-    
+
     logger.info(f"Finished input tokens: {total_metrics.get('finished_input_tokens', 0):,}")
     logger.info(f"Finished output tokens: {total_metrics.get('finished_output_tokens', 0):,}")
-    
+
+    logger.info(f"Completed pages: {total_metrics.get('completed_pages', 0):,}")
+    logger.info(f"Failed pages: {total_metrics.get('failed_pages', 0):,}")
+    logger.info(
+        f"Page Failure rate: {total_metrics.get('failed_pages', 0) / max(total_metrics.get('completed_pages', 0) + total_metrics.get('failed_pages', 0), 1) * 100:.2f}%"
+    )
+
     # Output rates
-    if 'server_input_tokens_per_sec' in rates:
+    if "server_input_tokens_per_sec" in rates:
         logger.info(f"Server Input tokens/sec rate: {rates['server_input_tokens_per_sec']:.2f}")
-    if 'server_output_tokens_per_sec' in rates:
+    if "server_output_tokens_per_sec" in rates:
         logger.info(f"Server Output tokens/sec rate: {rates['server_output_tokens_per_sec']:.2f}")
-    if 'finished_input_tokens' in rates:
+    if "finished_input_tokens" in rates:
         logger.info(f"Finished Input tokens/sec rate: {rates['finished_input_tokens']:.2f}")
-    if 'finished_output_tokens' in rates:
+    if "finished_output_tokens" in rates:
         logger.info(f"Finished Output tokens/sec rate: {rates['finished_output_tokens']:.2f}")
 
     logger.info("=" * 80)
