@@ -1183,10 +1183,14 @@ async def main():
     
     # Output rates
     if 'server_input_tokens_per_sec' in rates:
-        logger.info(f"Input tokens/sec rate: {rates['server_input_tokens_per_sec']:.2f}")
+        logger.info(f"Server Input tokens/sec rate: {rates['server_input_tokens_per_sec']:.2f}")
     if 'server_output_tokens_per_sec' in rates:
-        logger.info(f"Output tokens/sec rate: {rates['server_output_tokens_per_sec']:.2f}")
-    
+        logger.info(f"Server Output tokens/sec rate: {rates['server_output_tokens_per_sec']:.2f}")
+    if 'finished_input_tokens' in rates:
+        logger.info(f"Finished Input tokens/sec rate: {rates['finished_input_tokens']:.2f}")
+    if 'finished_output_tokens' in rates:
+        logger.info(f"Finished Output tokens/sec rate: {rates['finished_output_tokens']:.2f}")
+
     logger.info("=" * 80)
     logger.info("Work done")
 
