@@ -1202,11 +1202,21 @@ async def main():
     logger.info(f"Finished input tokens: {total_metrics.get('finished_input_tokens', 0):,}")
     logger.info(f"Finished output tokens: {total_metrics.get('finished_output_tokens', 0):,}")
 
+    logger.info(f"Completed pages: {total_metrics.get('completed_pages', 0):,}")
+    logger.info(f"Failed pages: {total_metrics.get('failed_pages', 0):,}")
+    logger.info(
+        f"Page Failure rate: {total_metrics.get('failed_pages', 0) / max(total_metrics.get('completed_pages', 0) + total_metrics.get('failed_pages', 0), 1) * 100:.2f}%"
+    )
+
     # Output rates
     if "server_input_tokens_per_sec" in rates:
-        logger.info(f"Input tokens/sec rate: {rates['server_input_tokens_per_sec']:.2f}")
+        logger.info(f"Server Input tokens/sec rate: {rates['server_input_tokens_per_sec']:.2f}")
     if "server_output_tokens_per_sec" in rates:
-        logger.info(f"Output tokens/sec rate: {rates['server_output_tokens_per_sec']:.2f}")
+        logger.info(f"Server Output tokens/sec rate: {rates['server_output_tokens_per_sec']:.2f}")
+    if "finished_input_tokens_per_sec" in rates:
+        logger.info(f"Finished Input tokens/sec rate: {rates['finished_input_tokens_per_sec']:.2f}")
+    if "finished_output_tokens_per_sec" in rates:
+        logger.info(f"Finished Output tokens/sec rate: {rates['finished_output_tokens_per_sec']:.2f}")
 
     logger.info("=" * 80)
     logger.info("Work done")

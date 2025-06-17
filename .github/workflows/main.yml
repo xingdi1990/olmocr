@@ -276,6 +276,8 @@ jobs:
         with:
           token: ${{ secrets.BEAKER_TOKEN }}
           version: latest
+      - name: Debug Docker images
+        run: docker images
 
       - name: Push to Beaker
         env:
