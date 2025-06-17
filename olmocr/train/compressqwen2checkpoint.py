@@ -1,4 +1,6 @@
 # pip install llmcompressor
+from llmcompressor import oneshot
+from llmcompressor.modifiers.quantization import QuantizationModifier
 
 from transformers import AutoTokenizer, Qwen2VLForConditionalGeneration
 
@@ -6,9 +8,6 @@ MODEL_ID = "/home/ubuntu/olmocr/olmOCR-7B-0225-preview"
 
 model = Qwen2VLForConditionalGeneration.from_pretrained(MODEL_ID, device_map="auto", torch_dtype="auto")
 tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
-
-from llmcompressor import oneshot
-from llmcompressor.modifiers.quantization import QuantizationModifier
 
 # Configure the simple PTQ quantization
 # recipe = QuantizationModifier(

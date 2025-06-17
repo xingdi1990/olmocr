@@ -32,7 +32,6 @@ from tqdm import tqdm
 
 from olmocr.check import (
     check_poppler_version,
-    check_sglang_version,
     check_torch_gpu_available,
 )
 from olmocr.data.renderpdf import render_pdf_to_base64png
