@@ -574,10 +574,13 @@ async def vllm_server_task(model_name_or_path, args, semaphore):
         "vllm",
         "serve",
         model_name_or_path,
-        "--port", str(BASE_SERVER_PORT),
+        "--port",
+        str(BASE_SERVER_PORT),
         "--disable-log-requests",
-        "--uvicorn-log-level", "warning",
-        "--served-model-name", "Qwen/Qwen2-VL-7B-Instruct",
+        "--uvicorn-log-level",
+        "warning",
+        "--served-model-name",
+        "Qwen/Qwen2-VL-7B-Instruct",
     ]
     cmd.extend(mem_fraction_arg)
 
@@ -615,11 +618,11 @@ async def vllm_server_task(model_name_or_path, args, semaphore):
             server_printed_ready_message = True
             last_semaphore_release = time.time()
 
-        match = re.search(r'Running: (\d+)', line)
+        match = re.search(r"Running: (\d+)", line)
         if match:
             last_running_req = int(match.group(1))
 
-        match = re.search(r'Waiting: (\d+)', line)
+        match = re.search(r"Waiting: (\d+)", line)
         if match:
             last_queue_req = int(match.group(1))
             logger.info(f"vllm running req: {last_running_req} queue req: {last_queue_req}")
@@ -675,7 +678,9 @@ async def vllm_server_host(model_name_or_path, args, semaphore):
     if retry >= MAX_RETRIES:
         logger.error(f"Ended up starting the vllm server more than {retry} times, cancelling pipeline")
         logger.error("")
-        logger.error("Please make sure vllm is installed according to the latest instructions here: https://docs.vllm.ai/en/stable/getting_started/installation/gpu.html")
+        logger.error(
+            "Please make sure vllm is installed according to the latest instructions here: https://docs.vllm.ai/en/stable/getting_started/installation/gpu.html"
+        )
         sys.exit(1)
 
 
@@ -1140,7 +1145,7 @@ async def main():
         return
 
     # If you get this far, then you are doing inference and need a GPU
-    #check_sglang_version()
+    # check_sglang_version()
     check_torch_gpu_available()
 
     logger.info(f"Starting pipeline with PID {os.getpid()}")
@@ -1180,30 +1185,30 @@ async def main():
 
     vllm_server.cancel()
     metrics_task.cancel()
-    
+
     # Output final metrics summary
     metrics_summary = metrics.get_metrics_summary()
     logger.info("=" * 80)
     logger.info("FINAL METRICS SUMMARY")
     logger.info("=" * 80)
     logger.info(f"Total elapsed time: {metrics_summary['elapsed_time_seconds']:.2f} seconds")
-    
+
     # Output token counts and rates
-    total_metrics = metrics_summary['total_metrics']
-    rates = metrics_summary['rates']
-    
+    total_metrics = metrics_summary["total_metrics"]
+    rates = metrics_summary["rates"]
+
     logger.info(f"Total Server Input tokens: {total_metrics.get('server_input_tokens', 0):,}")
     logger.info(f"Total Server Output tokens: {total_metrics.get('server_output_tokens', 0):,}")
-    
+
     logger.info(f"Finished input tokens: {total_metrics.get('finished_input_tokens', 0):,}")
     logger.info(f"Finished output tokens: {total_metrics.get('finished_output_tokens', 0):,}")
-    
+
     # Output rates
-    if 'server_input_tokens_per_sec' in rates:
+    if "server_input_tokens_per_sec" in rates:
         logger.info(f"Input tokens/sec rate: {rates['server_input_tokens_per_sec']:.2f}")
-    if 'server_output_tokens_per_sec' in rates:
+    if "server_output_tokens_per_sec" in rates:
         logger.info(f"Output tokens/sec rate: {rates['server_output_tokens_per_sec']:.2f}")
-    
+
     logger.info("=" * 80)
     logger.info("Work done")
 
