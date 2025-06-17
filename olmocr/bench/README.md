@@ -154,32 +154,37 @@ to run it against your own OCR tools. Your tool just needs to support Markdown o
       <td align="center">65.5 ± 1.2</td>
     </tr>
     <tr>
-      <td align="left">olmOCR v0.1.68 (No Anchor)</td>
-      <td align="center">72.1</td>
-      <td align="center">74.7</td>
-      <td align="center"><strong>71.5</strong></td>
-      <td align="center">43.7</td>
-      <td align="center">91.6</td>
-      <td align="center">78.5</td>
-      <td align="center">80.5</td>
-      <td align="center">98.1</td>
-      <td align="center">76.3 ± 1.1</td>
+      <td align="left">olmOCR v0.1.75 (No Anchor)</td>
+      <td align="center">71.5</td>
+      <td align="center">71.4</td>
+      <td align="center">71.4</td>
+      <td align="center">42.8</td>
+      <td align="center">94.1</td>
+      <td align="center">77.7</td>
+      <td align="center">71.0</td>
+      <td align="center">97.8</td>
+      <td align="center">74.7 ± 1.1</td>
     </tr>
     <tr>
-      <td align="left">olmOCR v0.1.68 (Anchored)</td>
-      <td align="center">75.6</td>
-      <td align="center">75.1</td>
-      <td align="center">70.2</td>
-      <td align="center"><strong>44.5</strong></td>
-      <td align="center">93.4</td>
-      <td align="center"><strong>79.4</strong></td>
-      <td align="center">81.7</td>
-      <td align="center">99.0</td>
-      <td align="center"><strong>77.4 ± 1.0</strong></td>
+      <td align="left">olmOCR v0.1.75 (Anchored)</td>
+      <td align="center">74.9</td>
+      <td align="center">71.2</td>
+      <td align="center">71.0</td>
+      <td align="center">42.2</td>
+      <td align="center">94.5</td>
+      <td align="center">78.3</td>
+      <td align="center">73.3</td>
+      <td align="center">98.3</td>
+      <td align="center"><strong>75.5 ± 1.0</strong></td>
     </tr>
   </tbody>
 </table>
 
+<sup><sub>There was a small drop in scores from olmOCR v0.1.68 (77.4), which is due to two factors. One, is that we have adjusted our benchmark code to not include
+any "fallback" mechanism when measuring benchmark scores (though it still exists when you run olmocr.pipeline). Second, there is a small drop in scores as we have updated
+from sglang 0.4.2 to vllm 0.9.1. In net, we think the upgrade to vllm is the right choice, given that sglang 0.4.6 had even lower scores by one point, and vllm comes with a 
+small performance boost, and great support for quantization.
+</sub></sup>
 
 ## Sourcing Documents and Tests
 
