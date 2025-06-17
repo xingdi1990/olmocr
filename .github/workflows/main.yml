@@ -265,6 +265,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
+          load: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
@@ -283,21 +284,11 @@ jobs:
         env:
           BEAKER_TOKEN: ${{ secrets.BEAKER_TOKEN }}
         run: |
-          # Get version
           VERSION=${{ steps.meta.outputs.version }}
-
-          # Get the image ID for the versioned tag
-          IMAGE_ID=$(docker images --format "{{.Repository}}:{{.Tag}} {{.ID}}" | grep "alleninstituteforai/olmocr:$VERSION" | awk '{print $2}')
-
-          if [ -z "$IMAGE_ID" ]; then
-            echo "ERROR: Could not find image ID for tag alleninstituteforai/olmocr:$VERSION"
-            exit 1
-          fi
-
-          # Push the Docker image to Beaker using the image ID
-          beaker image create "$IMAGE_ID" \
+          beaker image create \
             --name "olmocr-inference-$VERSION" \
-            --workspace ai2/olmocr
+            --workspace ai2/olmocr \
+            alleninstituteforai/olmocr:$VERSION
         
       - name: Clean up after build
         if: always()
