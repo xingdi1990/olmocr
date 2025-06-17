@@ -265,30 +265,31 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          load: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
           outputs: type=registry
           no-cache: true
 
-      - name: Setup Beaker CLI
-        uses: allenai/setup-beaker@v2
-        with:
-          token: ${{ secrets.BEAKER_TOKEN }}
-          version: latest
-      - name: Debug Docker images
-        run: docker images
+      # jakep: push to beaker can't work because of limitted disk space on these runners
+      # jakep: (you can try by setting load: true above, but you'll need a larger runner)
+      # - name: Setup Beaker CLI
+      #   uses: allenai/setup-beaker@v2
+      #   with:
+      #     token: ${{ secrets.BEAKER_TOKEN }}
+      #     version: latest
+      # - name: Debug Docker images
+      #   run: docker images
 
-      - name: Push to Beaker
-        env:
-          BEAKER_TOKEN: ${{ secrets.BEAKER_TOKEN }}
-        run: |
-          VERSION=${{ steps.meta.outputs.version }}
-          beaker image create \
-            --name "olmocr-inference-$VERSION" \
-            --workspace ai2/olmocr \
-            alleninstituteforai/olmocr:$VERSION
+      # - name: Push to Beaker
+      #   env:
+      #     BEAKER_TOKEN: ${{ secrets.BEAKER_TOKEN }}
+      #   run: |
+      #     VERSION=${{ steps.meta.outputs.version }}
+      #     beaker image create \
+      #       --name "olmocr-inference-$VERSION" \
+      #       --workspace ai2/olmocr \
+      #       alleninstituteforai/olmocr:$VERSION
         
       - name: Clean up after build
         if: always()

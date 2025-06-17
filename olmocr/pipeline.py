@@ -270,6 +270,7 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
                 local_image_rotation = page_response.rotation_correction
                 raise ValueError(f"invalid_page rotation for {pdf_orig_path}-{page_num}")
 
+            metrics.add_metrics(completed_pages=1)
             await tracker.track_work(worker_id, f"{pdf_orig_path}-{page_num}", "finished")
             return PageResult(
                 pdf_orig_path,
@@ -308,6 +309,7 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
             attempt += 1
 
     logger.error(f"Failed to process {pdf_orig_path}-{page_num} after {MAX_RETRIES} attempts.")
+    metrics.add_metrics(failed_pages=1)
     await tracker.track_work(worker_id, f"{pdf_orig_path}-{page_num}", "errored")
 
     return PageResult(
