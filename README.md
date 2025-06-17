@@ -86,16 +86,16 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
       <td align="center">72.0 ± 1.1</td>
     </tr>
     <tr>
-      <td align="left">Marker v1.7.4 (hybrid)</td>
-      <td align="center"><strong>77.7</strong></td>
-      <td align="center">71.2</td>
-      <td align="center"><strong>78.1</strong></td>
-      <td align="center">32.3</td>
-      <td align="center">83.4</td>
-      <td align="center">73.8</td>
-      <td align="center">79.0</td>
-      <td align="center">99.2</td>
-      <td align="center">74.3 ± 1.1</td>
+      <td align="left">Marker v1.7.5 (base)</td>
+      <td align="center">76.0</td>
+      <td align="center">57.9</td>
+      <td align="center">57.6</td>
+      <td align="center">27.8</td>
+      <td align="center">84.9</td>
+      <td align="center">72.9</td>
+      <td align="center">84.6</td>
+      <td align="center">99.1</td>
+      <td align="center">70.1 ± 1.1</td>
     </tr>
     <tr>
       <td align="left">olmOCR v0.1.68 (pipeline.py)</td>
@@ -136,7 +136,10 @@ conda activate olmocr
 pip install olmocr[bench]
 
 # For actually converting the files with your own GPU
-pip install olmocr[gpu] --find-links https://flashinfer.ai/whl/cu124/torch2.4/flashinfer/
+pip install olmocr.[gpu]  --extra-index-url https://download.pytorch.org/whl/cu128
+
+# Recommended: Install flash infer for faster inference on GPU
+pip install https://download.pytorch.org/whl/cu128/flashinfer/flashinfer_python-0.2.5%2Bcu128torch2.7-cp38-abi3-linux_x86_64.whl
 ```
 
 ### Local Usage Example
