@@ -996,7 +996,7 @@ async def main():
     parser.add_argument("--pages_per_group", type=int, default=500, help="Aiming for this many pdf pages per work item group")
     parser.add_argument("--max_page_retries", type=int, default=8, help="Max number of times we will retry rendering a page")
     parser.add_argument("--max_page_error_rate", type=float, default=0.004, help="Rate of allowable failed pages in a document, 1/250 by default")
-    parser.add_argument("--workers", type=int, default=8, help="Number of workers to run at a time")
+    parser.add_argument("--workers", type=int, default=20, help="Number of workers to run at a time")
     parser.add_argument("--apply_filter", action="store_true", help="Apply basic filtering to English pdfs which are not forms, and not likely seo spam")
     parser.add_argument("--stats", action="store_true", help="Instead of running any job, reports some statistics about the current workspace")
     parser.add_argument("--markdown", action="store_true", help="Also write natural text to markdown files preserving the folder structure of the input pdfs")
