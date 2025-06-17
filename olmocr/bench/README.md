@@ -14,6 +14,9 @@ olmOCR-bench operates on single page PDFs directly. We make this choice because 
 We have run the benchmark against some contemporary OCR pipelines, but it is really easy 
 to run it against your own OCR tools. Your tool just needs to support Markdown or plain text output.
 
+<div align="center">
+  <img src="https://github.com/allenai/olmocr/blob/main/scripts/pareto/ocr_pareto.png?raw=true" width=800/>
+</div>
 
 ## Results
 
@@ -46,7 +49,7 @@ to run it against your own OCR tools. Your tool just needs to support Markdown o
       <td align="center">48.3 ± 1.1</td>
     </tr>
     <tr>
-      <td align="left">Marker v1.7.5 (base)</td>
+      <td align="left">Marker v1.7.5 (base, force_ocr)</td>
       <td align="center">76.0</td>
       <td align="center">57.9</td>
       <td align="center">57.6</td>
