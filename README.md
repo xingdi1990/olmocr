@@ -49,18 +49,30 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
   <thead>
     <tr>
       <th align="left"><strong>Model</strong></th>
-      <th align="center">AR</th>
-      <th align="center">OSM</th>
-      <th align="center">TA</th>
-      <th align="center">OS</th>
-      <th align="center">HF</th>
-      <th align="center">MC</th>
-      <th align="center">LTT</th>
+      <th align="center">ArXiv</th>
+      <th align="center">Old Scans Math</th>
+      <th align="center">Tables</th>
+      <th align="center">Old Scans</th>
+      <th align="center">Headers and Footers</th>
+      <th align="center">Multi column</th>
+      <th align="center">Long tiny text</th>
       <th align="center">Base</th>
-      <th align="center">Overall Score</th>
+      <th align="center">Overall</th>
     </tr>
   </thead>
   <tbody>
+    <tr>
+      <td align="left">Marker v1.7.5 (base)</td>
+      <td align="center">76.0</td>
+      <td align="center">57.9</td>
+      <td align="center">57.6</td>
+      <td align="center">27.8</td>
+      <td align="center">84.9</td>
+      <td align="center">72.9</td>
+      <td align="center">84.6</td>
+      <td align="center">99.1</td>
+      <td align="center">70.1 ± 1.1</td>
+    </tr>
     <tr>
       <td align="left">MinerU v1.3.10</td>
       <td align="center">75.4</td>
@@ -75,42 +87,31 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
     </tr>
     <tr>
       <td align="left">Mistral OCR API</td>
-      <td align="center">77.2</td>
+      <td align="center"><strong>77.2</strong></td>
       <td align="center">67.5</td>
       <td align="center">60.6</td>
       <td align="center">29.3</td>
       <td align="center">93.6</td>
       <td align="center">71.3</td>
       <td align="center">77.1</td>
-      <td align="center">99.4</td>
+      <td align="center"><strong>99.4</strong></td>
       <td align="center">72.0 ± 1.1</td>
     </tr>
     <tr>
-      <td align="left">Marker v1.7.5 (base)</td>
-      <td align="center">76.0</td>
-      <td align="center">57.9</td>
-      <td align="center">57.6</td>
-      <td align="center">27.8</td>
-      <td align="center">84.9</td>
-      <td align="center">72.9</td>
-      <td align="center">84.6</td>
-      <td align="center">99.1</td>
-      <td align="center">70.1 ± 1.1</td>
-    </tr>
-    <tr>
-      <td align="left">olmOCR v0.1.68 (pipeline.py)</td>
-      <td align="center">75.6</td>
-      <td align="center">75.1</td>
-      <td align="center">70.2</td>
-      <td align="center"><strong>44.5</strong></td>
-      <td align="center">93.4</td>
-      <td align="center"><strong>79.4</strong></td>
-      <td align="center">81.7</td>
-      <td align="center">99.0</td>
-      <td align="center"><strong>77.4 ± 1.0</strong></td>
+      <td align="left">olmOCR v0.1.75 (Anchored)</td>
+      <td align="center">74.9</td>
+      <td align="center">71.2</td>
+      <td align="center">71.0</td>
+      <td align="center">42.2</td>
+      <td align="center">94.5</td>
+      <td align="center"><strong>78.3</strong></td>
+      <td align="center">73.3</td>
+      <td align="center">98.3</td>
+      <td align="center"><strong>75.5 ± 1.0</strong></td>
     </tr>
   </tbody>
 </table>
+
 
 ### Installation
 

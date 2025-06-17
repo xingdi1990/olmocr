@@ -121,7 +121,7 @@ to run it against your own OCR tools. Your tool just needs to support Markdown o
       <td align="left">Gemini Flash 2 (Anchored)</td>
       <td align="center">54.5</td>
       <td align="center">56.1</td>
-      <td align="center">72.1</td>
+      <td align="center"><strong>72.1</strong></td>
       <td align="center">34.2</td>
       <td align="center">64.7</td>
       <td align="center">61.5</td>
@@ -158,7 +158,7 @@ to run it against your own OCR tools. Your tool just needs to support Markdown o
       <td align="center">71.5</td>
       <td align="center">71.4</td>
       <td align="center">71.4</td>
-      <td align="center">42.8</td>
+      <td align="center"><strong>42.8</strong></td>
       <td align="center">94.1</td>
       <td align="center">77.7</td>
       <td align="center">71.0</td>
@@ -172,13 +172,14 @@ to run it against your own OCR tools. Your tool just needs to support Markdown o
       <td align="center">71.0</td>
       <td align="center">42.2</td>
       <td align="center">94.5</td>
-      <td align="center">78.3</td>
+      <td align="center"><strong>78.3</strong></td>
       <td align="center">73.3</td>
       <td align="center">98.3</td>
       <td align="center"><strong>75.5 ± 1.0</strong></td>
     </tr>
   </tbody>
 </table>
+
 
 <sup><sub>There was a small drop in scores from olmOCR v0.1.68 (77.4), which is due to two factors. One, is that we have adjusted our benchmark code to not include
 any "fallback" mechanism when measuring benchmark scores (though it still exists when you run olmocr.pipeline). Second, there is a small drop in scores as we have updated
