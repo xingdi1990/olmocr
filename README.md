@@ -35,6 +35,7 @@ Features:
  - (Based on a 7B parameter VLM, so it requires a GPU)
 
 ### News
+ - June 17, 2025 - v0.1.75 - Switch from sglang to vllm based inference pipeline, updated docker image to CUDA 12.8.
  - May 23, 2025 - v0.1.70 - Official docker support and images are now available! [See Docker usage](#using-docker)
  - May 19, 2025 - v0.1.68 - [olmOCR-Bench](https://github.com/allenai/olmocr/tree/main/olmocr/bench) launch, scoring 77.4. Launch includes 2 point performance boost in olmOCR pipeline due to bug fixes with prompts.
  - Mar 17, 2025 - v0.1.60 - Performance improvements due to better temperature selection in sampling.
