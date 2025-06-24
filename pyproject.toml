@@ -105,7 +105,6 @@ train = [
     "s3fs",
     "necessary",
     "einops",
-    "transformers>=4.45.1"
 ]
 
 elo = [

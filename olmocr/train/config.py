@@ -64,9 +64,20 @@ class TokenizerStepConfig(PipelineStepConfig):
 
 
 @dataclass
+class DatasetItemConfig:
+    """Configuration for a single dataset item."""
+    root_dir: str
+    pipeline: List[Dict[str, Any]] = field(default_factory=list)
+    
+    # Optional sampling
+    max_samples: Optional[int] = None
+    
+
+@dataclass 
 class DatasetConfig:
     """Configuration for dataset and data loading."""
-    root_dir: str
+    train: List[Dict[str, Any]] = field(default_factory=list)
+    eval: List[Dict[str, Any]] = field(default_factory=list)
     
     # DataLoader configuration
     batch_size: int = 1
@@ -76,32 +87,12 @@ class DatasetConfig:
     pin_memory: bool = True
     prefetch_factor: int = 2
     
-    # Pipeline steps configuration
-    pipeline_steps: List[Dict[str, Any]] = field(default_factory=lambda: [
-        {"name": "FrontMatterParser", "use_page_response_class": True},
-        {"name": "PDFRenderer", "target_longest_image_dim": 1024},
-        {"name": "StaticLengthDocumentAnchoring", "target_anchor_text_len": 6000},
-        {"name": "FinetuningPrompt"},
-        {"name": "FrontMatterOutputFormat"},
-        {"name": "InstructUserMessages"},
-        {"name": "Tokenizer", "masking_index": -100, "end_of_message_token": "<|im_end|>"}
-    ])
-    
-    # Optional dataset sampling
-    max_samples: Optional[int] = None
-    validation_split: float = 0.1
+    # Global seed
     seed: int = 42
-    
-    # Train/validation split
-    train_indices: Optional[List[int]] = None
-    val_indices: Optional[List[int]] = None
     
     # Caching
     cache_dir: Optional[str] = None
     use_cache: bool = False
-    
-    # Data augmentation (future extension)
-    augmentation: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -280,9 +271,14 @@ class Config:
     
     def validate(self) -> None:
         """Validate configuration values."""
-        # Dataset validation
-        if not os.path.exists(self.dataset.root_dir):
-            raise ValueError(f"Dataset root directory does not exist: {self.dataset.root_dir}")
+        # Dataset validation - check all train and eval datasets
+        for split_name, datasets in [("train", self.dataset.train), ("eval", self.dataset.eval)]:
+            for i, dataset_cfg in enumerate(datasets):
+                root_dir = dataset_cfg.get('root_dir')
+                if not root_dir:
+                    raise ValueError(f"Missing root_dir for {split_name} dataset {i}")
+                if not os.path.exists(root_dir):
+                    raise ValueError(f"Dataset root directory does not exist: {root_dir}")
         
         # Training validation
         if self.training.warmup_steps is not None and self.training.warmup_ratio > 0:
@@ -303,8 +299,16 @@ class Config:
             self.training.logging_dir = os.path.join(self.training.output_dir, "logs")
         Path(self.training.logging_dir).mkdir(parents=True, exist_ok=True)
     
-    def get_pipeline_steps(self, processor=None):
-        """Create actual pipeline step instances from configuration."""
+    def get_pipeline_steps(self, pipeline_config: List[Dict[str, Any]], processor=None):
+        """Create actual pipeline step instances from pipeline configuration.
+        
+        Args:
+            pipeline_config: List of pipeline step configurations
+            processor: The model processor (required for Tokenizer step)
+            
+        Returns:
+            List of initialized pipeline step instances
+        """
         from olmocr.train.dataloader import (
             FrontMatterParser,
             PDFRenderer,
@@ -317,14 +321,18 @@ class Config:
         from olmocr.prompts.prompts import PageResponse
         
         steps = []
-        for step_config in self.dataset.pipeline_steps:
+        for step_config in pipeline_config:
             if not step_config.get('enabled', True):
                 continue
                 
             step_name = step_config['name']
             
             if step_name == 'FrontMatterParser':
-                front_matter_class = PageResponse if step_config.get('use_page_response_class', True) else None
+                # Handle both old and new config format
+                if 'front_matter_class' in step_config:
+                    front_matter_class = PageResponse if step_config['front_matter_class'] == 'PageResponse' else None
+                else:
+                    front_matter_class = PageResponse if step_config.get('use_page_response_class', True) else None
                 steps.append(FrontMatterParser(front_matter_class=front_matter_class))
                 
             elif step_name == 'PDFRenderer':
@@ -365,7 +373,7 @@ def create_default_config() -> Config:
     """Create a default configuration."""
     return Config(
         model=ModelConfig(),
-        dataset=DatasetConfig(root_dir="/path/to/dataset"),
+        dataset=DatasetConfig(),
         training=TrainingConfig()
     )
 
