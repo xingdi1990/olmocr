@@ -85,6 +85,18 @@ to run it against your own OCR tools. Your tool just needs to support Markdown o
       <td align="center">72.0 ± 1.1</td>
     </tr>
     <tr>
+      <td align="left">Nanonets OCR</td>
+      <td align="center">67.0</td>
+      <td align="center">68.6</td>
+      <td align="center"><strong>77.7</strong></td>
+      <td align="center">39.5</td>
+      <td align="center">40.7</td>
+      <td align="center">69.9</td>
+      <td align="center">53.4</td>
+      <td align="center">99.3</td>
+      <td align="center">64.5 ± 1.1</td>
+    </tr>
+    <tr>
       <td align="left">GPT-4o (No Anchor)</td>
       <td align="center">51.5</td>
       <td align="center"><strong>75.5</strong></td>
