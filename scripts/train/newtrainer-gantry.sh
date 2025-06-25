@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 set -e
 
@@ -24,7 +24,7 @@ GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 echo "Git branch: $GIT_BRANCH"
 
 # Create full image tag
-IMAGE_TAG="olmocr-benchmark-${VERSION}-${GIT_HASH}"
+IMAGE_TAG="olmocr-train-${VERSION}-${GIT_HASH}"
 echo "Building Docker image with tag: $IMAGE_TAG"
 
 # Build the Docker image
@@ -47,7 +47,7 @@ gantry run \
     --allow-dirty \
     --host-networking \
     --workspace ai2/olmocr \
-    --beaker-image $IMAGE_TAG \
+    --beaker-image $BEAKER_USER/$IMAGE_TAG \
     --pip gantry-train-requirements.txt \
     --priority normal \
     --gpus 8 \
