@@ -50,7 +50,7 @@ gantry run \
     --beaker-image $BEAKER_USER/$IMAGE_TAG \
     --pip gantry-train-requirements.txt \
     --priority normal \
-    --gpus 8 \
+    --gpus 1 \
     --preemptible \
     --cluster "ai2/jupiter-cirrascale-2" \
     --budget ai2/oe-data \
