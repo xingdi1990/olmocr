@@ -84,7 +84,7 @@ class DatasetConfig:
 class ModelConfig:
     """Configuration for model."""
     name: str = "Qwen/Qwen2.5-VL-7B-Instruct"
-    trust_remote_code: bool = True
+    trust_remote_code: bool = False
     
     # Model initialization
     load_in_8bit: bool = False
@@ -108,9 +108,6 @@ class ModelConfig:
     lora_target_modules: List[str] = field(default_factory=lambda: ["q_proj", "v_proj", "k_proj", "o_proj"])
     lora_modules_to_save: Optional[List[str]] = None
     
-    # Processor configuration
-    processor_trust_remote_code: bool = True
-
 
 @dataclass
 class TrainingConfig:

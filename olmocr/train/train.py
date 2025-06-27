@@ -88,7 +88,6 @@ def main():
     logger.info(f"Loading processor: {config.model.name}")
     processor = AutoProcessor.from_pretrained(
         config.model.name,
-        trust_remote_code=config.model.processor_trust_remote_code
     )
     
     # Load model
