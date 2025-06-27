@@ -140,7 +140,6 @@ class TrainingConfig:
     learning_rate: float = 2e-5
     lr_scheduler_type: str = "cosine"
     warmup_ratio: float = 0.1
-    warmup_steps: Optional[int] = None
     
     # Optimization
     optim: str = "adamw_torch"
@@ -184,7 +183,7 @@ class TrainingConfig:
     hub_strategy: str = "every_save"
     
     # Resume from checkpoint
-    resume_from_checkpoint: Optional[Union[bool, str]] = None
+    resume_from_checkpoint: Optional[str] = None
     
     # DeepSpeed
     deepspeed: Optional[str] = None
@@ -281,9 +280,6 @@ class Config:
                     raise ValueError(f"Dataset root directory does not exist: {root_dir}")
         
         # Training validation
-        if self.training.warmup_steps is not None and self.training.warmup_ratio > 0:
-            raise ValueError("Cannot specify both warmup_steps and warmup_ratio")
-        
         if self.training.fp16 and self.training.bf16:
             raise ValueError("Cannot use both fp16 and bf16")
         
