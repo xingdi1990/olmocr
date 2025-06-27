@@ -60,6 +60,8 @@ gantry run \
     --env-secret AWS_ACCESS_KEY_ID=S2_AWS_ACCESS_KEY_ID \
     --env-secret AWS_SECRET_ACCESS_KEY=S2_AWS_SECRET_ACCESS_KEY \
     --env-secret WANDB_API_KEY=JAKE_WANDB_API_KEY \
+    --weka oe-data-default:/weka/oe-data-default \
+    --weka oe-training-default:/weka/oe-training-default \
     --shared-memory 10GiB \
     --yes \
     -- /bin/bash -c "source scripts/beaker/jupiter-ib.sh && python -m olmocr.train.train --config olmocr/train/configs/example_config.yaml"
