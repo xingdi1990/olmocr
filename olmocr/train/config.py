@@ -173,7 +173,7 @@ class TrainingConfig:
     logging_strategy: str = "steps"
     logging_steps: int = 10
     logging_first_step: bool = True
-    report_to: List[str] = field(default_factory=lambda: ["tensorboard"])
+    report_to: List[str] = field(default_factory=lambda: ["wandb"])
     
     # Other training settings
     seed: int = 42

@@ -136,21 +136,24 @@ def main():
     
     # Create evaluation datasets
     logger.info("Creating evaluation datasets...")
-    eval_datasets = []
+    eval_datasets = {}
     for i, dataset_cfg in enumerate(config.dataset.eval):
         root_dir = dataset_cfg['root_dir']
         pipeline_steps = config.get_pipeline_steps(dataset_cfg['pipeline'], processor)
         
-        logger.info(f"Creating evaluation dataset {i+1} from: {root_dir}")
+        # Use dataset name if provided, otherwise use root_dir as name
+        dataset_name = dataset_cfg.get('name', f"eval_dataset_{i+1}")
+        
+        logger.info(f"Creating evaluation dataset '{dataset_name}' from: {root_dir}")
         dataset = BaseMarkdownPDFDataset(root_dir, pipeline_steps)
         logger.info(f"Found {len(dataset)} samples")
         
         if len(dataset) > 0:
-            eval_datasets.append(dataset)
+            eval_datasets[dataset_name] = dataset
     
-    # Combine all evaluation datasets
-    eval_dataset = ConcatDataset(eval_datasets) if len(eval_datasets) > 1 else eval_datasets[0]
-    logger.info(f"Total evaluation samples: {len(eval_dataset)}")
+    # Log total evaluation samples across all datasets
+    total_eval_samples = sum(len(dataset) for dataset in eval_datasets.values())
+    logger.info(f"Total evaluation samples across {len(eval_datasets)} datasets: {total_eval_samples}")
     
     # Set up training arguments
     training_args = TrainingArguments(
@@ -194,6 +197,7 @@ def main():
         dataloader_drop_last=config.training.dataloader_drop_last,
         dataloader_num_workers=config.training.dataloader_num_workers,
         remove_unused_columns=config.training.remove_unused_columns,
+        eval_on_start=True,
         run_name=config.run_name,
     )
     
@@ -213,7 +217,7 @@ def main():
         model=model,
         args=training_args,
         train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
+        eval_dataset=eval_datasets,
         data_collator=create_data_collator(),
         callbacks=callbacks,
     )
