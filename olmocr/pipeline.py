@@ -23,7 +23,6 @@ from urllib.parse import urlparse
 
 import boto3
 import httpx
-import torch
 from botocore.exceptions import ClientError
 from huggingface_hub import snapshot_download
 from PIL import Image
