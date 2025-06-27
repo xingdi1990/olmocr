@@ -10,7 +10,7 @@ model:
   trust_remote_code: true
   torch_dtype: auto
   use_flash_attention: true
-  attn_implementation: flash_attention_2
+  attn_implementation: sdpa
   
   # LoRA settings (disabled by default)
   use_lora: false
