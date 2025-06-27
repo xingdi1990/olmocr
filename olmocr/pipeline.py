@@ -623,7 +623,7 @@ async def vllm_server_task(model_name_or_path, args, semaphore):
         if match:
             last_running_req = int(match.group(1))
 
-        match = re.search(r"Waiting: (\d+)", line)
+        match = re.search(r'(?:Waiting|Pending):\s*(\d+)', line)
         if match:
             last_queue_req = int(match.group(1))
             logger.info(f"vllm running req: {last_running_req} queue req: {last_queue_req}")
