@@ -32,13 +32,12 @@ from tqdm import tqdm
 
 from olmocr.check import (
     check_poppler_version,
-    check_sglang_version,
     check_torch_gpu_available,
 )
 from olmocr.data.renderpdf import render_pdf_to_base64png
 from olmocr.filter.filter import Language, PdfFilter
 from olmocr.image_utils import convert_image_to_pdf_bytes, is_jpeg, is_png
-from olmocr.metrics import MetricsKeeper, WorkerTracker, cpu_vs_wall
+from olmocr.metrics import MetricsKeeper, WorkerTracker
 from olmocr.prompts import PageResponse, build_finetuning_prompt
 from olmocr.prompts.anchor import get_anchor_text
 from olmocr.s3_utils import (
@@ -331,7 +330,7 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
 
 
 async def process_pdf(args, worker_id: int, pdf_orig_path: str):
-    with tempfile.NamedTemporaryFile("wb+", suffix=".pdf") as tf:
+    with tempfile.NamedTemporaryFile("wb+", suffix=".pdf", delete=False) as tf:
         try:
             data = await asyncio.to_thread(lambda: get_s3_bytes_with_backoff(pdf_s3, pdf_orig_path))
             tf.write(data)
@@ -349,6 +348,7 @@ async def process_pdf(args, worker_id: int, pdf_orig_path: str):
             tf.write(convert_image_to_pdf_bytes(tf.name))
             tf.flush()
 
+    try:
         try:
             reader = PdfReader(tf.name)
             num_pages = reader.get_num_pages()
@@ -400,6 +400,9 @@ async def process_pdf(args, worker_id: int, pdf_orig_path: str):
             # You can't build a dolma doc with even 1 failed page, so just get out of here
             # However, you don't want to propagate an exception higher up and cancel the entire work_group
             return None
+    finally:
+        if os.path.exists(tf.name):
+            os.unlink(tf.name)
 
 
 def build_dolma_document(pdf_orig_path, page_results):
@@ -705,19 +708,31 @@ async def vllm_server_ready():
     raise Exception("vllm server did not become ready after waiting.")
 
 
-async def download_model(model_name_or_path: str):
-    if model_name_or_path.startswith("s3://") or model_name_or_path.startswith("gs://") or model_name_or_path.startswith("weka://"):
-        logger.info(f"Downloading model directory from '{model_name_or_path}'")
-        model_cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "olmocr", "model")
-        download_directory([model_name_or_path], model_cache_dir)
-        return model_cache_dir
-    elif os.path.isabs(model_name_or_path) and os.path.isdir(model_name_or_path):
-        logger.info(f"Using local model path at '{model_name_or_path}'")
-        return model_name_or_path
-    else:
-        logger.info(f"Downloading model with hugging face '{model_name_or_path}'")
-        snapshot_download(repo_id=model_name_or_path)
-        return model_name_or_path
+async def download_model(model_name_or_path: str, max_retries: int = 5):
+    for retry in range(max_retries):
+        try:
+            if model_name_or_path.startswith("s3://") or model_name_or_path.startswith("gs://") or model_name_or_path.startswith("weka://"):
+                logger.info(f"Downloading model directory from '{model_name_or_path}'")
+                model_cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "olmocr", "model")
+                # Delete existing model cache directory if it exists
+                if os.path.exists(model_cache_dir):
+                    shutil.rmtree(model_cache_dir)
+                download_directory([model_name_or_path], model_cache_dir)
+                return model_cache_dir
+            elif os.path.isabs(model_name_or_path) and os.path.isdir(model_name_or_path):
+                logger.info(f"Using local model path at '{model_name_or_path}'")
+                return model_name_or_path
+            else:
+                logger.info(f"Downloading model with hugging face '{model_name_or_path}'")
+                snapshot_download(repo_id=model_name_or_path)
+                return model_name_or_path
+        except Exception:
+            if retry == max_retries - 1:
+                raise  # Raise on final attempt and fail the job
+
+            sleep_time = random.randrange(2, 20) * 2**retry
+            logger.exception(f"Could not download model, sleeping for {sleep_time} seconds to retry ({retry + 1}/{max_retries})")
+            await asyncio.sleep(random.randrange(10, 30) * 2**retry)
 
 
 async def metrics_reporter(work_queue):
@@ -906,6 +921,7 @@ def print_stats(args, root_work_queue):
             logger.warning(f"Error processing {s3_path}: {e}")
             return 0, 0, 0, 0, 0, set(), 0, 0
 
+    print(f"\nCompleted work items {completed_items:,} out of {total_items:,}: {completed_items/total_items*100:.2f}%")
     print("\nProcessing output files...")
     docs_total = 0
     input_tokens_total = 0
@@ -1033,8 +1049,8 @@ async def main():
 
         # Wait a little bit so that not all beaker jobs in a task start at the same time and download the model at the same time
         replica_count = int(os.environ.get("BEAKER_REPLICA_COUNT", "1"))
-        interval = 10 if (replica_count - 1) * 10 <= 240 else 240 / max(1, replica_count - 1)
-        sleep_time = int(int(os.environ.get("BEAKER_REPLICA_RANK", "0")) * interval)
+        interval = 10 if (replica_count - 1) * 10 <= 30 else 30 / max(1, replica_count - 1)
+        sleep_time = int(os.environ.get("BEAKER_REPLICA_RANK", "0")) * interval
         logger.info(f"Beaker job sleeping for {sleep_time} seconds to stagger model downloads")
         await asyncio.sleep(sleep_time)
 
@@ -1155,7 +1171,6 @@ async def main():
     await vllm_server_ready()
 
     metrics_task = asyncio.create_task(metrics_reporter(work_queue))
-    cpu_monitor_task = asyncio.create_task(cpu_vs_wall(10))
 
     # Create worker tasks to process the queue concurrently.
     worker_tasks = []
@@ -1171,7 +1186,6 @@ async def main():
 
     vllm_server.cancel()
     metrics_task.cancel()
-    cpu_monitor_task.cancel()
 
     # Output final metrics summary
     metrics_summary = metrics.get_metrics_summary()
@@ -1201,10 +1215,10 @@ async def main():
         logger.info(f"Server Input tokens/sec rate: {rates['server_input_tokens_per_sec']:.2f}")
     if "server_output_tokens_per_sec" in rates:
         logger.info(f"Server Output tokens/sec rate: {rates['server_output_tokens_per_sec']:.2f}")
-    if "finished_input_tokens" in rates:
-        logger.info(f"Finished Input tokens/sec rate: {rates['finished_input_tokens']:.2f}")
-    if "finished_output_tokens" in rates:
-        logger.info(f"Finished Output tokens/sec rate: {rates['finished_output_tokens']:.2f}")
+    if "finished_input_tokens_per_sec" in rates:
+        logger.info(f"Finished Input tokens/sec rate: {rates['finished_input_tokens_per_sec']:.2f}")
+    if "finished_output_tokens_per_sec" in rates:
+        logger.info(f"Finished Output tokens/sec rate: {rates['finished_output_tokens_per_sec']:.2f}")
 
     logger.info("=" * 80)
     logger.info("Work done")
