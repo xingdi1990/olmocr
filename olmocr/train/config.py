@@ -78,21 +78,6 @@ class DatasetConfig:
     """Configuration for dataset and data loading."""
     train: List[Dict[str, Any]] = field(default_factory=list)
     eval: List[Dict[str, Any]] = field(default_factory=list)
-    
-    # DataLoader configuration
-    batch_size: int = 1
-    num_workers: int = 4
-    shuffle: bool = True
-    drop_last: bool = True
-    pin_memory: bool = True
-    prefetch_factor: int = 2
-    
-    # Global seed
-    seed: int = 42
-    
-    # Caching
-    cache_dir: Optional[str] = None
-    use_cache: bool = False
 
 
 @dataclass
@@ -178,9 +163,6 @@ class TrainingConfig:
     # Other training settings
     seed: int = 42
     data_seed: Optional[int] = None
-    push_to_hub: bool = False
-    hub_model_id: Optional[str] = None
-    hub_strategy: str = "every_save"
     
     # Resume from checkpoint
     resume_from_checkpoint: Optional[str] = None
