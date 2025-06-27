@@ -1,3 +1,4 @@
+torchvision
 accelerate
 peft
 wandb
