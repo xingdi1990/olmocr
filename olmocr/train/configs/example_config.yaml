@@ -27,7 +27,7 @@ model:
 dataset:
 
   train:
-    - root_dir: /weka/oe-data-default/jakep/olmOCR-mix-0225/processed_00_documents_train_s2pdf/
+    - root_dir: /weka/oe-data-default/jakep/olmOCR-mix-0225/processed_01_books_train_iabooks/
       pipeline: &basic_pipeline
         - name: FrontMatterParser
           front_matter_class: PageResponse
@@ -41,8 +41,9 @@ dataset:
         - name: Tokenizer
           masking_index: -100
           end_of_message_token: "<|im_end|>"
-    - root_dir: /weka/oe-data-default/jakep/olmOCR-mix-0225/processed_01_books_train_iabooks/
-      pipeline: *basic_pipeline
+    # Not putting in big bulk of data to speed up loading for debugging for now
+    # - root_dir: /weka/oe-data-default/jakep/olmOCR-mix-0225/processed_00_documents_train_s2pdf/
+    #   pipeline: *basic_pipeline
 
   eval:
     - root_dir: /weka/oe-data-default/jakep/olmOCR-mix-0225/processed_00_documents_eval_s2pdf/
