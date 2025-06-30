@@ -7,9 +7,10 @@
 #SBATCH -t 02:00:00
 
 module reset
-module load PrgEnv-gnu
-module load olcf-container-tools
-module load apptainer-enable-mpi
+module load PrgEnv-gnu/8.6.0
+module load rocm/6.3
+module load craype-accel-amd-gfx90a
+module load miniforge3/23.11.0-0
 
 # Run in offline mode to make sure it doesn't timeout loading the model
 export TRANSFORMERS_OFFLINE=1
