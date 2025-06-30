@@ -178,9 +178,7 @@ def main():
         adam_epsilon=config.training.adam_epsilon,
         weight_decay=config.training.weight_decay,
         max_grad_norm=config.training.max_grad_norm,
-        fp16=config.training.fp16,
-        bf16=config.training.bf16,
-        tf32=config.training.tf32,
+        bf16=True, # We're sticking with this known good reduced precision option
         eval_strategy=config.training.evaluation_strategy,
         eval_steps=config.training.eval_steps,
         save_strategy=config.training.save_strategy,

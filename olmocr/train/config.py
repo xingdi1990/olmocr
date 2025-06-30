@@ -147,11 +147,6 @@ class TrainingConfig:
     gradient_checkpointing: bool = True
     gradient_checkpointing_kwargs: Dict[str, Any] = field(default_factory=lambda: {"use_reentrant": False})
 
-    # Mixed precision
-    fp16: bool = False
-    bf16: bool = True
-    tf32: bool = True  # Enable TF32 on Ampere GPUs
-
     # Evaluation and checkpointing
     evaluation_strategy: str = "steps"
     eval_steps: int = 500
