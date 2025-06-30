@@ -260,10 +260,6 @@ class Config:
                 if not os.path.exists(root_dir):
                     raise ValueError(f"Dataset root directory does not exist: {root_dir}")
 
-        # Training validation
-        if self.training.fp16 and self.training.bf16:
-            raise ValueError("Cannot use both fp16 and bf16")
-
         # Model validation
         if self.model.load_in_8bit and self.model.load_in_4bit:
             raise ValueError("Cannot load in both 8bit and 4bit")
