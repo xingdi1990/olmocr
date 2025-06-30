@@ -166,9 +166,9 @@ def main():
     full_output_dir = os.path.join(config.training.output_dir, config.run_name)
     logger.info(f"Setting output directory to: {full_output_dir}")
 
-    # Check for existing checkpoints if resume_from_checkpoint is not specified
-    resume_checkpoint = config.training.resume_from_checkpoint
-    if resume_checkpoint is None and os.path.exists(full_output_dir):
+    # Check for existing checkpoints if any
+    found_resumable_checkpoint = False
+    if os.path.exists(full_output_dir):
         # Look for checkpoint directories
         checkpoint_dirs = [d for d in os.listdir(full_output_dir) if d.startswith("checkpoint-") and os.path.isdir(os.path.join(full_output_dir, d))]
         if checkpoint_dirs:
@@ -176,7 +176,7 @@ def main():
             checkpoint_dirs.sort(key=lambda x: int(x.split("-")[1]))
             latest_checkpoint = os.path.join(full_output_dir, checkpoint_dirs[-1])
             logger.info(f"Found existing checkpoint: {latest_checkpoint}")
-            resume_checkpoint = latest_checkpoint
+            found_resumable_checkpoint = True
         else:
             logger.info("No existing checkpoints found in output directory")
 
@@ -213,7 +213,6 @@ def main():
         seed=config.training.seed,
         data_seed=config.training.data_seed,
         push_to_hub=False,
-        resume_from_checkpoint=resume_checkpoint,
         dataloader_drop_last=config.training.dataloader_drop_last,
         dataloader_num_workers=config.training.dataloader_num_workers,
         remove_unused_columns=config.training.remove_unused_columns,
@@ -243,7 +242,7 @@ def main():
 
     # Start training
     logger.info("Starting training...")
-    train_result = trainer.train(resume_from_checkpoint=resume_checkpoint)
+    train_result = trainer.train(resume_from_checkpoint=found_resumable_checkpoint)
 
     # Save the final model
     logger.info("Saving final model...")

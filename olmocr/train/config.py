@@ -168,9 +168,6 @@ class TrainingConfig:
     seed: int = 42
     data_seed: Optional[int] = None
 
-    # Resume from checkpoint
-    resume_from_checkpoint: Optional[str] = None
-
     # Performance
     dataloader_drop_last: bool = True
     dataloader_num_workers: int = 4
