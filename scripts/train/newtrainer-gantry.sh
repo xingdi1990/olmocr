@@ -64,4 +64,4 @@ gantry run \
     --weka oe-training-default:/weka/oe-training-default \
     --shared-memory 10GiB \
     --yes \
-    -- /bin/bash -c "pip install flash-attn==2.8.0.post2 --no-build-isolation && python -m olmocr.train.train --config olmocr/train/configs/example_config.yaml"
+    -- /bin/bash -c "pip install flash-attn==2.8.0.post2 --no-build-isolation && python -m olmocr.train.train --config olmocr/train/configs/qwen25_vl_b100_x1_default_image_1600.yaml"
