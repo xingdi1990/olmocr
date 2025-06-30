@@ -58,7 +58,7 @@ dataset:
 
 # Training configuration
 training:
-  output_dir: /weka/oe-data-default/jakep/olmocr-trainer/
+  output_dir: /lustre/orion/csc652/proj-shared/jakep/olmocr-trainer/
   num_train_epochs: 1
   
   # Batch size and accumulation
