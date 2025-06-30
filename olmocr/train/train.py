@@ -4,6 +4,7 @@ Simple script to test OlmOCR dataset loading with YAML configuration.
 
 import argparse
 import logging
+import os
 
 import numpy as np
 import torch
@@ -86,6 +87,11 @@ def main():
         logger.error(f"Configuration validation failed: {e}")
         return
 
+    # Set wandb project from config
+    if config.project_name:
+        os.environ["WANDB_PROJECT"] = config.project_name
+        logger.info(f"Setting WANDB_PROJECT to: {config.project_name}")
+    
     # Load processor for tokenization
     logger.info(f"Loading processor: {config.model.name}")
     processor = AutoProcessor.from_pretrained(
