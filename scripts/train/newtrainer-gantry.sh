@@ -63,4 +63,4 @@ gantry run \
     --weka oe-training-default:/weka/oe-training-default \
     --shared-memory 10GiB \
     --yes \
-    -- /bin/bash -c "pip install -r gantry-train-requirements.txt && pip install transformers==4.52.4 && pip install flash-attn==2.8.0.post2 --no-build-isolation && /usr/bin/python -m olmocr.train.train --config olmocr/train/configs/qwen25_vl_b100_x1_default.yaml"
+    -- /bin/bash -c "pip install -r gantry-train-requirements.txt && pip install transformers==4.52.4 && pip install flash-attn==2.8.0.post2 --no-build-isolation && python -m olmocr.train.train --config olmocr/train/configs/qwen25_vl_b100_x1_default.yaml"
