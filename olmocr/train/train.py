@@ -4,18 +4,18 @@ Simple script to test OlmOCR dataset loading with YAML configuration.
 
 import argparse
 import logging
-import numpy as np
 
-from transformers import (
-    AutoProcessor,
-    Qwen2VLForConditionalGeneration,
-    Qwen2_5_VLForConditionalGeneration,
-    Trainer,
-    TrainingArguments,
-    EarlyStoppingCallback
-)
+import numpy as np
 import torch
 from torch.utils.data import ConcatDataset
+from transformers import (
+    AutoProcessor,
+    EarlyStoppingCallback,
+    Qwen2_5_VLForConditionalGeneration,
+    Qwen2VLForConditionalGeneration,
+    Trainer,
+    TrainingArguments,
+)
 
 from olmocr.train.config import Config
 from olmocr.train.dataloader import BaseMarkdownPDFDataset
@@ -31,76 +31,67 @@ logger = logging.getLogger(__name__)
 
 class QwenDataCollator:
     """Data collator for vision-language models that handles numpy arrays."""
-    
+
     def __call__(self, examples):
         # Filter out None values and extract the fields we need
-        batch = {
-            'input_ids': [],
-            'attention_mask': [],
-            'labels': [],
-            'pixel_values': [],
-            'image_grid_thw': []
-        }
-        
+        batch = {"input_ids": [], "attention_mask": [], "labels": [], "pixel_values": [], "image_grid_thw": []}
+
         for example in examples:
             if example is not None:
                 # Convert numpy arrays to tensors
-                batch['input_ids'].append(torch.from_numpy(example['input_ids']) if isinstance(example['input_ids'], np.ndarray) else example['input_ids'])
-                batch['attention_mask'].append(torch.from_numpy(example['attention_mask']) if isinstance(example['attention_mask'], np.ndarray) else example['attention_mask'])
-                batch['labels'].append(torch.from_numpy(example['labels']) if isinstance(example['labels'], np.ndarray) else example['labels'])
-                
+                batch["input_ids"].append(torch.from_numpy(example["input_ids"]) if isinstance(example["input_ids"], np.ndarray) else example["input_ids"])
+                batch["attention_mask"].append(
+                    torch.from_numpy(example["attention_mask"]) if isinstance(example["attention_mask"], np.ndarray) else example["attention_mask"]
+                )
+                batch["labels"].append(torch.from_numpy(example["labels"]) if isinstance(example["labels"], np.ndarray) else example["labels"])
+
                 # Handle pixel_values which might be numpy array or already a tensor
-                pixel_values = example['pixel_values']
+                pixel_values = example["pixel_values"]
                 if isinstance(pixel_values, np.ndarray):
                     pixel_values = torch.from_numpy(pixel_values)
-                batch['pixel_values'].append(pixel_values)
-                
+                batch["pixel_values"].append(pixel_values)
+
                 # Handle image_grid_thw
-                image_grid_thw = example['image_grid_thw']
+                image_grid_thw = example["image_grid_thw"]
                 if isinstance(image_grid_thw, np.ndarray):
                     image_grid_thw = torch.from_numpy(image_grid_thw)
-                batch['image_grid_thw'].append(image_grid_thw)
-        
+                batch["image_grid_thw"].append(image_grid_thw)
+
         # Convert lists to tensors with proper padding
         # Note: For Qwen2-VL, we typically handle variable length sequences
         # The model's processor should handle the padding internally
         return {
-            'input_ids': torch.stack(batch['input_ids']),
-            'attention_mask': torch.stack(batch['attention_mask']),
-            'labels': torch.stack(batch['labels']),
-            'pixel_values': torch.stack(batch['pixel_values']),  # Stack into tensor
-            'image_grid_thw': torch.stack(batch['image_grid_thw'])
+            "input_ids": torch.stack(batch["input_ids"]),
+            "attention_mask": torch.stack(batch["attention_mask"]),
+            "labels": torch.stack(batch["labels"]),
+            "pixel_values": torch.stack(batch["pixel_values"]),  # Stack into tensor
+            "image_grid_thw": torch.stack(batch["image_grid_thw"]),
         }
 
 
 def main():
     parser = argparse.ArgumentParser(description="Train OlmOCR model")
-    parser.add_argument(
-        "--config",
-        type=str,
-        default="olmocr/train/configs/example_config.yaml",
-        help="Path to YAML configuration file"
-    )
-    
+    parser.add_argument("--config", type=str, default="olmocr/train/configs/example_config.yaml", help="Path to YAML configuration file")
+
     args = parser.parse_args()
-    
+
     # Load configuration
     logger.info(f"Loading configuration from: {args.config}")
     config = Config.from_yaml(args.config)
-    
+
     # Validate configuration
     try:
         config.validate()
     except ValueError as e:
         logger.error(f"Configuration validation failed: {e}")
         return
-    
+
     # Load processor for tokenization
     logger.info(f"Loading processor: {config.model.name}")
     processor = AutoProcessor.from_pretrained(
         config.model.name,
     )
-    
+
     # Load model
     logger.info(f"Loading model: {config.model.name}")
     if "Qwen2.5-VL" in config.model.name:
@@ -121,50 +112,50 @@ def main():
         )
     else:
         raise NotImplementedError()
-    
+
     # Enable gradient checkpointing if configured
     if config.training.gradient_checkpointing:
         model.gradient_checkpointing_enable(gradient_checkpointing_kwargs=config.training.gradient_checkpointing_kwargs)
-    
+
     # Create training datasets
     logger.info("Creating training datasets...")
     train_datasets = []
     for i, dataset_cfg in enumerate(config.dataset.train):
-        root_dir = dataset_cfg['root_dir']
-        pipeline_steps = config.get_pipeline_steps(dataset_cfg['pipeline'], processor)
-        
+        root_dir = dataset_cfg["root_dir"]
+        pipeline_steps = config.get_pipeline_steps(dataset_cfg["pipeline"], processor)
+
         logger.info(f"Creating training dataset {i+1} from: {root_dir}")
         dataset = BaseMarkdownPDFDataset(root_dir, pipeline_steps)
         logger.info(f"Found {len(dataset)} samples")
-        
+
         if len(dataset) > 0:
             train_datasets.append(dataset)
-    
+
     # Combine all training datasets
     train_dataset = ConcatDataset(train_datasets) if len(train_datasets) > 1 else train_datasets[0]
     logger.info(f"Total training samples: {len(train_dataset)}")
-    
+
     # Create evaluation datasets
     logger.info("Creating evaluation datasets...")
     eval_datasets = {}
     for i, dataset_cfg in enumerate(config.dataset.eval):
-        root_dir = dataset_cfg['root_dir']
-        pipeline_steps = config.get_pipeline_steps(dataset_cfg['pipeline'], processor)
-        
+        root_dir = dataset_cfg["root_dir"]
+        pipeline_steps = config.get_pipeline_steps(dataset_cfg["pipeline"], processor)
+
         # Use dataset name if provided, otherwise use root_dir as name
-        dataset_name = dataset_cfg.get('name', f"eval_dataset_{i+1}")
-        
+        dataset_name = dataset_cfg.get("name", f"eval_dataset_{i+1}")
+
         logger.info(f"Creating evaluation dataset '{dataset_name}' from: {root_dir}")
         dataset = BaseMarkdownPDFDataset(root_dir, pipeline_steps)
         logger.info(f"Found {len(dataset)} samples")
-        
+
         if len(dataset) > 0:
             eval_datasets[dataset_name] = dataset
-    
+
     # Log total evaluation samples across all datasets
     total_eval_samples = sum(len(dataset) for dataset in eval_datasets.values())
     logger.info(f"Total evaluation samples across {len(eval_datasets)} datasets: {total_eval_samples}")
-    
+
     # Set up training arguments
     training_args = TrainingArguments(
         output_dir=config.training.output_dir,
@@ -208,17 +199,16 @@ def main():
         eval_on_start=True,
         run_name=config.run_name,
     )
-    
+
     # Set up callbacks
     callbacks = []
     if config.training.use_early_stopping:
         callbacks.append(
             EarlyStoppingCallback(
-                early_stopping_patience=config.training.early_stopping_patience,
-                early_stopping_threshold=config.training.early_stopping_threshold
+                early_stopping_patience=config.training.early_stopping_patience, early_stopping_threshold=config.training.early_stopping_threshold
             )
         )
-    
+
     # Initialize trainer
     logger.info("Initializing trainer...")
     trainer = Trainer(
@@ -229,16 +219,16 @@ def main():
         data_collator=QwenDataCollator(),
         callbacks=callbacks,
     )
-    
+
     # Start training
     logger.info("Starting training...")
     train_result = trainer.train(resume_from_checkpoint=config.training.resume_from_checkpoint)
-    
+
     # Save the final model
     logger.info("Saving final model...")
     trainer.save_model()
     trainer.save_state()
-    
+
     # Log metrics
     logger.info(f"Training completed! Metrics: {train_result.metrics}")
 

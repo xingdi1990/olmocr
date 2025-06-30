@@ -71,7 +71,7 @@ class BaseMarkdownPDFDataset(Dataset):
 
                 # Verify the resolved path exists
                 if pdf_path.exists():
-                    # Validate PDF - check it loads and has exactly one page
+                    # Validate PDF - check it loads and has exactly one page and that you can get document-anchoring from it
                     try:
                         reader = PdfReader(str(pdf_path))
                         num_pages = len(reader.pages)
@@ -79,6 +79,9 @@ class BaseMarkdownPDFDataset(Dataset):
                         if num_pages != 1:
                             invalid_pdfs.append((pdf_path, f"Expected 1 page, found {num_pages}"))
                             continue
+
+                        # Test that document anchoring works
+                        get_anchor_text(pdf_path, page=1, pdf_engine="pdfreport", target_length=100)
 
                         self.samples.append({"markdown_path": md_path, "pdf_path": pdf_path})
                         valid_count += 1
