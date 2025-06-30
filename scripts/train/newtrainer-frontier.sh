@@ -29,4 +29,4 @@ source activate /lustre/orion/csc652/proj-shared/jakep/conda_env_312_olmocr_trai
 export TRANSFORMERS_OFFLINE=1
 export HF_DATASETS_OFFLINE=1
 
-python -m olmocr.train.train --config olmocr/train/configs/example_config.yam
+python -m olmocr.train.train --config olmocr/train/configs/example_config.yaml
