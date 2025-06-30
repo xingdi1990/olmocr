@@ -42,13 +42,12 @@ if ! beaker image create --workspace ai2/oe-data-pdf --name $IMAGE_TAG $IMAGE_TA
 fi
 
 gantry run \
-    --description "${run_name}"\
+    --description "OlmOCR Training Run"\
     --task-name "${run_name}"\
     --allow-dirty \
     --host-networking \
     --workspace ai2/olmocr \
     --beaker-image $BEAKER_USER/$IMAGE_TAG \
-    --pip gantry-train-requirements.txt \
     --priority normal \
     --gpus 1 \
     --preemptible \
@@ -64,4 +63,4 @@ gantry run \
     --weka oe-training-default:/weka/oe-training-default \
     --shared-memory 10GiB \
     --yes \
-    -- /bin/bash -c "pip install flash-attn==2.8.0.post2 --no-build-isolation && python -m olmocr.train.train --config olmocr/train/configs/qwen25_vl_b100_x1_default_image_1600.yaml"
+    -- /bin/bash -c "pip install -r gantry-train-requirements.txt && pip install transformers==4.52.4 && pip install flash-attn==2.8.0.post2 --no-build-isolation && /usr/bin/python -m olmocr.train.train --config olmocr/train/configs/qwen25_vl_b100_x1_default.yaml"
