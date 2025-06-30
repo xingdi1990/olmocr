@@ -52,7 +52,7 @@ gantry run \
     --priority normal \
     --gpus 1 \
     --preemptible \
-    --cluster "ai2/jupiter-cirrascale-2" \
+    --cluster "ai2/titan-cirrascale" \
     --budget ai2/oe-data \
     --env LOG_FILTER_TYPE=local_rank0_only \
     --env OMP_NUM_THREADS=8 \
@@ -64,4 +64,4 @@ gantry run \
     --weka oe-training-default:/weka/oe-training-default \
     --shared-memory 10GiB \
     --yes \
-    -- /bin/bash -c "source scripts/beaker/jupiter-ib.sh && python -m olmocr.train.train --config olmocr/train/configs/example_config.yaml"
+    -- /bin/bash -c "pip install flash-attn==2.8.0.post2 --no-build-isolation && python -m olmocr.train.train --config olmocr/train/configs/example_config.yaml"

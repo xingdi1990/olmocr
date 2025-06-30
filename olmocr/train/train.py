@@ -162,9 +162,13 @@ def main():
     total_eval_samples = sum(len(dataset) for dataset in eval_datasets.values())
     logger.info(f"Total evaluation samples across {len(eval_datasets)} datasets: {total_eval_samples}")
 
+    # Construct full output directory by appending run_name to base output_dir
+    full_output_dir = os.path.join(config.training.output_dir, config.run_name)
+    logger.info(f"Setting output directory to: {full_output_dir}")
+
     # Set up training arguments
     training_args = TrainingArguments(
-        output_dir=config.training.output_dir,
+        output_dir=full_output_dir,
         num_train_epochs=config.training.num_train_epochs,
         per_device_train_batch_size=config.training.per_device_train_batch_size,
         per_device_eval_batch_size=config.training.per_device_eval_batch_size,
