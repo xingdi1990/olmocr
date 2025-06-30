@@ -31,7 +31,10 @@ logger = logging.getLogger(__name__)
 
 
 class QwenDataCollator:
-    """Data collator for vision-language models that handles numpy arrays."""
+    """Data collator for vision-language models that handles numpy arrays and variable-length sequences."""
+
+    def __init__(self, pad_token_id=0):
+        self.pad_token_id = pad_token_id
 
     def __call__(self, examples):
         # Filter out None values and extract the fields we need
@@ -58,15 +61,43 @@ class QwenDataCollator:
                     image_grid_thw = torch.from_numpy(image_grid_thw)
                 batch["image_grid_thw"].append(image_grid_thw)
 
-        # Convert lists to tensors with proper padding
-        # Note: For Qwen2-VL, we typically handle variable length sequences
-        # The model's processor should handle the padding internally
+        # Find the maximum sequence length in the batch
+        max_length = max(ids.shape[0] for ids in batch["input_ids"])
+        
+        # Pad sequences to the maximum length
+        padded_input_ids = []
+        padded_attention_mask = []
+        padded_labels = []
+        
+        for i in range(len(batch["input_ids"])):
+            input_ids = batch["input_ids"][i]
+            attention_mask = batch["attention_mask"][i]
+            labels = batch["labels"][i]
+            
+            # Calculate padding needed
+            padding_length = max_length - input_ids.shape[0]
+            
+            if padding_length > 0:
+                # Pad input_ids with pad_token_id
+                input_ids = torch.cat([input_ids, torch.full((padding_length,), self.pad_token_id, dtype=input_ids.dtype)])
+                
+                # Pad attention_mask with zeros (indicating padded positions)
+                attention_mask = torch.cat([attention_mask, torch.zeros(padding_length, dtype=attention_mask.dtype)])
+                
+                # Pad labels with -100 (ignored in loss computation)
+                labels = torch.cat([labels, torch.full((padding_length,), -100, dtype=labels.dtype)])
+            
+            padded_input_ids.append(input_ids)
+            padded_attention_mask.append(attention_mask)
+            padded_labels.append(labels)
+
+        # Stack all sequences now that they have the same length
         return {
-            "input_ids": torch.stack(batch["input_ids"]),
-            "attention_mask": torch.stack(batch["attention_mask"]),
-            "labels": torch.stack(batch["labels"]),
-            "pixel_values": torch.stack(batch["pixel_values"]),  # Stack into tensor
-            "image_grid_thw": torch.stack(batch["image_grid_thw"]),
+            "input_ids": torch.stack(padded_input_ids),
+            "attention_mask": torch.stack(padded_attention_mask),
+            "labels": torch.stack(padded_labels),
+            "pixel_values": torch.stack(batch["pixel_values"]),  # Assuming these are already same size
+            "image_grid_thw": torch.stack(batch["image_grid_thw"]),  # Assuming these are already same size
         }
 
 
@@ -200,12 +231,13 @@ def main():
         data_seed=config.training.data_seed,
         push_to_hub=False,
         resume_from_checkpoint=config.training.resume_from_checkpoint,
-        deepspeed=config.training.deepspeed,
         dataloader_drop_last=config.training.dataloader_drop_last,
         dataloader_num_workers=config.training.dataloader_num_workers,
         remove_unused_columns=config.training.remove_unused_columns,
         eval_on_start=True,
         run_name=config.run_name,
+        torch_compile=True,
+        torch_compile_backend="inductor"
     )
 
     # Set up callbacks
@@ -224,7 +256,7 @@ def main():
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_datasets,
-        data_collator=QwenDataCollator(),
+        data_collator=QwenDataCollator(pad_token_id=processor.tokenizer.pad_token_id or 0),
         callbacks=callbacks,
     )
 

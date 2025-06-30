@@ -171,9 +171,6 @@ class TrainingConfig:
     # Resume from checkpoint
     resume_from_checkpoint: Optional[str] = None
 
-    # DeepSpeed
-    deepspeed: Optional[str] = None
-
     # Performance
     dataloader_drop_last: bool = True
     dataloader_num_workers: int = 4
