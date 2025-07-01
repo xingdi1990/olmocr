@@ -49,6 +49,20 @@ class FinetuningPromptConfig(PipelineStepConfig):
 
 
 @dataclass
+class NewYamlFinetuningPromptWithAnchoringConfig(PipelineStepConfig):
+    """Configuration for NewYamlFinetuningPromptWithAnchoring step."""
+
+    name: str = "NewYamlFinetuningPromptWithAnchoring"
+
+
+@dataclass
+class NewYamlFinetuningPromptWithNoAnchoringConfig(PipelineStepConfig):
+    """Configuration for NewYamlFinetuningPromptWithNoAnchoring step."""
+
+    name: str = "NewYamlFinetuningPromptWithNoAnchoring"
+
+
+@dataclass
 class FrontMatterOutputFormatConfig(PipelineStepConfig):
     """Configuration for FrontMatterOutputFormat step."""
 
@@ -282,6 +296,8 @@ class Config:
             FrontMatterOutputFormat,
             FrontMatterParser,
             InstructUserMessages,
+            NewYamlFinetuningPromptWithAnchoring,
+            NewYamlFinetuningPromptWithNoAnchoring,
             PDFRenderer,
             StaticLengthDocumentAnchoring,
             Tokenizer,
@@ -312,6 +328,12 @@ class Config:
 
             elif step_name == "FinetuningPrompt":
                 steps.append(FinetuningPrompt())
+
+            elif step_name == "NewYamlFinetuningPromptWithAnchoring":
+                steps.append(NewYamlFinetuningPromptWithAnchoring())
+
+            elif step_name == "NewYamlFinetuningPromptWithNoAnchoring":
+                steps.append(NewYamlFinetuningPromptWithNoAnchoring())
 
             elif step_name == "FrontMatterOutputFormat":
                 steps.append(FrontMatterOutputFormat())

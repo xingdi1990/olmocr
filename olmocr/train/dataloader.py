@@ -286,6 +286,33 @@ class FinetuningPrompt(PipelineStep):
     def __call__(self, sample: Sample) -> Sample:
         sample["instruction_prompt"] = build_finetuning_prompt(sample["anchor_text"])
         return sample
+    
+
+@dataclass(frozen=True, slots=True)
+class NewYamlFinetuningPromptWithAnchoring(PipelineStep):
+    """Applies the standard fine tuning prompt"""
+
+    def __call__(self, sample: Sample) -> Sample:
+        sample["instruction_prompt"] = (
+            f"Attached is one page of a document, as well as some raw textual content that was previously extracted for it. "
+            f"Just return the plain text representation of this document as if you were reading it naturally. Convert equations to LateX and tables to markdown.\n"
+            f"RAW_TEXT_START\n{sample['anchor_text']}\nRAW_TEXT_END\n"
+            f"Return your output as markdown, with a front matter section on top specifying values for the primary_language, is_rotation_valid, rotation_correction, is_table, and is_diagram parameters."
+        )
+        return sample
+
+
+@dataclass(frozen=True, slots=True)
+class NewYamlFinetuningPromptWithNoAnchoring(PipelineStep):
+    """Applies the standard fine tuning prompt"""
+
+    def __call__(self, sample: Sample) -> Sample:
+        sample["instruction_prompt"] = (
+            f"Attached is one page of a document that you must process. "
+            f"Just return the plain text representation of this document as if you were reading it naturally. Convert equations to LateX and tables to markdown.\n"
+            f"Return your output as markdown, with a front matter section on top specifying values for the primary_language, is_rotation_valid, rotation_correction, is_table, and is_diagram parameters."
+        )
+        return sample
 
 
 @dataclass(frozen=True, slots=True)

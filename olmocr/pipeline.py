@@ -238,7 +238,7 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
 
         # Enable guided decoding regex if needed
         if args.guided_decoding:
-            query["guided_regex"] = r"---\nprimary_language: .*\nis_rotation_valid: .*\nrotation_correction: .*\nis_table: .*\nis_diagram: .*\n---\n[\s\S]*"
+            query["guided_regex"] = r"---\nprimary_language: .{1,20}\nis_rotation_valid: (?:True|False|true|false)\nrotation_correction:(?:0|90|180|270)\nis_table: (?:True|False|true|false)\nis_diagram: (?:True|False|true|false)\n---\n[\s\S]*"
 
         logger.info(f"Built page query for {pdf_orig_path}-{page_num}")
 
