@@ -139,7 +139,7 @@ class TrainingConfig:
     """Configuration for training parameters."""
 
     output_dir: str = "./outputs"
-    num_train_epochs: int = 3
+    num_train_epochs: int = 1
     per_device_train_batch_size: int = 1
     per_device_eval_batch_size: int = 1
     gradient_accumulation_steps: int = 8
@@ -158,7 +158,7 @@ class TrainingConfig:
     max_grad_norm: float = 1.0
 
     # Gradient checkpointing
-    gradient_checkpointing: bool = True
+    gradient_checkpointing: bool = False
     gradient_checkpointing_kwargs: Dict[str, Any] = field(default_factory=lambda: {"use_reentrant": False})
 
     # Evaluation and checkpointing
@@ -178,9 +178,9 @@ class TrainingConfig:
     logging_first_step: bool = True
     report_to: List[str] = field(default_factory=lambda: ["wandb"])
 
-    # Other training settings
+    # Force seeds to a consistent value for reproducibility
     seed: int = 42
-    data_seed: Optional[int] = None
+    data_seed: Optional[int] = 42
 
     # Performance
     dataloader_drop_last: bool = True
