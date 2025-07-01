@@ -28,8 +28,9 @@ IMAGE_TAG="olmocr-train-${VERSION}-${GIT_HASH}"
 echo "Building Docker image with tag: $IMAGE_TAG"
 
 # Build the Docker image
-echo "Building Docker image..."
-docker build --platform linux/amd64 -f ./Dockerfile -t $IMAGE_TAG .
+# echo "Building Docker image..."
+# docker build --platform linux/amd64 -f ./Dockerfile -t $IMAGE_TAG .
+IMAGE_TAG=olmocr-train-0.1.76-9f0f912101
 
 # Get Beaker username
 BEAKER_USER=$(beaker account whoami --format json | jq -r '.[0].name')
@@ -41,26 +42,78 @@ if ! beaker image create --workspace ai2/oe-data-pdf --name $IMAGE_TAG $IMAGE_TA
     echo "Warning: Beaker image with tag $IMAGE_TAG already exists. Using existing image."
 fi
 
-gantry run \
-    --description "OlmOCR Training Run"\
-    --task-name "${run_name}"\
-    --allow-dirty \
-    --host-networking \
-    --workspace ai2/olmocr \
-    --beaker-image $BEAKER_USER/$IMAGE_TAG \
-    --priority normal \
-    --gpus 1 \
-    --preemptible \
-    --cluster "ai2/titan-cirrascale" \
-    --budget ai2/oe-data \
-    --env LOG_FILTER_TYPE=local_rank0_only \
-    --env OMP_NUM_THREADS=8 \
-    --env BEAKER_USER_ID=$(beaker account whoami --format json | jq '.[0].name' -cr) \
-    --env-secret AWS_ACCESS_KEY_ID=S2_AWS_ACCESS_KEY_ID \
-    --env-secret AWS_SECRET_ACCESS_KEY=S2_AWS_SECRET_ACCESS_KEY \
-    --env-secret WANDB_API_KEY=JAKE_WANDB_API_KEY \
-    --weka oe-data-default:/weka/oe-data-default \
-    --weka oe-training-default:/weka/oe-training-default \
-    --shared-memory 10GiB \
-    --yes \
-    -- /bin/bash -c "pip install -r gantry-train-requirements.txt && pip install transformers==4.52.4 && pip install flash-attn==2.8.0.post2 --no-build-isolation && python -m olmocr.train.train --config olmocr/train/configs/qwen25_vl_b100_x1_default.yaml"
+# Create Python script to run beaker experiment
+cat << 'EOF' > /tmp/run_training_experiment.py
+import sys
+from beaker import Beaker, ExperimentSpec, TaskSpec, TaskContext, ResultSpec, TaskResources, ImageSource, Priority, Constraints, EnvVar, DataMount
+
+# Get image tag, beaker user, git branch, and git hash from command line
+image_tag = sys.argv[1]
+beaker_user = sys.argv[2]
+git_branch = sys.argv[3]
+git_hash = sys.argv[4]
+
+# Initialize Beaker client
+b = Beaker.from_env(default_workspace="ai2/olmocr")
+
+# Build the training command
+commands = [
+    "pip install -r gantry-train-requirements.txt",
+    "pip install transformers==4.52.4",
+    "pip install flash-attn==2.8.0.post2 --no-build-isolation",
+    "python -m olmocr.train.train --config olmocr/train/configs/qwen25_vl_b100_x1_default.yaml"
+]
+
+# Build task spec
+task_spec = TaskSpec(
+    name="olmocr-training",
+    image=ImageSource(beaker=f"{beaker_user}/{image_tag}"),
+    command=[
+        "bash", "-c",
+        " && ".join(commands)
+    ],
+    context=TaskContext(
+        priority=Priority.normal,
+        preemptible=True,
+    ),
+    resources=TaskResources(
+        gpu_count=1,
+        shared_memory="10GiB"
+    ),
+    constraints=Constraints(cluster=["ai2/titan-cirrascale"]),
+    result=ResultSpec(path="/noop-results"),
+    env_vars=[
+        EnvVar(name="LOG_FILTER_TYPE", value="local_rank0_only"),
+        EnvVar(name="OMP_NUM_THREADS", value="8"),
+        EnvVar(name="BEAKER_USER_ID", value=beaker_user),
+        EnvVar(name="AWS_ACCESS_KEY_ID", secret="S2_AWS_ACCESS_KEY_ID"),
+        EnvVar(name="AWS_SECRET_ACCESS_KEY", secret="S2_AWS_SECRET_ACCESS_KEY"),
+        EnvVar(name="WANDB_API_KEY", secret="JAKE_WANDB_API_KEY")
+    ],
+    datasets=[
+        DataMount.new(mount_path="/weka/oe-data-default", weka="oe-data-default"),
+        DataMount.new(mount_path="/weka/oe-training-default", weka="oe-training-default"),
+    ]
+)
+
+# Create experiment spec
+experiment_spec = ExperimentSpec(
+    description=f"OlmOCR Training Run - Branch: {git_branch}, Commit: {git_hash}",
+    budget="ai2/oe-data",
+    tasks=[task_spec],
+)
+
+# Create the experiment
+experiment = b.experiment.create(spec=experiment_spec, workspace="ai2/olmocr")
+print(f"Created training experiment: {experiment.id}")
+print(f"View at: https://beaker.org/ex/{experiment.id}")
+EOF
+
+# Run the Python script to create the experiment
+echo "Creating Beaker experiment..."
+$PYTHON /tmp/run_training_experiment.py $IMAGE_TAG $BEAKER_USER $GIT_BRANCH $GIT_HASH
+
+# Clean up temporary file
+rm /tmp/run_training_experiment.py
+
+echo "Training experiment submitted successfully!"
