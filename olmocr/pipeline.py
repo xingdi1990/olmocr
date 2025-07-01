@@ -254,6 +254,11 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
                 local_anchor_text_len = max(1, local_anchor_text_len // 2)
                 logger.info(f"Reducing anchor text len to {local_anchor_text_len} for {pdf_orig_path}-{page_num}")
                 raise ValueError("Response exceeded model_max_context, cannot use this response")
+            
+            if base_response_data["choices"][0]["finish_reason"] != "stop":
+                local_anchor_text_len = max(1, local_anchor_text_len // 2)
+                logger.info(f"Reducing anchor text len to {local_anchor_text_len} for {pdf_orig_path}-{page_num}")
+                raise ValueError("Response did not finish with reason code 'stop', cannot use this response")
 
             metrics.add_metrics(
                 server_input_tokens=base_response_data["usage"].get("prompt_tokens", 0),
