@@ -18,6 +18,7 @@ from transformers import (
     TrainingArguments,
 )
 
+from typing import Optional
 from olmocr.train.config import Config
 from olmocr.train.dataloader import BaseMarkdownPDFDataset
 
@@ -33,6 +34,9 @@ logger = logging.getLogger(__name__)
 class QwenDataCollator:
     """Data collator for vision-language models that handles numpy arrays."""
 
+    def __init__(self, max_token_len: Optional[int] = None):
+        self.max_token_len = max_token_len
+
     def __call__(self, examples):
         # Filter out None values and extract the fields we need
         batch = {"input_ids": [], "attention_mask": [], "labels": [], "pixel_values": [], "image_grid_thw": []}
@@ -40,11 +44,19 @@ class QwenDataCollator:
         for example in examples:
             if example is not None:
                 # Convert numpy arrays to tensors
-                batch["input_ids"].append(torch.from_numpy(example["input_ids"]) if isinstance(example["input_ids"], np.ndarray) else example["input_ids"])
-                batch["attention_mask"].append(
-                    torch.from_numpy(example["attention_mask"]) if isinstance(example["attention_mask"], np.ndarray) else example["attention_mask"]
-                )
-                batch["labels"].append(torch.from_numpy(example["labels"]) if isinstance(example["labels"], np.ndarray) else example["labels"])
+                input_ids = torch.from_numpy(example["input_ids"]) if isinstance(example["input_ids"], np.ndarray) else example["input_ids"]
+                attention_mask = torch.from_numpy(example["attention_mask"]) if isinstance(example["attention_mask"], np.ndarray) else example["attention_mask"]
+                labels = torch.from_numpy(example["labels"]) if isinstance(example["labels"], np.ndarray) else example["labels"]
+                
+                # Trim to max_token_len if specified
+                if self.max_token_len is not None:
+                    input_ids = input_ids[:self.max_token_len]
+                    attention_mask = attention_mask[:self.max_token_len]
+                    labels = labels[:self.max_token_len]
+                
+                batch["input_ids"].append(input_ids)
+                batch["attention_mask"].append(attention_mask)
+                batch["labels"].append(labels)
 
                 # Handle pixel_values which might be numpy array or already a tensor
                 pixel_values = example["pixel_values"]
@@ -236,7 +248,7 @@ def main():
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_datasets,
-        data_collator=QwenDataCollator(),
+        data_collator=QwenDataCollator(max_token_len=config.training.collator_max_token_len),
         callbacks=callbacks,
     )
 

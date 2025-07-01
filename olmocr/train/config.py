@@ -185,6 +185,9 @@ class TrainingConfig:
     # Performance
     dataloader_drop_last: bool = True
     dataloader_num_workers: int = 4
+    
+    # Data collator settings
+    collator_max_token_len: Optional[int] = None
     remove_unused_columns: bool = False  # Important for custom datasets
 
     # Early stopping
