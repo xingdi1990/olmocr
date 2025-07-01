@@ -2,6 +2,30 @@
 
 set -e
 
+# Parse command line arguments
+CONFIG="olmocr/train/configs/qwen25_vl_b100_x1_default.yaml"
+SKIP_DOCKER_BUILD=false
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --config)
+            CONFIG="$2"
+            shift 2
+            ;;
+        --skip-docker-build)
+            SKIP_DOCKER_BUILD=true
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Usage: $0 [--config CONFIG_PATH] [--skip-docker-build]"
+            exit 1
+            ;;
+    esac
+done
+
+echo "Using config: $CONFIG"
+
 # Use conda environment Python if available, otherwise use system Python
 if [ -n "$CONDA_PREFIX" ]; then
     PYTHON="$CONDA_PREFIX/bin/python"
@@ -27,31 +51,35 @@ echo "Git branch: $GIT_BRANCH"
 IMAGE_TAG="olmocr-train-${VERSION}-${GIT_HASH}"
 echo "Building Docker image with tag: $IMAGE_TAG"
 
-# Build the Docker image
-# echo "Building Docker image..."
-# docker build --platform linux/amd64 -f ./Dockerfile -t $IMAGE_TAG .
-IMAGE_TAG=olmocr-train-0.1.76-9f0f912101
+# Build and push Docker image if not skipping
+if [ "$SKIP_DOCKER_BUILD" = false ]; then
+    echo "Building Docker image..."
+    docker build --platform linux/amd64 -f ./Dockerfile -t $IMAGE_TAG .
+    
+    # Push image to beaker
+    echo "Trying to push image to Beaker..."
+    if ! beaker image create --workspace ai2/oe-data-pdf --name $IMAGE_TAG $IMAGE_TAG 2>/dev/null; then
+        echo "Warning: Beaker image with tag $IMAGE_TAG already exists. Using existing image."
+    fi
+else
+    echo "Skipping Docker build as requested"
+fi
 
 # Get Beaker username
 BEAKER_USER=$(beaker account whoami --format json | jq -r '.[0].name')
 echo "Beaker user: $BEAKER_USER"
-
-# Push image to beaker
-echo "Trying to push image to Beaker..."
-if ! beaker image create --workspace ai2/oe-data-pdf --name $IMAGE_TAG $IMAGE_TAG 2>/dev/null; then
-    echo "Warning: Beaker image with tag $IMAGE_TAG already exists. Using existing image."
-fi
 
 # Create Python script to run beaker experiment
 cat << 'EOF' > /tmp/run_training_experiment.py
 import sys
 from beaker import Beaker, ExperimentSpec, TaskSpec, TaskContext, ResultSpec, TaskResources, ImageSource, Priority, Constraints, EnvVar, DataMount
 
-# Get image tag, beaker user, git branch, and git hash from command line
+# Get image tag, beaker user, git branch, git hash, and config from command line
 image_tag = sys.argv[1]
 beaker_user = sys.argv[2]
 git_branch = sys.argv[3]
 git_hash = sys.argv[4]
+config = sys.argv[5]
 
 # Initialize Beaker client
 b = Beaker.from_env(default_workspace="ai2/olmocr")
@@ -61,7 +89,7 @@ commands = [
     "pip install -r gantry-train-requirements.txt",
     "pip install transformers==4.52.4",
     "pip install flash-attn==2.8.0.post2 --no-build-isolation",
-    "python -m olmocr.train.train --config olmocr/train/configs/qwen25_vl_b100_x1_default.yaml"
+    f"python -m olmocr.train.train --config {config}"
 ]
 
 # Build task spec
@@ -111,7 +139,7 @@ EOF
 
 # Run the Python script to create the experiment
 echo "Creating Beaker experiment..."
-$PYTHON /tmp/run_training_experiment.py $IMAGE_TAG $BEAKER_USER $GIT_BRANCH $GIT_HASH
+$PYTHON /tmp/run_training_experiment.py $IMAGE_TAG $BEAKER_USER $GIT_BRANCH $GIT_HASH "$CONFIG"
 
 # Clean up temporary file
 rm /tmp/run_training_experiment.py
