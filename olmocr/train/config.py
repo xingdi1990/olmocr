@@ -70,6 +70,13 @@ class FrontMatterOutputFormatConfig(PipelineStepConfig):
 
 
 @dataclass
+class JSONOutputFormatConfig(PipelineStepConfig):
+    """Configuration for JSONOutputFormat step."""
+
+    name: str = "JSONOutputFormat"
+
+
+@dataclass
 class InstructUserMessagesConfig(PipelineStepConfig):
     """Configuration for InstructUserMessages step."""
 
@@ -301,6 +308,7 @@ class Config:
             InstructUserMessages,
             NewYamlFinetuningPromptWithAnchoring,
             NewYamlFinetuningPromptWithNoAnchoring,
+            JSONOutputFormat,
             PDFRenderer,
             StaticLengthDocumentAnchoring,
             Tokenizer,
@@ -337,6 +345,9 @@ class Config:
 
             elif step_name == "NewYamlFinetuningPromptWithNoAnchoring":
                 steps.append(NewYamlFinetuningPromptWithNoAnchoring())
+
+            elif step_name == "JSONOutputFormat":
+                steps.append(JSONOutputFormat())
 
             elif step_name == "FrontMatterOutputFormat":
                 steps.append(FrontMatterOutputFormat())

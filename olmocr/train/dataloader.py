@@ -7,6 +7,7 @@ from functools import reduce
 from io import BytesIO
 from os import PathLike
 from pathlib import Path
+import json
 from typing import Any, Callable, Dict, List, Optional, Type, TypeAlias, Tuple
 
 import numpy as np
@@ -337,6 +338,25 @@ is_diagram: {page_data.is_diagram}
 
         return sample
 
+
+@dataclass(frozen=True, slots=True)
+class JSONOutputFormat(PipelineStep):
+    """Takes the output and applies the standard yaml formatting to it"""
+
+    def __call__(self, sample: Sample) -> Sample:
+        page_data = sample["page_data"]
+        assert type(page_data) == PageResponse
+
+        sample["response"] = json.dumps({
+            "primary_language": page_data.primary_language,
+            "is_rotation_valid": page_data.is_rotation_valid,
+            "rotation_correction": page_data.rotation_correction,
+            "is_table": page_data.is_table,
+            "is_diagram": page_data.is_diagram,
+            "natural_text": page_data.natural_text
+        }, ensure_ascii=True)
+
+        return sample
 
 @dataclass(frozen=True, slots=True)
 class InstructUserMessages(PipelineStep):
