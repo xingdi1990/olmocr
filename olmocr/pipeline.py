@@ -236,6 +236,10 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
         # Change temperature as number of attempts increases to overcome repetition issues at expense of quality
         query["temperature"] = TEMPERATURE_BY_ATTEMPT[lookup_attempt]
 
+        # Enable guided decoding regex if needed
+        if args.guided_decoding:
+            query["guided_regex"] = r"---\nprimary_language: .*\nis_rotation_valid: .*\nrotation_correction: .*\nis_table: .*\nis_diagram: .*\n---\n[\s\S]*"
+
         logger.info(f"Built page query for {pdf_orig_path}-{page_num}")
 
         try:
@@ -1022,6 +1026,7 @@ async def main():
     parser.add_argument("--model_max_context", type=int, default="8192", help="Maximum context length that the model was fine tuned under")
     parser.add_argument("--target_longest_image_dim", type=int, help="Dimension on longest side to use for rendering the pdf pages", default=1024)
     parser.add_argument("--target_anchor_text_len", type=int, help="Maximum amount of anchor text to use (characters)", default=3000)
+    parser.add_argument("--guided_decoding", action="store_true", help="Enable guided decoding for model YAML type outputs")
 
     # Beaker/job running stuff
     parser.add_argument("--beaker", action="store_true", help="Submit this job to beaker instead of running locally")
