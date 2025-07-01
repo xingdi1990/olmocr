@@ -225,6 +225,7 @@ def main():
         seed=config.training.seed,
         data_seed=config.training.data_seed,
         push_to_hub=False,
+        label_names=["labels"],
         dataloader_drop_last=config.training.dataloader_drop_last,
         dataloader_num_workers=config.training.dataloader_num_workers,
         remove_unused_columns=config.training.remove_unused_columns,
