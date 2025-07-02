@@ -73,7 +73,7 @@ training:
   warmup_ratio: 0.1
   
   # Optimization
-  optim: adamw_torch_fused
+  optim: adamw_torch
   weight_decay: 0.01
   max_grad_norm: 1.0
   
