@@ -188,7 +188,7 @@ def main():
             checkpoint_dirs.sort(key=lambda x: int(x.split("-")[1]))
             latest_checkpoint = os.path.join(full_output_dir, checkpoint_dirs[-1])
             logger.info(f"Found existing checkpoint: {latest_checkpoint}")
-            found_resumable_checkpoint = True
+            found_resumable_checkpoint = latest_checkpoint
         else:
             logger.info("No existing checkpoints found in output directory")
 
