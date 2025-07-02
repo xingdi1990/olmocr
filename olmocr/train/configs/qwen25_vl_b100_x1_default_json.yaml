@@ -2,7 +2,7 @@
 
 # Project metadata
 project_name: olmocr-qwen-vl-training
-run_name: qwen2.5-vl-7b-finetune-default
+run_name: qwen2.5-vl-7b-finetune-default-json
 
 # Model configuration
 model:
