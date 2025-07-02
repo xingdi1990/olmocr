@@ -102,7 +102,7 @@ task_spec = TaskSpec(
     ],
     context=TaskContext(
         priority=Priority.normal,
-        preemptible=True,
+        preemptible=False,
     ),
     resources=TaskResources(
         gpu_count=1,
