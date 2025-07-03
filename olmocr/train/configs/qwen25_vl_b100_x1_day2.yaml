@@ -67,6 +67,8 @@ training:
 
   gradient_checkpointing: False
   
+  collator_max_token_len: 8192
+
   # Learning rate
   learning_rate: 2e-5
   lr_scheduler_type: cosine
