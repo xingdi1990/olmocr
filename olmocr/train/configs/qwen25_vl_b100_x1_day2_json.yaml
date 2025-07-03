@@ -43,16 +43,17 @@ dataset:
           masking_index: -100
           end_of_message_token: "<|im_end|>"
     - name: processed_00_documents_train_s2pdf
-      root_dir: /weka/oe-data-default/jakep/processed_00_documents_train_s2pdf/
+      root_dir: /weka/oe-data-default/jakep/olmOCR-mix-0225/processed_00_documents_train_s2pdf/
       pipeline: *basic_pipeline
 
   eval:
     - name: processed_00_documents_eval_s2pdf
-      root_dir: /weka/oe-data-default/jakep/processed_00_documents_eval_s2pdf/
+      root_dir: /weka/oe-data-default/jakep/olmOCR-mix-0225/processed_00_documents_eval_s2pdf/
       pipeline: *basic_pipeline
     - name: processed_01_books_eval_iabooks
-      root_dir: /weka/oe-data-default/jakep/processed_01_books_eval_iabooks/
+      root_dir: /weka/oe-data-default/jakep/olmOCR-mix-0225/processed_01_books_eval_iabooks/
       pipeline: *basic_pipeline
+
 
 
 # Training configuration
