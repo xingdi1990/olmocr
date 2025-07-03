@@ -480,24 +480,76 @@ if __name__ == "__main__":
     # Set up logging for testing
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
-    parser = argparse.ArgumentParser(description="Test MarkdownPDFDocumentDataset")
+    parser = argparse.ArgumentParser(description="Test MarkdownPDFDocumentDataset with YAML configuration")
     parser.add_argument(
-        "--root-dir",
+        "--config",
         type=str,
-        default="/home/ubuntu/olmOCR-mix-0225/processed_00_documents_eval_s2pdf/",
-        help="Root directory containing processed markdown and PDF files",
+        required=True,
+        help="Path to YAML configuration file",
+    )
+    parser.add_argument(
+        "--dataset-type",
+        type=str,
+        choices=["train", "eval"],
+        default="train",
+        help="Which dataset subset to display (train or eval)",
+    )
+    parser.add_argument(
+        "--dataset-index",
+        type=int,
+        default=0,
+        help="Index of dataset to use from the train/eval list",
+    )
+    parser.add_argument(
+        "--sample-index",
+        type=int,
+        default=0,
+        help="Index of sample to display in detail",
     )
 
     args = parser.parse_args()
+    
+    # Import config module
+    from olmocr.train.config import Config
 
-    # Quick test to ensure dataset loads
-    print(f"\n=== Testing dataset loading ===")
-    base_dataset = BaseMarkdownPDFDataset(args.root_dir)
-    print(f"Found {len(base_dataset)} markdown-PDF pairs")
-
-    # Test the convenience dataset class
-    print(f"\n=== Testing MarkdownPDFDocumentDataset (convenience class) ===")
-    dataset = MarkdownPDFDocumentDataset(args.root_dir, target_longest_image_dim=1024, front_matter_class=PageResponse, image_transform=None)
+    # Load configuration
+    print(f"\n=== Loading configuration from {args.config} ===")
+    config = Config.from_yaml(args.config)
+    
+    # Validate configuration
+    try:
+        config.validate()
+    except ValueError as e:
+        print(f"Configuration validation failed: {e}")
+        exit(1)
+    
+    # Load processor for tokenization
+    print(f"\nLoading processor: {config.model.name}")
+    from transformers import AutoProcessor
+    processor = AutoProcessor.from_pretrained(config.model.name)
+    
+    # Select dataset based on type
+    if args.dataset_type == "train":
+        dataset_configs = config.dataset.train
+        dataset_name = "train"
+    else:
+        dataset_configs = config.dataset.eval
+        dataset_name = "eval"
+    
+    if args.dataset_index >= len(dataset_configs):
+        print(f"Error: Dataset index {args.dataset_index} out of range. Only {len(dataset_configs)} {dataset_name} datasets available.")
+        exit(1)
+    
+    dataset_cfg = dataset_configs[args.dataset_index]
+    root_dir = dataset_cfg["root_dir"]
+    pipeline_steps = config.get_pipeline_steps(dataset_cfg["pipeline"], processor)
+    
+    print(f"\n=== Testing {dataset_name} dataset {args.dataset_index} ===")
+    print(f"Root directory: {root_dir}")
+    print(f"Pipeline steps: {[step.__class__.__name__ for step in pipeline_steps]}")
+    
+    # Create dataset
+    dataset = BaseMarkdownPDFDataset(root_dir, pipeline_steps)
 
     print(f"Dataset length: {len(dataset)}")
 
@@ -507,131 +559,211 @@ if __name__ == "__main__":
         for i in range(min(5, len(dataset))):
             sample = dataset.samples[i]
             print(f"  {i}: MD: {sample['markdown_path'].name}, PDF: {sample['pdf_path'].name}")
+        
+        # Check if sample index is valid
+        if args.sample_index >= len(dataset):
+            print(f"\nError: Sample index {args.sample_index} out of range. Only {len(dataset)} samples available.")
+            exit(1)
 
-        # Test __getitem__
-        print("\nTesting __getitem__ on first sample:")
-        first_sample = dataset[0]
-
-        # Pretty print the message structure
-        print("\n=== Message Structure ===")
-        # TODO
-
-        print("\n=== Sample Metadata ===")
-        print(f"PDF: {Path(first_sample['pdf_path']).name}")
-        print(f"Image size: {first_sample['image'].size}")
-        print(f"Page data: {first_sample['page_data']}")
-
-        # Test with actual Qwen2.5-VL tokenization
-        print("\n\n=== Testing with Qwen2.5-VL-7B-Instruct Tokenization ===")
-
-        try:
-            from transformers import AutoProcessor
-
-            print("Loading Qwen2.5-VL processor...")
-            processor = AutoProcessor.from_pretrained("Qwen/Qwen2.5-VL-7B-Instruct")
-
-            # Create pipeline with real tokenizer
-            tokenized_dataset = BaseMarkdownPDFDataset(
-                args.root_dir,
-                pipeline_steps=[
-                    FrontMatterParser(front_matter_class=PageResponse),
-                    PDFRenderer(target_longest_image_dim=512),
-                    StaticLengthDocumentAnchoring(target_anchor_text_len=1000),
-                    FinetuningPrompt(),
-                    FrontMatterOutputFormat(),
-                    InstructUserMessages(),
-                    Tokenizer(processor),
-                ],
-            )
-
-            if len(tokenized_dataset) > 0:
-                print("\nProcessing first sample with Qwen2.5-VL...")
-                tokenized_sample = tokenized_dataset[0]
-
-                print("\nTokenized output:")
-                print(f"  Keys: {list(tokenized_sample.keys())}")
-                print(f"  Input IDs shape: {tokenized_sample['input_ids'].shape}")
-                print(f"  Labels shape: {tokenized_sample['labels'].shape}")
-                print(f"  Attention mask shape: {tokenized_sample['attention_mask'].shape}")
-
-                if "pixel_values" in tokenized_sample:
-                    print(f"  Pixel values shape: {tokenized_sample['pixel_values'].shape}")
-                if "image_grid_thw" in tokenized_sample:
-                    print(f"  Image grid THW: {tokenized_sample['image_grid_thw']}")
-
-                # Show label masking
-                print(f"\nLabel masking analysis:")
-                labels = tokenized_sample["labels"]
-                masked_count = np.sum(labels == -100)
-                total_count = len(labels)
-                print(f"  Total tokens: {total_count}")
-                print(f"  Masked tokens: {masked_count} ({masked_count/total_count*100:.1f}%)")
-                print(f"  Unmasked tokens: {total_count - masked_count} ({(total_count - masked_count)/total_count*100:.1f}%)")
-
-                # Find the transition point
-                transition_idx = None
-                for i in range(len(labels) - 1):
-                    if labels[i] == -100 and labels[i + 1] != -100:
-                        transition_idx = i + 1
-                        break
-
-                if transition_idx:
-                    print(f"  Transition from masked to unmasked at position: {transition_idx}")
-
-                # Print all tokens
-                input_ids = tokenized_sample["input_ids"]
-                print(f"\nAll tokens ({len(input_ids)} total):")
-                print("Format: [index] Token (repr) | Label | Token ID")
+        # Get the requested sample
+        print(f"\n=== Displaying sample {args.sample_index} ===")
+        sample = dataset[args.sample_index]
+        
+        # Display sample information based on pipeline output
+        print("\nSample keys:", list(sample.keys()))
+        
+        # If it's raw data (no tokenization)
+        if 'markdown_path' in sample:
+            print(f"\nMarkdown file: {sample['markdown_path'].name}")
+        if 'pdf_path' in sample:
+            print(f"PDF file: {sample['pdf_path'].name}")
+        if 'image' in sample and hasattr(sample['image'], 'size'):
+            print(f"Image size: {sample['image'].size}")
+        if 'page_data' in sample:
+            print(f"\nPage data: {sample['page_data']}")
+        if 'messages' in sample:
+            print(f"\n=== Messages ===")
+            for i, msg in enumerate(sample['messages']):
+                print(f"\nMessage {i}:")
+                print(f"  Role: {msg['role']}")
+                print(f"  Content preview: {str(msg['content'])[:200]}...")
+        
+        # If it's tokenized data
+        if 'input_ids' in sample:
+            print(f"\n=== Tokenized Output ===")
+            print(f"  Keys: {list(sample.keys())}")
+            print(f"  Input IDs shape: {sample['input_ids'].shape}")
+            print(f"  Labels shape: {sample['labels'].shape}")
+            print(f"  Attention mask shape: {sample['attention_mask'].shape}")
+            
+            if "pixel_values" in sample:
+                print(f"  Pixel values shape: {sample['pixel_values'].shape}")
+            if "image_grid_thw" in sample:
+                print(f"  Image grid THW: {sample['image_grid_thw']}")
+            
+            # Show label masking
+            print(f"\nLabel masking analysis:")
+            labels = sample["labels"]
+            masked_count = np.sum(labels == -100)
+            total_count = len(labels)
+            print(f"  Total tokens: {total_count}")
+            print(f"  Masked tokens: {masked_count} ({masked_count/total_count*100:.1f}%)")
+            print(f"  Unmasked tokens: {total_count - masked_count} ({(total_count - masked_count)/total_count*100:.1f}%)")
+            
+            # Find the transition point
+            transition_idx = None
+            for i in range(len(labels) - 1):
+                if labels[i] == -100 and labels[i + 1] != -100:
+                    transition_idx = i + 1
+                    break
+            
+            if transition_idx:
+                print(f"  Transition from masked to unmasked at position: {transition_idx}")
+            
+            # Print all tokens
+            input_ids = sample["input_ids"]
+            print(f"\nAll tokens ({len(input_ids)} total):")
+            print("Format: [index] Token (repr) | Label | Token ID")
+            print("-" * 80)
+            
+            for i in range(len(input_ids)):
+                token = processor.tokenizer.decode([input_ids[i]])
+                token_repr = repr(token)
+                label = labels[i] if i < len(labels) else "N/A"
+                token_id = input_ids[i]
+                
+                # Mark special positions
+                marker = ""
+                if transition_idx and i == transition_idx:
+                    marker = " <-- TRANSITION (first unmasked)"
+                elif i == 0:
+                    marker = " <-- START"
+                elif label != -100 and i > 0 and labels[i - 1] == -100:
+                    marker = " <-- response begins"
+                
+                print(f"[{i:4d}] {token_repr:20s} | {str(label):6s} | {token_id:6d}{marker}")
+            
+            # Calculate and show token statistics after the table
+            print(f"\nToken statistics:")
+            
+            # Count consecutive high-value tokens that represent the image
+            # Qwen uses tokens like 151859, 151860, etc. for image patches
+            image_token_threshold = 151000  # Typical threshold for Qwen image tokens
+            image_token_count = np.sum(input_ids > image_token_threshold)
+            
+            # Calculate prompt tokens (everything masked)
+            prompt_token_count = masked_count
+            
+            # Calculate output tokens (everything not masked)
+            output_token_count = total_count - masked_count
+            
+            # Calculate non-image prompt tokens
+            non_image_prompt_tokens = prompt_token_count - image_token_count
+            
+            print(f"  Image tokens: {image_token_count}")
+            print(f"  Prompt tokens (total): {prompt_token_count}")
+            print(f"  Prompt tokens (non-image): {non_image_prompt_tokens}")
+            print(f"  Output tokens: {output_token_count}")
+            print(f"  Total sequence length: {total_count}")
+        
+        # Analyze token length distribution across entire dataset
+        if 'input_ids' in sample:
+            print(f"\n\n=== Analyzing token length distribution across entire dataset ===")
+            print(f"Processing {len(dataset)} samples...")
+            
+            # Function to process a single sample
+            def process_sample(idx):
+                try:
+                    current_sample = dataset[idx]
+                    if 'labels' in current_sample:
+                        # Count total sequence length (all tokens, prompt + completion)
+                        labels = current_sample['labels']
+                        total_length = len(labels)
+                        return (idx, total_length, None)
+                    return (idx, None, "No labels in sample")
+                except Exception as e:
+                    return (idx, None, str(e))
+            
+            # Process samples in parallel with progress bar
+            sequence_lengths = []
+            max_sequence_length = 0
+            max_sequence_sample_idx = 0
+            errors = []
+            
+            # Determine number of workers (use fewer workers to avoid memory issues)
+            import multiprocessing
+            num_workers = min(multiprocessing.cpu_count() // 2, 8)
+            
+            with ProcessPoolExecutor(max_workers=num_workers) as executor:
+                # Submit all tasks
+                futures = {executor.submit(process_sample, idx): idx for idx in range(len(dataset))}
+                
+                # Process results with progress bar
+                with tqdm(total=len(dataset), desc="Analyzing samples") as pbar:
+                    for future in as_completed(futures):
+                        idx = futures[future]
+                        try:
+                            idx, sequence_length, error = future.result()
+                            if error:
+                                errors.append((idx, error))
+                            elif sequence_length is not None:
+                                sequence_lengths.append(sequence_length)
+                                if sequence_length > max_sequence_length:
+                                    max_sequence_length = sequence_length
+                                    max_sequence_sample_idx = idx
+                        except Exception as e:
+                            errors.append((idx, f"Future error: {e}"))
+                        pbar.update(1)
+            
+            if errors:
+                print(f"\nEncountered {len(errors)} errors during processing")
+                if len(errors) <= 5:
+                    for idx, error in errors:
+                        print(f"  Sample {idx}: {error}")
+            
+            if sequence_lengths:
+                sequence_lengths = np.array(sequence_lengths)
+                
+                print(f"\nTotal sequence length statistics (prompt + completion):")
+                print(f"  Total samples analyzed: {len(sequence_lengths)}")
+                print(f"  Max sequence length: {max_sequence_length} tokens (sample index: {max_sequence_sample_idx})")
+                print(f"  Min sequence length: {np.min(sequence_lengths)} tokens")
+                print(f"  Mean sequence length: {np.mean(sequence_lengths):.1f} tokens")
+                print(f"  Median sequence length: {np.median(sequence_lengths):.1f} tokens")
+                print(f"  Std dev: {np.std(sequence_lengths):.1f} tokens")
+                
+                # Create histogram with 100-token buckets
+                print(f"\nSequence length histogram (100-token buckets):")
+                
+                # Define buckets
+                bucket_size = 100
+                max_bucket = ((max_sequence_length // bucket_size) + 1) * bucket_size
+                buckets = list(range(0, max_bucket + bucket_size, bucket_size))
+                
+                # Count samples in each bucket
+                hist, _ = np.histogram(sequence_lengths, bins=buckets)
+                
+                # Find max count for scaling
+                max_count = max(hist)
+                bar_width = 50  # Width of histogram bars
+                
+                print(f"\n{'Range':>15} | {'Count':>6} | Distribution")
                 print("-" * 80)
-
-                for i in range(len(input_ids)):
-                    token = processor.tokenizer.decode([input_ids[i]])
-                    token_repr = repr(token)
-                    label = labels[i] if i < len(labels) else "N/A"
-                    token_id = input_ids[i]
-
-                    # Mark special positions
-                    marker = ""
-                    if transition_idx and i == transition_idx:
-                        marker = " <-- TRANSITION (first unmasked)"
-                    elif i == 0:
-                        marker = " <-- START"
-                    elif label != -100 and i > 0 and labels[i - 1] == -100:
-                        marker = " <-- response begins"
-
-                    print(f"[{i:4d}] {token_repr:20s} | {str(label):6s} | {token_id:6d}{marker}")
-
-                # Calculate and show token statistics after the table
-                print(f"\nToken statistics:")
-
-                # Count consecutive high-value tokens that represent the image
-                # Qwen uses tokens like 151859, 151860, etc. for image patches
-                image_token_threshold = 151000  # Typical threshold for Qwen image tokens
-                image_token_count = np.sum(input_ids > image_token_threshold)
-
-                # Calculate prompt tokens (everything masked)
-                prompt_token_count = masked_count
-
-                # Calculate output tokens (everything not masked)
-                output_token_count = total_count - masked_count
-
-                # Calculate non-image prompt tokens
-                non_image_prompt_tokens = prompt_token_count - image_token_count
-
-                print(f"  Image tokens: {image_token_count}")
-                print(f"  Prompt tokens (total): {prompt_token_count}")
-                print(f"  Prompt tokens (non-image): {non_image_prompt_tokens}")
-                print(f"  Output tokens: {output_token_count}")
-                print(f"  Total sequence length: {total_count}")
-
-        except ImportError as e:
-            print(f"\nCould not import transformers: {e}")
-            print("Install with: pip install transformers")
-        except Exception as e:
-            print(f"\nError during tokenization test: {e}")
-            import traceback
-
-            traceback.print_exc()
+                
+                for i in range(len(hist)):
+                    start = buckets[i]
+                    end = buckets[i + 1] - 1
+                    count = hist[i]
+                    
+                    # Create bar
+                    if max_count > 0:
+                        bar_length = int((count / max_count) * bar_width)
+                        bar = "█" * bar_length
+                    else:
+                        bar = ""
+                    
+                    range_str = f"{start:>5}-{end:>5}"
+                    print(f"{range_str:>15} | {count:>6} | {bar}")
 
     else:
         raise AssertionError("Expected some data to be created at this point")
