@@ -2,7 +2,7 @@
 
 # Project metadata
 project_name: olmocr-qwen-vl-training
-run_name: qwen2.5-vl-7b-finetune-day2-json
+run_name: qwen2.5-vl-7b-finetune-day2-1280
 
 # Model configuration
 model:
@@ -33,7 +33,7 @@ dataset:
         - name: FrontMatterParser
           front_matter_class: PageResponse
         - name: PDFRenderer
-          target_longest_image_dim: 1024
+          target_longest_image_dim: 1280
         - name: StaticLengthDocumentAnchoring
           target_anchor_text_len: 3000
         - name: FinetuningPrompt
