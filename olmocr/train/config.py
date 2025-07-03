@@ -191,7 +191,7 @@ class TrainingConfig:
 
     # Performance
     dataloader_drop_last: bool = True
-    dataloader_num_workers: int = 4
+    dataloader_num_workers: int = 16
     
     # Data collator settings
     collator_max_token_len: Optional[int] = None
