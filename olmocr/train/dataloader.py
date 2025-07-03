@@ -354,7 +354,7 @@ class JSONOutputFormat(PipelineStep):
             "is_table": page_data.is_table,
             "is_diagram": page_data.is_diagram,
             "natural_text": page_data.natural_text
-        }, ensure_ascii=True)
+        }, ensure_ascii=False)
 
         return sample
 
