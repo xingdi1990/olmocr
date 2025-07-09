@@ -2,7 +2,7 @@
 
 # Project metadata
 project_name: olmocr-qwen-vl-training
-run_name: qwen2.5-vl-7b-finetune-day2-1280-noanchor
+run_name: qwen2.5-vl-7b-finetune-day3-1280-noanchor
 
 # Model configuration
 model:
@@ -58,7 +58,7 @@ dataset:
 
 # Training configuration
 training:
-  output_dir: /home/ubuntu/olmocr-trainer/
+  output_dir: /weka/oe-data-default/jakep/olmocr-trainer/
   num_train_epochs: 1
   
   # Batch size and accumulation
@@ -72,7 +72,7 @@ training:
   
   # Learning rate
   learning_rate: 2e-5
-  lr_scheduler_type: cosine
+  lr_scheduler_type: linear
   warmup_ratio: 0.1
   
   # Optimization

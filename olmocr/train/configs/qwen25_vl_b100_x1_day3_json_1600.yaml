@@ -2,7 +2,7 @@
 
 # Project metadata
 project_name: olmocr-qwen-vl-training
-run_name: qwen2.5-vl-7b-finetune-day2-json
+run_name: qwen2.5-vl-7b-finetune-day3-1600
 
 # Model configuration
 model:
@@ -33,7 +33,7 @@ dataset:
         - name: FrontMatterParser
           front_matter_class: PageResponse
         - name: PDFRenderer
-          target_longest_image_dim: 1024
+          target_longest_image_dim: 1600
         - name: StaticLengthDocumentAnchoring
           target_anchor_text_len: 3000
         - name: FinetuningPrompt
@@ -58,7 +58,7 @@ dataset:
 
 # Training configuration
 training:
-  output_dir: /home/ubuntu/olmocr-trainer/
+  output_dir: /weka/oe-data-default/jakep/olmocr-trainer/
   num_train_epochs: 1
   
   # Batch size and accumulation
@@ -72,7 +72,7 @@ training:
   
   # Learning rate
   learning_rate: 2e-5
-  lr_scheduler_type: cosine
+  lr_scheduler_type: linear
   warmup_ratio: 0.1
   
   # Optimization
