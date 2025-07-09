@@ -23,7 +23,6 @@ from urllib.parse import urlparse
 
 import boto3
 import httpx
-import torch
 from botocore.exceptions import ClientError
 from huggingface_hub import snapshot_download
 from PIL import Image
@@ -236,10 +235,6 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
         # Change temperature as number of attempts increases to overcome repetition issues at expense of quality
         query["temperature"] = TEMPERATURE_BY_ATTEMPT[lookup_attempt]
 
-        # Enable guided decoding regex if needed
-        if args.guided_decoding:
-            query["guided_regex"] = r"---\nprimary_language: (?:[a-z]{2}|null)\nis_rotation_valid: (?:True|False|true|false)\nrotation_correction: (?:0|90|180|270)\nis_table: (?:True|False|true|false)\nis_diagram: (?:True|False|true|false)\n---\n[\s\S]*"
-
         logger.info(f"Built page query for {pdf_orig_path}-{page_num}")
 
         try:
@@ -258,24 +253,14 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
                 local_anchor_text_len = max(1, local_anchor_text_len // 2)
                 logger.info(f"Reducing anchor text len to {local_anchor_text_len} for {pdf_orig_path}-{page_num}")
                 raise ValueError("Response exceeded model_max_context, cannot use this response")
-            
-            if base_response_data["choices"][0]["finish_reason"] != "stop":
-                local_anchor_text_len = max(1, local_anchor_text_len // 2)
-                logger.info(f"Reducing anchor text len to {local_anchor_text_len} for {pdf_orig_path}-{page_num}")
-                raise ValueError("Response did not finish with reason code 'stop', cannot use this response")
 
             metrics.add_metrics(
                 server_input_tokens=base_response_data["usage"].get("prompt_tokens", 0),
                 server_output_tokens=base_response_data["usage"].get("completion_tokens", 0),
             )
 
-            model_response_markdown = base_response_data["choices"][0]["message"]["content"]
-
-            # Somewhat temporary code, will need to refactor
-            from olmocr.train.dataloader import FrontMatterParser
-            parser = FrontMatterParser(front_matter_class=PageResponse)
-            front_matter, text = parser._extract_front_matter_and_text(model_response_markdown)
-            page_response = parser._parse_front_matter(front_matter, text)
+            model_response_json = json.loads(base_response_data["choices"][0]["message"]["content"])
+            page_response = PageResponse(**model_response_json)
 
             if not page_response.is_rotation_valid and attempt < MAX_RETRIES - 1:
                 logger.info(
@@ -581,10 +566,6 @@ async def worker(args, work_queue: WorkQueue, semaphore, worker_id):
 
 
 async def vllm_server_task(model_name_or_path, args, semaphore):
-    # Check GPU memory, lower mem devices need a bit less KV cache space because the VLM takes additional memory
-    gpu_memory = torch.cuda.get_device_properties(0).total_memory / (1024**3)  # Convert to GB
-    mem_fraction_arg = ["--gpu-memory-utilization", "0.80"] if gpu_memory < 60 else []
-
     cmd = [
         "vllm",
         "serve",
@@ -596,8 +577,11 @@ async def vllm_server_task(model_name_or_path, args, semaphore):
         "warning",
         "--served-model-name",
         "olmocr",
+        "--tensor-parallel-size",
+        str(args.tensor_parallel_size),
+        "--data-parallel-size",
+        str(args.data_parallel_size),
     ]
-    cmd.extend(mem_fraction_arg)
 
     proc = await asyncio.create_subprocess_exec(
         *cmd,
@@ -637,7 +621,7 @@ async def vllm_server_task(model_name_or_path, args, semaphore):
         if match:
             last_running_req = int(match.group(1))
 
-        match = re.search(r"Waiting: (\d+)", line)
+        match = re.search(r"(?:Waiting|Pending):\s*(\d+)", line)
         if match:
             last_queue_req = int(match.group(1))
             logger.info(f"vllm running req: {last_running_req} queue req: {last_queue_req}")
@@ -1025,8 +1009,7 @@ async def main():
     )
     parser.add_argument("--model_max_context", type=int, default="8192", help="Maximum context length that the model was fine tuned under")
     parser.add_argument("--target_longest_image_dim", type=int, help="Dimension on longest side to use for rendering the pdf pages", default=1024)
-    parser.add_argument("--target_anchor_text_len", type=int, help="Maximum amount of anchor text to use (characters)", default=3000)
-    parser.add_argument("--guided_decoding", action="store_true", help="Enable guided decoding for model YAML type outputs")
+    parser.add_argument("--target_anchor_text_len", type=int, help="Maximum amount of anchor text to use (characters)", default=6000)
 
     # Beaker/job running stuff
     parser.add_argument("--beaker", action="store_true", help="Submit this job to beaker instead of running locally")
@@ -1039,6 +1022,8 @@ async def main():
     parser.add_argument("--beaker_gpus", type=int, default=1, help="Number of gpu replicas to run")
     parser.add_argument("--beaker_priority", type=str, default="normal", help="Beaker priority level for the job")
     parser.add_argument("--port", type=int, default=30024, help="Port to use for the VLLM server")
+    parser.add_argument("--tensor-parallel-size", "-tp", type=int, default=1, help="Tensor parallel size for vLLM")
+    parser.add_argument("--data-parallel-size", "-dp", type=int, default=1, help="Data parallel size for vLLM")
     args = parser.parse_args()
 
     global workspace_s3, pdf_s3
