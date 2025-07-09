@@ -2,7 +2,7 @@
 
 # Project metadata
 project_name: olmocr-qwen-vl-training
-run_name: qwen2.5-vl-7b-finetune-day3-1280-noanchor
+run_name: qwen2.5-vl-7b-finetune-day3-json-lr5e-5
 
 # Model configuration
 model:
@@ -33,9 +33,9 @@ dataset:
         - name: FrontMatterParser
           front_matter_class: PageResponse
         - name: PDFRenderer
-          target_longest_image_dim: 1280
+          target_longest_image_dim: 1024
         - name: StaticLengthDocumentAnchoring
-          target_anchor_text_len: -1
+          target_anchor_text_len: 3000
         - name: FinetuningPrompt
         - name: JSONOutputFormat
         - name: InstructUserMessages
@@ -71,7 +71,7 @@ training:
   collator_max_token_len: 8192
   
   # Learning rate
-  learning_rate: 2e-5
+  learning_rate: 5e-5
   lr_scheduler_type: linear
   warmup_ratio: 0.1
   
