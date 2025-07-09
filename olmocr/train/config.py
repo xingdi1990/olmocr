@@ -155,6 +155,7 @@ class TrainingConfig:
     learning_rate: float = 2e-5
     lr_scheduler_type: str = "cosine"
     warmup_ratio: float = 0.1
+    lr_scheduler_kwargs: Dict[str, Any] = field(default_factory=dict)
 
     # Optimization
     optim: str = "adamw_torch"

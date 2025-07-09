@@ -202,6 +202,7 @@ def main():
         learning_rate=float(config.training.learning_rate),
         lr_scheduler_type=config.training.lr_scheduler_type,
         warmup_ratio=config.training.warmup_ratio,
+        lr_scheduler_kwargs=config.training.lr_scheduler_kwargs,
         optim=config.training.optim,
         adam_beta1=config.training.adam_beta1,
         adam_beta2=config.training.adam_beta2,

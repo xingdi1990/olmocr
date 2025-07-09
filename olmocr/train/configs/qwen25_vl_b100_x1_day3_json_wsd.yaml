@@ -2,7 +2,7 @@
 
 # Project metadata
 project_name: olmocr-qwen-vl-training
-run_name: qwen2.5-vl-7b-finetune
+run_name: qwen2.5-vl-7b-finetune-day3-json
 
 # Model configuration
 model:
@@ -35,17 +35,16 @@ dataset:
         - name: PDFRenderer
           target_longest_image_dim: 1024
         - name: StaticLengthDocumentAnchoring
-          target_anchor_text_len: 1000
+          target_anchor_text_len: 3000
         - name: FinetuningPrompt
-        - name: FrontMatterOutputFormat
+        - name: JSONOutputFormat
         - name: InstructUserMessages
         - name: Tokenizer
           masking_index: -100
           end_of_message_token: "<|im_end|>"
-    # Not putting in big bulk of data to speed up loading for debugging for now
-    # - name: processed_00_documents_train_s2pdf
-    #   root_dir: /weka/oe-data-default/jakep/olmOCR-mix-0225/processed_00_documents_train_s2pdf/
-    #   pipeline: *basic_pipeline
+    - name: processed_00_documents_train_s2pdf
+      root_dir: /weka/oe-data-default/jakep/olmOCR-mix-0225/processed_00_documents_train_s2pdf/
+      pipeline: *basic_pipeline
 
   eval:
     - name: processed_00_documents_eval_s2pdf
@@ -56,6 +55,7 @@ dataset:
       pipeline: *basic_pipeline
 
 
+
 # Training configuration
 training:
   output_dir: /weka/oe-data-default/jakep/olmocr-trainer/
@@ -64,13 +64,17 @@ training:
   # Batch size and accumulation
   per_device_train_batch_size: 1
   per_device_eval_batch_size: 1
-  gradient_accumulation_steps: 8
+  gradient_accumulation_steps: 32
 
   gradient_checkpointing: False
+
+  collator_max_token_len: 8192
   
   # Learning rate
-  learning_rate: 1e-6
-  lr_scheduler_type: cosine
+  learning_rate: 2e-5
+  lr_scheduler_type: warmup_stable_decay
+  lr_scheduler_kwargs:
+    num_stable_steps: 4000
   warmup_ratio: 0.1
   
   # Optimization
@@ -84,8 +88,8 @@ training:
   eval_steps: 500
   save_strategy: steps
   save_steps: 500
-  save_total_limit: 3
-  load_best_model_at_end: true
+  save_total_limit: 5
+  load_best_model_at_end: false # Needs to be false because it has a problem restoring checkpoints for some reason
   metric_for_best_model: eval_processed_00_documents_eval_s2pdf_loss
   greater_is_better: false
   
