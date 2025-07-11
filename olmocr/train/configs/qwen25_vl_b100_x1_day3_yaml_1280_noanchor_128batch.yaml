@@ -2,7 +2,7 @@
 
 # Project metadata
 project_name: olmocr-qwen-vl-training
-run_name: qwen2.5-vl-7b-finetune-day3-json-wsd
+run_name: qwen2.5-vl-7b-finetune-day3-yaml-1280-noanchor-128batch
 
 # Model configuration
 model:
@@ -33,11 +33,11 @@ dataset:
         - name: FrontMatterParser
           front_matter_class: PageResponse
         - name: PDFRenderer
-          target_longest_image_dim: 1024
+          target_longest_image_dim: 1280
         - name: StaticLengthDocumentAnchoring
-          target_anchor_text_len: 3000
+          target_anchor_text_len: -1
         - name: FinetuningPrompt
-        - name: JSONOutputFormat
+        - name: FrontMatterOutputFormat
         - name: InstructUserMessages
         - name: Tokenizer
           masking_index: -100
@@ -64,17 +64,15 @@ training:
   # Batch size and accumulation
   per_device_train_batch_size: 1
   per_device_eval_batch_size: 1
-  gradient_accumulation_steps: 32
+  gradient_accumulation_steps: 128
 
   gradient_checkpointing: False
 
   collator_max_token_len: 8192
   
   # Learning rate
-  learning_rate: 2e-5
-  lr_scheduler_type: warmup_stable_decay
-  lr_scheduler_kwargs:
-    num_decay_steps: 2000
+  learning_rate: 5e-5
+  lr_scheduler_type: linear
   warmup_ratio: 0.1
   
   # Optimization
