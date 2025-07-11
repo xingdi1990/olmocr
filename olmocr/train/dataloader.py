@@ -1,5 +1,6 @@
 import base64
 import logging
+import re
 from abc import ABC, abstractmethod
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, fields
@@ -357,6 +358,49 @@ class JSONOutputFormat(PipelineStep):
         }, ensure_ascii=False)
 
         return sample
+
+@dataclass(frozen=True, slots=True)
+class LatexBracketNormalizer(PipelineStep):
+    """Normalizes LaTeX brackets in natural text field."""
+    
+    def __call__(self, sample: Sample) -> Sample:
+        """Normalize LaTeX brackets in the natural text field."""
+        # Get the page_data object
+        if "page_data" not in sample:
+            return sample
+            
+        page_data = sample["page_data"]
+        if not hasattr(page_data, "natural_text") or not page_data.natural_text:
+            return sample
+        
+        text = page_data.natural_text
+        
+        # Define patterns for LaTeX normalization
+        # Order matters: process display math first, then inline
+        patterns = [
+            (r"\$\$(.+?)\$\$", r"\[\1\]"),  # $$...$$ to \[...\]
+            (r"\$(.+?)\$", r"\(\1\)"),      # $...$ to \(...\)
+        ]
+        
+        # Apply replacements
+        for pattern, replacement in patterns:
+            text = re.sub(pattern, replacement, text, flags=re.DOTALL)
+        
+        # Update the page_data with normalized text
+        # Since PageResponse is frozen, we need to create a new instance
+        from olmocr.prompts.prompts import PageResponse
+        new_page_data = PageResponse(
+            primary_language=page_data.primary_language,
+            is_rotation_valid=page_data.is_rotation_valid,
+            rotation_correction=page_data.rotation_correction,
+            is_table=page_data.is_table,
+            is_diagram=page_data.is_diagram,
+            natural_text=text
+        )
+        
+        sample["page_data"] = new_page_data
+        return sample
+
 
 @dataclass(frozen=True, slots=True)
 class InstructUserMessages(PipelineStep):

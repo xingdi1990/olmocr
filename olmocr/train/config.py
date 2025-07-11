@@ -84,6 +84,13 @@ class InstructUserMessagesConfig(PipelineStepConfig):
 
 
 @dataclass
+class LatexBracketNormalizerConfig(PipelineStepConfig):
+    """Configuration for LatexBracketNormalizer step."""
+
+    name: str = "LatexBracketNormalizer"
+
+
+@dataclass
 class TokenizerStepConfig(PipelineStepConfig):
     """Configuration for Tokenizer step."""
 
@@ -307,6 +314,7 @@ class Config:
             FrontMatterOutputFormat,
             FrontMatterParser,
             InstructUserMessages,
+            LatexBracketNormalizer,
             NewYamlFinetuningPromptWithAnchoring,
             NewYamlFinetuningPromptWithNoAnchoring,
             JSONOutputFormat,
@@ -355,6 +363,9 @@ class Config:
 
             elif step_name == "InstructUserMessages":
                 steps.append(InstructUserMessages())
+
+            elif step_name == "LatexBracketNormalizer":
+                steps.append(LatexBracketNormalizer())
 
             elif step_name == "Tokenizer":
                 if processor is None:
