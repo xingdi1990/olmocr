@@ -26,9 +26,11 @@ from tqdm import tqdm
 
 from olmocr.s3_utils import parse_s3_path
 
-# Hugging Face model ID for tokenizer files
-HF_MODEL_ID = "Qwen/Qwen2.5-VL-7B-Instruct"
-HF_BASE_URL = f"https://huggingface.co/{HF_MODEL_ID}/resolve/main"
+# Hugging Face model IDs for tokenizer files
+HF_MODEL_IDS = {
+    "Qwen2VLForConditionalGeneration": "Qwen/Qwen2-VL-7B-Instruct",
+    "Qwen2_5_VLForConditionalGeneration": "Qwen/Qwen2.5-VL-7B-Instruct"
+}
 
 # Required tokenizer files to download from Hugging Face
 TOKENIZER_FILES = [
@@ -40,8 +42,8 @@ TOKENIZER_FILES = [
     "vocab.json"
 ]
 
-# Expected model architecture
-EXPECTED_ARCHITECTURE = "Qwen2_5_VLForConditionalGeneration"
+# Supported model architectures
+SUPPORTED_ARCHITECTURES = ["Qwen2VLForConditionalGeneration", "Qwen2_5_VLForConditionalGeneration"]
 
 # Files to exclude from copying (training-related files)
 EXCLUDED_FILES = {
@@ -60,9 +62,9 @@ def is_s3_path(path: str) -> bool:
     return path.startswith("s3://")
 
 
-def download_file_from_hf(filename: str, destination_dir: str) -> None:
+def download_file_from_hf(filename: str, destination_dir: str, hf_base_url: str) -> None:
     """Download a file from Hugging Face model repository."""
-    url = f"{HF_BASE_URL}/{filename}"
+    url = f"{hf_base_url}/{filename}"
     local_path = os.path.join(destination_dir, filename)
     
     print(f"Downloading {filename} from Hugging Face...")
@@ -76,21 +78,37 @@ def download_file_from_hf(filename: str, destination_dir: str) -> None:
     print(f"Downloaded {filename}")
 
 
-def validate_checkpoint_architecture(config_path: str) -> None:
-    """Validate that the checkpoint has the expected architecture."""
-    print(f"Validating checkpoint architecture from {config_path}...")
+def detect_checkpoint_architecture(config_path: str) -> str:
+    """Detect and validate the checkpoint architecture."""
+    print(f"Detecting checkpoint architecture from {config_path}...")
     
     with smart_open(config_path, "r") as f:
         config_data = json.load(f)
     
     architectures = config_data.get("architectures", [])
-    if EXPECTED_ARCHITECTURE not in architectures:
-        raise ValueError(
-            f"Invalid model architecture. Expected '{EXPECTED_ARCHITECTURE}' "
-            f"but found: {architectures}"
-        )
     
-    print(f"✓ Valid architecture: {architectures}")
+    # Find the supported architecture
+    detected_architecture = None
+    for arch in architectures:
+        if arch in SUPPORTED_ARCHITECTURES:
+            detected_architecture = arch
+            break
+    
+    if not detected_architecture:
+        # Try to detect from model name
+        model_name = config_data.get("name_or_path", "")
+        if "Qwen2.5-VL" in model_name:
+            detected_architecture = "Qwen2_5_VLForConditionalGeneration"
+        elif "Qwen2-VL" in model_name:
+            detected_architecture = "Qwen2VLForConditionalGeneration"
+        else:
+            raise ValueError(
+                f"No supported architecture found. Expected one of {SUPPORTED_ARCHITECTURES} "
+                f"but found: {architectures}"
+            )
+    
+    print(f"✓ Detected architecture: {detected_architecture}")
+    return detected_architecture
 
 
 def copy_local_to_local(source_dir: str, dest_dir: str) -> None:
@@ -219,12 +237,17 @@ def copy_s3_to_s3(source_bucket: str, source_prefix: str, dest_bucket: str, dest
 
 def prepare_checkpoint(source_path: str, dest_path: str) -> None:
     """Prepare OlmOCR checkpoint for deployment."""
-    # First, validate the source checkpoint
+    # First, detect the source checkpoint architecture
     config_path = os.path.join(source_path, "config.json")
     if is_s3_path(source_path):
         config_path = f"{source_path}/config.json"
     
-    validate_checkpoint_architecture(config_path)
+    architecture = detect_checkpoint_architecture(config_path)
+    
+    # Get the appropriate HF model ID and base URL
+    hf_model_id = HF_MODEL_IDS[architecture]
+    hf_base_url = f"https://huggingface.co/{hf_model_id}/resolve/main"
+    print(f"Using HuggingFace model: {hf_model_id}")
     
     # Copy model files to destination
     print("\nCopying model files...")
@@ -254,7 +277,7 @@ def prepare_checkpoint(source_path: str, dest_path: str) -> None:
             # Download files
             with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
                 futures = [
-                    executor.submit(download_file_from_hf, filename, temp_dir)
+                    executor.submit(download_file_from_hf, filename, temp_dir, hf_base_url)
                     for filename in TOKENIZER_FILES
                 ]
                 for future in concurrent.futures.as_completed(futures):
@@ -280,7 +303,7 @@ def prepare_checkpoint(source_path: str, dest_path: str) -> None:
         # Download directly to destination
         with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
             futures = [
-                executor.submit(download_file_from_hf, filename, dest_path)
+                executor.submit(download_file_from_hf, filename, dest_path, hf_base_url)
                 for filename in TOKENIZER_FILES
             ]
             for future in concurrent.futures.as_completed(futures):
