@@ -109,16 +109,8 @@ async def build_page_query(local_pdf_path: str, page: int, target_longest_image_
     assert image_rotation in [0, 90, 180, 270], "Invalid image rotation provided in build_page_query"
 
     # Allow the page rendering to process in the background while we get the anchor text (which blocks the main thread)
-    image_base64 = asyncio.to_thread(render_pdf_to_base64png, local_pdf_path, page, target_longest_image_dim=target_longest_image_dim)
+    image_base64 = await asyncio.to_thread(render_pdf_to_base64png, local_pdf_path, page, target_longest_image_dim=target_longest_image_dim)
 
-    # GET ANCHOR TEXT IS NOT THREAD SAFE!! Ahhhh..... don't try to do it
-    # and it's also CPU bound, so it needs to run in a process pool
-    loop = asyncio.get_running_loop()
-    anchor_text = loop.run_in_executor(
-        process_pool, partial(get_anchor_text, pdf_engine="pdfreport", target_length=target_anchor_text_len), local_pdf_path, page
-    )
-
-    image_base64, anchor_text = await asyncio.gather(image_base64, anchor_text)  # type: ignore
     if image_rotation != 0:
         image_bytes = base64.b64decode(image_base64)
         with Image.open(BytesIO(image_bytes)) as img:
@@ -131,6 +123,10 @@ async def build_page_query(local_pdf_path: str, page: int, target_longest_image_
         # Encode the rotated image back to base64
         image_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
+    instruction_prompt =  (f"Attached is one page of a document that you must process. "
+                           f"Just return the plain text representation of this document as if you were reading it naturally. Convert equations to LateX and tables to markdown.\n"
+                           f"Return your output as markdown, with a front matter section on top specifying values for the primary_language, is_rotation_valid, rotation_correction, is_table, and is_diagram parameters.")
+
     return {
         "model": "olmocr",
         "messages": [
@@ -138,7 +134,7 @@ async def build_page_query(local_pdf_path: str, page: int, target_longest_image_
                 "role": "user",
                 "content": [
                     {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_base64}"}},
-                    {"type": "text", "text": build_finetuning_prompt(anchor_text)},
+                    {"type": "text", "text": instruction_prompt},
                 ],
             }
         ],
