@@ -181,7 +181,7 @@ perf_task_spec_args = {
         priority=Priority.normal,
         preemptible=True,
     ),
-    "resources": TaskResources(gpu_count=1),
+    "resources": TaskResources(gpu_count=8),
     "constraints": Constraints(cluster=["ai2/ceres-cirrascale", "ai2/jupiter-cirrascale-2"]),
     "result": ResultSpec(path="/noop-results"),
 }
