@@ -134,6 +134,22 @@ def load_model_and_tokenizer(source_path: str) -> Tuple[Union[Qwen2VLForConditio
     return model, tokenizer, temp_dir
 
 
+def copy_additional_files(source_path: str, dest_path: str, temp_source_dir: Optional[str] = None) -> None:
+    """Copy additional config files that are needed but not saved by save_pretrained."""
+    # List of additional files to copy if they exist
+    additional_files = ["preprocessor_config.json", "chat_template.json"]
+    
+    # Determine the actual source path (could be temp dir if downloaded from S3)
+    actual_source = temp_source_dir if temp_source_dir else source_path
+    
+    for filename in additional_files:
+        source_file = os.path.join(actual_source, filename)
+        if os.path.exists(source_file):
+            dest_file = os.path.join(dest_path, filename)
+            print(f"Copying {filename} to destination...")
+            shutil.copy2(source_file, dest_file)
+
+
 def compress_checkpoint(source_path: str, dest_path: str) -> None:
     """Compress OlmOCR checkpoint using FP8 quantization."""
     # Load model and tokenizer
@@ -160,6 +176,9 @@ def compress_checkpoint(source_path: str, dest_path: str) -> None:
                 model.save_pretrained(temp_dest_dir)
                 tokenizer.save_pretrained(temp_dest_dir)
                 
+                # Copy additional files
+                copy_additional_files(source_path, temp_dest_dir, temp_source_dir)
+                
                 # Upload to S3
                 bucket, prefix = parse_s3_path(dest_path)
                 upload_local_to_s3(temp_dest_dir, bucket, prefix)
@@ -169,6 +188,9 @@ def compress_checkpoint(source_path: str, dest_path: str) -> None:
             os.makedirs(dest_path, exist_ok=True)
             model.save_pretrained(dest_path)
             tokenizer.save_pretrained(dest_path)
+            
+            # Copy additional files
+            copy_additional_files(source_path, dest_path, temp_source_dir)
         
         print(f"\n✓ Successfully compressed checkpoint and saved to {dest_path}")
         
