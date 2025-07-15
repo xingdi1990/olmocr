@@ -28,6 +28,7 @@ from typing import Optional, Tuple, Union, List
 
 import boto3
 import torch
+from datasets import Dataset
 from llmcompressor import oneshot
 from PIL import Image
 from transformers import AutoTokenizer, Qwen2VLForConditionalGeneration, Qwen2_5_VLForConditionalGeneration, AutoProcessor
@@ -71,9 +72,9 @@ def get_calibration_pdfs(num_samples: int, pdf_paths: List[str]) -> List[str]:
     return valid_paths
 
 
-async def prepare_calibration_dataset(pdf_paths: List[str], processor) -> List[dict]:
+async def prepare_calibration_dataset(pdf_paths: List[str], processor) -> Dataset:
     """Prepare calibration dataset from PDFs using build_page_query."""
-    dataset = []
+    dataset_items = []
     
     for pdf_path in pdf_paths:
         # Get first page of each PDF (page 0)
@@ -111,9 +112,18 @@ async def prepare_calibration_dataset(pdf_paths: List[str], processor) -> List[d
             truncation=True,
         )
         
-        dataset.append(inputs)
+        dataset_items.append(inputs)
     
-    return dataset
+    # Convert list of dicts to HuggingFace Dataset
+    if dataset_items:
+        # Flatten the list of dicts into a single dict of lists
+        dataset_dict = {}
+        for key in dataset_items[0].keys():
+            dataset_dict[key] = [item[key] for item in dataset_items]
+        
+        return Dataset.from_dict(dataset_dict)
+    else:
+        return Dataset.from_dict({})
 
 
 def is_s3_path(path: str) -> bool:
@@ -235,8 +245,9 @@ def copy_additional_files(source_path: str, dest_path: str, temp_source_dir: Opt
             shutil.copy2(source_file, dest_file)
 
 
+# Define a oneshot data collator for multimodal inputs.
 def data_collator(batch):
-    """Simple data collator for calibration dataset."""
+    assert len(batch) == 1
     return {key: torch.tensor(value) for key, value in batch[0].items()}
 
 
