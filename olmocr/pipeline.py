@@ -34,10 +34,11 @@ from olmocr.check import (
     check_torch_gpu_available,
 )
 from olmocr.data.renderpdf import render_pdf_to_base64png
+from olmocr.train.dataloader import FrontMatterParser
 from olmocr.filter.filter import Language, PdfFilter
 from olmocr.image_utils import convert_image_to_pdf_bytes, is_jpeg, is_png
 from olmocr.metrics import MetricsKeeper, WorkerTracker
-from olmocr.prompts import PageResponse, build_finetuning_prompt
+from olmocr.prompts import PageResponse, build_no_anchoring_yaml_prompt
 from olmocr.prompts.anchor import get_anchor_text
 from olmocr.s3_utils import (
     download_directory,
@@ -103,7 +104,7 @@ class PageResult:
     is_fallback: bool
 
 
-async def build_page_query(local_pdf_path: str, page: int, target_longest_image_dim: int, target_anchor_text_len: int, image_rotation: int = 0) -> dict:
+async def build_page_query(local_pdf_path: str, page: int, target_longest_image_dim: int, image_rotation: int = 0) -> dict:
     MAX_TOKENS = 4500
     assert image_rotation in [0, 90, 180, 270], "Invalid image rotation provided in build_page_query"
 
@@ -122,10 +123,6 @@ async def build_page_query(local_pdf_path: str, page: int, target_longest_image_
         # Encode the rotated image back to base64
         image_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-    instruction_prompt =  (f"Attached is one page of a document that you must process. "
-                           f"Just return the plain text representation of this document as if you were reading it naturally. Convert equations to LateX and tables to markdown.\n"
-                           f"Return your output as markdown, with a front matter section on top specifying values for the primary_language, is_rotation_valid, rotation_correction, is_table, and is_diagram parameters.")
-
     return {
         "model": "olmocr",
         "messages": [
@@ -133,7 +130,7 @@ async def build_page_query(local_pdf_path: str, page: int, target_longest_image_
                 "role": "user",
                 "content": [
                     {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_base64}"}},
-                    {"type": "text", "text": instruction_prompt},
+                    {"type": "text", "text": build_no_anchoring_yaml_prompt()},
                 ],
             }
         ],
@@ -211,8 +208,6 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
     COMPLETION_URL = f"http://localhost:{BASE_SERVER_PORT}/v1/chat/completions"
     MAX_RETRIES = args.max_page_retries
     TEMPERATURE_BY_ATTEMPT = [0.1, 0.1, 0.2, 0.3, 0.5, 0.8, 0.1, 0.8]
-    FORCE_NO_DOCUMENT_ANCHORING_BY_ATTEMPT = [False, False, False, False, False, False, True, True]
-    assert len(TEMPERATURE_BY_ATTEMPT) == len(FORCE_NO_DOCUMENT_ANCHORING_BY_ATTEMPT)
     exponential_backoffs = 0
     local_anchor_text_len = args.target_anchor_text_len
     local_image_rotation = 0
@@ -220,16 +215,19 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
     await tracker.track_work(worker_id, f"{pdf_orig_path}-{page_num}", "started")
 
     while attempt < MAX_RETRIES:
-        lookup_attempt = min(attempt, len(FORCE_NO_DOCUMENT_ANCHORING_BY_ATTEMPT) - 1)
+        lookup_attempt = min(attempt, len(TEMPERATURE_BY_ATTEMPT) - 1)
         query = await build_page_query(
             pdf_local_path,
             page_num,
             args.target_longest_image_dim,
-            local_anchor_text_len if not FORCE_NO_DOCUMENT_ANCHORING_BY_ATTEMPT[lookup_attempt] else -1,
             image_rotation=local_image_rotation,
         )
         # Change temperature as number of attempts increases to overcome repetition issues at expense of quality
         query["temperature"] = TEMPERATURE_BY_ATTEMPT[lookup_attempt]
+
+        # Enable guided decoding regex if needed
+        if args.guided_decoding:
+            query["guided_regex"] = r"---\nprimary_language: (?:[a-z]{2}|null)\nis_rotation_valid: (?:True|False|true|false)\nrotation_correction: (?:0|90|180|270)\nis_table: (?:True|False|true|false)\nis_diagram: (?:True|False|true|false)\n(?:---|---\n[\s\S]+)"
 
         logger.info(f"Built page query for {pdf_orig_path}-{page_num}")
 
@@ -249,14 +247,22 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
                 local_anchor_text_len = max(1, local_anchor_text_len // 2)
                 logger.info(f"Reducing anchor text len to {local_anchor_text_len} for {pdf_orig_path}-{page_num}")
                 raise ValueError("Response exceeded model_max_context, cannot use this response")
+            
+            if base_response_data["choices"][0]["finish_reason"] != "stop":
+                local_anchor_text_len = max(1, local_anchor_text_len // 2)
+                logger.info(f"Reducing anchor text len to {local_anchor_text_len} for {pdf_orig_path}-{page_num}")
+                raise ValueError("Response did not finish with reason code 'stop', cannot use this response")
 
             metrics.add_metrics(
                 server_input_tokens=base_response_data["usage"].get("prompt_tokens", 0),
                 server_output_tokens=base_response_data["usage"].get("completion_tokens", 0),
             )
 
-            model_response_json = json.loads(base_response_data["choices"][0]["message"]["content"])
-            page_response = PageResponse(**model_response_json)
+            model_response_markdown = base_response_data["choices"][0]["message"]["content"]
+
+            parser = FrontMatterParser(front_matter_class=PageResponse)
+            front_matter, text = parser._extract_front_matter_and_text(model_response_markdown)
+            page_response = parser._parse_front_matter(front_matter, text)
 
             if not page_response.is_rotation_valid and attempt < MAX_RETRIES - 1:
                 logger.info(
@@ -322,7 +328,6 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
         output_tokens=0,
         is_fallback=True,
     )
-
 
 async def process_pdf(args, worker_id: int, pdf_orig_path: str):
     with tempfile.NamedTemporaryFile("wb+", suffix=".pdf", delete=False) as tf:
@@ -1005,7 +1010,7 @@ async def main():
     )
     parser.add_argument("--model_max_context", type=int, default="8192", help="Maximum context length that the model was fine tuned under")
     parser.add_argument("--target_longest_image_dim", type=int, help="Dimension on longest side to use for rendering the pdf pages", default=1280)
-    parser.add_argument("--target_anchor_text_len", type=int, help="Maximum amount of anchor text to use (characters)", default=-1)
+    parser.add_argument("--target_anchor_text_len", type=int, help="Maximum amount of anchor text to use (characters), not used for new models", default=-1)
     parser.add_argument("--guided_decoding", action="store_true", help="Enable guided decoding for model YAML type outputs")
 
     # Beaker/job running stuff
