@@ -365,13 +365,9 @@ Examples:
         calibration_pdfs = args.calibration_pdfs.split('+')
         print(f"Parsed {len(calibration_pdfs)} calibration PDF paths")
     
-    try:
-        compress_checkpoint(args.source, args.destination, args.recipe, args.num_calibration_samples, calibration_pdfs)
-    except Exception as e:
-        print(f"\n❌ Error: {e}")
-        return 1
-    
-    return 0
+
+    compress_checkpoint(args.source, args.destination, args.recipe, args.num_calibration_samples, calibration_pdfs)
+
 
 
 if __name__ == "__main__":
