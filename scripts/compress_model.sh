@@ -144,6 +144,10 @@ task_spec_args = {
     "resources": TaskResources(gpu_count=1),
     "constraints": Constraints(cluster=["ai2/ceres-cirrascale", "ai2/jupiter-cirrascale-2"]),
     "result": ResultSpec(path="/noop-results"),
+    "datasets": [
+        DataMount.new(mount_path="/weka/oe-data-default", weka="oe-data-default"),
+        DataMount.new(mount_path="/weka/oe-training-default", weka="oe-training-default"),
+    ]
 }
 
 # Add env vars if AWS credentials exist

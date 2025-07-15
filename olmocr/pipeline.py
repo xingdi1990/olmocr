@@ -271,7 +271,7 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
                 local_image_rotation = page_response.rotation_correction
                 raise ValueError(f"invalid_page rotation for {pdf_orig_path}-{page_num}")
 
-            metrics.add_metrics(completed_pages=1)
+            metrics.add_metrics(**{"completed_pages": 1, f"finished_on_attempt_{attempt}": 1})
             await tracker.track_work(worker_id, f"{pdf_orig_path}-{page_num}", "finished")
             return PageResult(
                 pdf_orig_path,
@@ -1210,6 +1210,19 @@ async def main():
     logger.info(
         f"Page Failure rate: {total_metrics.get('failed_pages', 0) / max(total_metrics.get('completed_pages', 0) + total_metrics.get('failed_pages', 0), 1) * 100:.2f}%"
     )
+
+    # Output finished_on_attempt statistics
+    logger.info("\nPages finished by attempt number:")
+    total_finished = sum(total_metrics.get(f'finished_on_attempt_{i}', 0) for i in range(args.max_page_retries))
+    cumulative = 0
+    
+    for i in range(args.max_page_retries):
+        if f'finished_on_attempt_{i}' in total_metrics:
+            count = total_metrics[f'finished_on_attempt_{i}']
+            cumulative += count
+            percentage = (count / total_finished * 100) if total_finished > 0 else 0
+            cumulative_percentage = (cumulative / total_finished * 100) if total_finished > 0 else 0
+            logger.info(f"  Attempt {i}: {count:,} pages ({percentage:.1f}%) - Cumulative: {cumulative:,} ({cumulative_percentage:.1f}%)")
 
     # Output rates
     if "server_input_tokens_per_sec" in rates:
