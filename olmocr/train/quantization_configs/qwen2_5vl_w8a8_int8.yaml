@@ -3,6 +3,4 @@ quantization_stage:
     GPTQModifier:
       targets: [Linear]
       ignore: ['re:.*lm_head', 're:model.visual.*']
-      weights:
-        num_bits: 8
-        type: int
+      scheme: W8A8
