@@ -6,10 +6,11 @@ Compresses OlmOCR checkpoints using FP8 quantization:
 3. Saves compressed model to destination (local or S3)
 
 Usage:
-    python compress_checkpoint.py <source_path> <destination_path>
+    python compress_checkpoint.py <source_path> <destination_path> [--recipe <recipe_path>]
     
     source_path: Path to checkpoint (local or S3)
     destination_path: Where to save compressed checkpoint (local or S3)
+    recipe_path: Optional path to quantization config YAML file
 """
 
 import argparse
@@ -22,7 +23,6 @@ from typing import Optional, Tuple, Union
 import boto3
 import torch
 from llmcompressor import oneshot
-from llmcompressor.modifiers.quantization import QuantizationModifier
 from transformers import AutoTokenizer, Qwen2VLForConditionalGeneration, Qwen2_5_VLForConditionalGeneration
 
 from olmocr.s3_utils import parse_s3_path
@@ -150,7 +150,7 @@ def copy_additional_files(source_path: str, dest_path: str, temp_source_dir: Opt
             shutil.copy2(source_file, dest_file)
 
 
-def compress_checkpoint(source_path: str, dest_path: str) -> None:
+def compress_checkpoint(source_path: str, dest_path: str, recipe_path: str) -> None:
     """Compress OlmOCR checkpoint using FP8 quantization."""
     # Load model and tokenizer
     model, tokenizer, temp_source_dir = load_model_and_tokenizer(source_path)
@@ -162,16 +162,9 @@ def compress_checkpoint(source_path: str, dest_path: str) -> None:
             print(f"{name}: shape={list(param.shape)}, dtype={param.dtype}")
         print("=========================\n")
         
-        # Configure FP8 dynamic quantization
-        print("\nApplying FP8 dynamic quantization...")
-        recipe = QuantizationModifier(
-            targets="Linear",
-            scheme="FP8_DYNAMIC",
-            ignore=["re:.*lm_head", "re:visual.*"],
-        )
-        
-        # Apply the quantization
-        oneshot(model=model, recipe=recipe)
+        # Apply quantization using provided recipe
+        print(f"\nApplying quantization using recipe: {recipe_path}")
+        oneshot(model=model, recipe=recipe_path)
         print("✓ Quantization completed successfully")
         
         # Save the compressed model
@@ -218,25 +211,26 @@ def main():
         epilog="""
 Examples:
     # Local to local
-    python compress_checkpoint.py /path/to/checkpoint /path/to/compressed
+    python compress_checkpoint.py /path/to/checkpoint /path/to/compressed --recipe train/quantization_configs/qwen2_5vl_w8a8_fp8.yaml
     
     # S3 to S3
-    python compress_checkpoint.py s3://bucket/checkpoint s3://bucket/compressed
+    python compress_checkpoint.py s3://bucket/checkpoint s3://bucket/compressed --recipe train/quantization_configs/qwen2vl_w8a8_fp8.yaml
     
     # S3 to local
-    python compress_checkpoint.py s3://bucket/checkpoint /path/to/compressed
+    python compress_checkpoint.py s3://bucket/checkpoint /path/to/compressed --recipe train/quantization_configs/qwen2_5vl_w8a8_fp8.yaml
     
     # Local to S3
-    python compress_checkpoint.py /path/to/checkpoint s3://bucket/compressed
+    python compress_checkpoint.py /path/to/checkpoint s3://bucket/compressed --recipe train/quantization_configs/qwen2vl_w8a8_fp8.yaml
         """
     )
     parser.add_argument("source", help="Source checkpoint path (local or S3)")
     parser.add_argument("destination", help="Destination path for compressed checkpoint (local or S3)")
+    parser.add_argument("--recipe", required=True, help="Path to quantization recipe YAML file")
     
     args = parser.parse_args()
     
     try:
-        compress_checkpoint(args.source, args.destination)
+        compress_checkpoint(args.source, args.destination, args.recipe)
     except Exception as e:
         print(f"\n❌ Error: {e}")
         return 1
