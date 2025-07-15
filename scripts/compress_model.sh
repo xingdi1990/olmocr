@@ -88,7 +88,7 @@ fi
 # Create Python script to run beaker experiment
 cat << 'EOF' > /tmp/run_compress_experiment.py
 import sys
-from beaker import Beaker, ExperimentSpec, TaskSpec, TaskContext, ResultSpec, TaskResources, ImageSource, Priority, Constraints, EnvVar
+from beaker import Beaker, ExperimentSpec, TaskSpec, TaskContext, ResultSpec, TaskResources, ImageSource, Priority, Constraints, EnvVar, DataMount
 
 # Get parameters from command line
 image_tag = sys.argv[1]
