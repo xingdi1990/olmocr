@@ -12,18 +12,20 @@ Usage:
     destination_path: Where to save compressed checkpoint (local or S3)
     recipe_path: Path to quantization config YAML file
     num_calibration_samples: Number of calibration samples to use (default: 100, set to 0 to disable)
-    calibration_pdfs: '+' separated list of PDF paths to use for calibration (required when num_calibration_samples > 0)
+    calibration_pdfs: Glob pattern for PDF paths to use for calibration (required when num_calibration_samples > 0)
 """
 
 import argparse
 import asyncio
 import base64
+import glob
 import json
 import os
 import random
 import shutil
 import tempfile
 from io import BytesIO
+from pathlib import Path
 from typing import Optional, Tuple, Union, List
 
 import boto3
@@ -354,11 +356,11 @@ Examples:
     # Local to S3
     python compress_checkpoint.py /path/to/checkpoint s3://bucket/compressed --recipe train/quantization_configs/qwen2vl_w8a8_fp8.yaml
     
-    # Using local calibration PDFs (with glob)
-    python compress_checkpoint.py /path/to/checkpoint /path/to/compressed --recipe recipe.yaml --calibration-pdfs "/data/pdfs/doc1.pdf+/data/pdfs/doc2.pdf+/data/pdfs/doc3.pdf"
+    # Using glob pattern for calibration PDFs
+    python compress_checkpoint.py /path/to/checkpoint /path/to/compressed --recipe recipe.yaml --calibration-pdfs "/data/pdfs/*.pdf"
     
-    # Using glob pattern with shell expansion
-    python compress_checkpoint.py /path/to/checkpoint /path/to/compressed --recipe recipe.yaml --calibration-pdfs "$(ls /data/pdfs/*.pdf | tr '\n' '+')"
+    # Using recursive glob pattern
+    python compress_checkpoint.py /path/to/checkpoint /path/to/compressed --recipe recipe.yaml --calibration-pdfs "/data/**/*.pdf"
         """
     )
     parser.add_argument("source", help="Source checkpoint path (local or S3)")
@@ -367,15 +369,35 @@ Examples:
     parser.add_argument("--num-calibration-samples", type=int, default=100, 
                        help="Number of calibration samples to use (default: 100, set to 0 to disable)")
     parser.add_argument("--calibration-pdfs", type=str, default=None,
-                       help="'+' separated list of calibration PDF paths (e.g., '/path/to/pdf1.pdf+/path/to/pdf2.pdf'). Required when num-calibration-samples > 0.")
+                       help="Glob pattern for calibration PDF paths (e.g., '/path/to/pdfs/*.pdf' or '/data/**/*.pdf'). Required when num-calibration-samples > 0.")
     
     args = parser.parse_args()
     
     # Parse calibration PDFs if provided
     calibration_pdfs = None
     if args.calibration_pdfs:
-        calibration_pdfs = args.calibration_pdfs.split('+')
-        print(f"Parsed {len(calibration_pdfs)} calibration PDF paths")
+        # Use pathlib for better glob handling
+        pattern = args.calibration_pdfs
+        
+        # Handle both absolute and relative paths with recursive glob
+        if '**' in pattern:
+            # For recursive patterns, we need to handle them specially
+            if pattern.startswith('/'):
+                # Absolute path with **
+                parts = pattern.split('**')
+                base_path = Path(parts[0])
+                glob_pattern = '**' + parts[1] if len(parts) > 1 else '**/*.pdf'
+                calibration_pdfs = list(base_path.glob(glob_pattern.lstrip('/')))
+            else:
+                # Relative path with **
+                calibration_pdfs = list(Path('.').glob(pattern))
+            calibration_pdfs = [str(p.absolute()) for p in calibration_pdfs if p.suffix.lower() == '.pdf']
+        else:
+            # Use standard glob for non-recursive patterns
+            calibration_pdfs = glob.glob(pattern)
+            calibration_pdfs = [p for p in calibration_pdfs if p.lower().endswith('.pdf')]
+        
+        print(f"Found {len(calibration_pdfs)} PDF files matching pattern: {args.calibration_pdfs}")
     
 
     compress_checkpoint(args.source, args.destination, args.recipe, args.num_calibration_samples, calibration_pdfs)
