@@ -6,12 +6,13 @@ Compresses OlmOCR checkpoints using FP8 quantization:
 3. Saves compressed model to destination (local or S3)
 
 Usage:
-    python compress_checkpoint.py <source_path> <destination_path> --recipe <recipe_path> [--num-calibration-samples N]
+    python compress_checkpoint.py <source_path> <destination_path> --recipe <recipe_path> [--num-calibration-samples N] [--calibration-pdfs PDF1+PDF2+...]
     
     source_path: Path to checkpoint (local or S3)
     destination_path: Where to save compressed checkpoint (local or S3)
     recipe_path: Path to quantization config YAML file
-    num_calibration_samples: Number of calibration samples to use (default: 100)
+    num_calibration_samples: Number of calibration samples to use (default: 100, set to 0 to disable)
+    calibration_pdfs: '+' separated list of PDF paths to use for calibration (required when num_calibration_samples > 0)
 """
 
 import argparse
@@ -36,43 +37,38 @@ from olmocr.pipeline import build_page_query
 
 
 s3_client = boto3.client("s3")
-CALIBRATION_S3_PATH = "s3://ai2-oe-data/jakep/olmocr/olmOCR-mix-0225/benchmark_set"
 
 
-def download_calibration_pdfs(num_samples: int) -> List[str]:
-    """Download calibration PDFs from S3 and return local paths."""
-    bucket, prefix = parse_s3_path(CALIBRATION_S3_PATH)
+def get_calibration_pdfs(num_samples: int, pdf_paths: List[str]) -> List[str]:
+    """Get calibration PDFs from provided paths.
     
-    # Create temporary directory for PDFs
-    temp_dir = tempfile.mkdtemp()
-    print(f"Downloading calibration PDFs to {temp_dir}...")
+    Args:
+        num_samples: Number of samples to use
+        pdf_paths: List of local PDF paths
+        
+    Returns:
+        List of valid PDF paths
+    """
+    print(f"Using {len(pdf_paths)} provided calibration PDFs")
     
-    # List all PDFs in the calibration dataset
-    paginator = s3_client.get_paginator("list_objects_v2")
-    pages = paginator.paginate(Bucket=bucket, Prefix=prefix)
+    # If more PDFs provided than needed, randomly sample
+    if len(pdf_paths) > num_samples:
+        pdf_paths = random.sample(pdf_paths, num_samples)
+        print(f"Randomly sampled {num_samples} PDFs from provided paths")
     
-    pdf_keys = []
-    for page in pages:
-        for obj in page.get("Contents", []):
-            key = obj["Key"]
-            if key.endswith(".pdf"):
-                pdf_keys.append(key)
+    # Verify all PDFs exist
+    valid_paths = []
+    for path in pdf_paths:
+        if os.path.exists(path) and path.endswith('.pdf'):
+            valid_paths.append(path)
+        else:
+            print(f"  Warning: Skipping invalid path: {path}")
     
-    # Randomly sample PDFs
-    if len(pdf_keys) > num_samples:
-        pdf_keys = random.sample(pdf_keys, num_samples)
+    if not valid_paths:
+        raise ValueError("No valid PDF paths found in the provided list")
     
-    # Download the PDFs
-    local_paths = []
-    for key in pdf_keys:
-        filename = os.path.basename(key)
-        local_path = os.path.join(temp_dir, filename)
-        s3_client.download_file(bucket, key, local_path)
-        local_paths.append(local_path)
-        print(f"  Downloaded {filename}")
-    
-    print(f"Downloaded {len(local_paths)} calibration PDFs")
-    return local_paths, temp_dir
+    print(f"Using {len(valid_paths)} valid calibration PDFs")
+    return valid_paths
 
 
 async def prepare_calibration_dataset(pdf_paths: List[str], processor) -> List[dict]:
@@ -243,7 +239,7 @@ def data_collator(batch):
     return {key: torch.tensor(value) for key, value in batch[0].items()}
 
 
-def compress_checkpoint(source_path: str, dest_path: str, recipe_path: str, num_calibration_samples: int = 100) -> None:
+def compress_checkpoint(source_path: str, dest_path: str, recipe_path: str, num_calibration_samples: int = 100, calibration_pdfs: Optional[List[str]] = None) -> None:
     """Compress OlmOCR checkpoint using FP8 quantization."""
     # Load model and tokenizer
     model, tokenizer, temp_source_dir = load_model_and_tokenizer(source_path)
@@ -257,16 +253,18 @@ def compress_checkpoint(source_path: str, dest_path: str, recipe_path: str, num_
         
         # Prepare calibration dataset if requested
         dataset = None
-        temp_pdf_dir = None
         
         if num_calibration_samples > 0:
+            if not calibration_pdfs:
+                raise ValueError("Calibration PDFs must be provided when num_calibration_samples > 0. Use --calibration-pdfs argument.")
+            
             print(f"\nPreparing calibration dataset with {num_calibration_samples} samples...")
             
             # Load processor for the model
             processor = AutoProcessor.from_pretrained(source_path if not temp_source_dir else temp_source_dir)
             
-            # Download PDFs
-            pdf_paths, temp_pdf_dir = download_calibration_pdfs(num_calibration_samples)
+            # Get calibration PDFs from provided paths
+            pdf_paths = get_calibration_pdfs(num_calibration_samples, calibration_pdfs)
             
             # Prepare dataset
             dataset = asyncio.run(prepare_calibration_dataset(pdf_paths, processor))
@@ -321,11 +319,6 @@ def compress_checkpoint(source_path: str, dest_path: str, recipe_path: str, num_
             print(f"Cleaning up temporary directory {temp_source_dir}...")
             shutil.rmtree(temp_source_dir)
         
-        # Clean up temporary PDF directory if needed
-        if temp_pdf_dir:
-            print(f"Cleaning up temporary PDF directory {temp_pdf_dir}...")
-            shutil.rmtree(temp_pdf_dir)
-        
         # Free up GPU memory
         del model
         torch.cuda.empty_cache()
@@ -348,18 +341,32 @@ Examples:
     
     # Local to S3
     python compress_checkpoint.py /path/to/checkpoint s3://bucket/compressed --recipe train/quantization_configs/qwen2vl_w8a8_fp8.yaml
+    
+    # Using local calibration PDFs (with glob)
+    python compress_checkpoint.py /path/to/checkpoint /path/to/compressed --recipe recipe.yaml --calibration-pdfs "/data/pdfs/doc1.pdf+/data/pdfs/doc2.pdf+/data/pdfs/doc3.pdf"
+    
+    # Using glob pattern with shell expansion
+    python compress_checkpoint.py /path/to/checkpoint /path/to/compressed --recipe recipe.yaml --calibration-pdfs "$(ls /data/pdfs/*.pdf | tr '\n' '+')"
         """
     )
     parser.add_argument("source", help="Source checkpoint path (local or S3)")
     parser.add_argument("destination", help="Destination path for compressed checkpoint (local or S3)")
     parser.add_argument("--recipe", required=True, help="Path to quantization recipe YAML file")
     parser.add_argument("--num-calibration-samples", type=int, default=100, 
-                       help="Number of calibration samples to use from benchmark set (default: 100, set to 0 to disable)")
+                       help="Number of calibration samples to use (default: 100, set to 0 to disable)")
+    parser.add_argument("--calibration-pdfs", type=str, default=None,
+                       help="'+' separated list of calibration PDF paths (e.g., '/path/to/pdf1.pdf+/path/to/pdf2.pdf'). Required when num-calibration-samples > 0.")
     
     args = parser.parse_args()
     
+    # Parse calibration PDFs if provided
+    calibration_pdfs = None
+    if args.calibration_pdfs:
+        calibration_pdfs = args.calibration_pdfs.split('+')
+        print(f"Parsed {len(calibration_pdfs)} calibration PDF paths")
+    
     try:
-        compress_checkpoint(args.source, args.destination, args.recipe, args.num_calibration_samples)
+        compress_checkpoint(args.source, args.destination, args.recipe, args.num_calibration_samples, calibration_pdfs)
     except Exception as e:
         print(f"\n❌ Error: {e}")
         return 1
