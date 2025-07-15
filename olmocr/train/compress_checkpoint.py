@@ -31,7 +31,6 @@ import torch
 from llmcompressor import oneshot
 from PIL import Image
 from transformers import AutoTokenizer, Qwen2VLForConditionalGeneration, Qwen2_5_VLForConditionalGeneration, AutoProcessor
-from qwen_vl_utils import process_vision_info
 
 from olmocr.s3_utils import parse_s3_path
 from olmocr.pipeline import build_page_query
@@ -80,24 +79,39 @@ async def prepare_calibration_dataset(pdf_paths: List[str], processor) -> List[d
         # Get first page of each PDF (page 0)
         query = await build_page_query(pdf_path, page=0, target_longest_image_dim=1024)
         
-        # Extract the image and text from the query
+        # Extract the messages
         messages = query["messages"]
         
+        # Extract images from the message content
+        images = []
+        for message in messages:
+            if message.get("role") == "user":
+                content = message.get("content", [])
+                for item in content:
+                    if item.get("type") == "image_url":
+                        image_url = item["image_url"]["url"]
+                        # Extract base64 image data
+                        if image_url.startswith("data:image"):
+                            base64_str = image_url.split(",")[1]
+                            image_bytes = base64.b64decode(base64_str)
+                            image = Image.open(BytesIO(image_bytes))
+                            images.append(image)
+        
+        # Apply chat template to get the text
         text = processor.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
         )
         
-        image_inputs, video_inputs = process_vision_info(messages)
-
-        # tokenize
-        return processor(
+        # Process with tokenizer
+        inputs = processor(
             text=[text],
-            images=image_inputs,
-            videos=video_inputs,
+            images=images if images else None,
             padding=False,
             max_length=8192,
             truncation=True,
         )
+        
+        dataset.append(inputs)
     
     return dataset
 
