@@ -156,6 +156,12 @@ def compress_checkpoint(source_path: str, dest_path: str) -> None:
     model, tokenizer, temp_source_dir = load_model_and_tokenizer(source_path)
     
     try:
+        # Print all model tensor names
+        print("\n=== Model Tensor Names ===")
+        for name, param in model.named_parameters():
+            print(f"{name}: shape={list(param.shape)}, dtype={param.dtype}")
+        print("=========================\n")
+        
         # Configure FP8 dynamic quantization
         print("\nApplying FP8 dynamic quantization...")
         recipe = QuantizationModifier(
