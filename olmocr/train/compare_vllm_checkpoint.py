@@ -5,16 +5,54 @@ Processes prompts and images from WildVision-bench until finding significant mis
 """
 
 import argparse
+import asyncio
 import gc
+import os
+import glob
+import tempfile
+import shutil
 import torch
 from vllm import LLM, SamplingParams
 from transformers import AutoProcessor, AutoModelForVision2Seq
 from datasets import load_dataset
+from huggingface_hub import snapshot_download
 import random
 import numpy as np
 from typing import List, Dict
 import base64
 from io import BytesIO
+import PIL.Image
+import logging
+
+from olmocr.pipeline import build_page_query
+from olmocr.s3_utils import download_directory
+
+logger = logging.getLogger(__name__)
+
+
+async def download_model(model_name_or_path: str, max_retries: int = 5):
+    for retry in range(max_retries):
+        try:
+            if model_name_or_path.startswith("s3://") or model_name_or_path.startswith("gs://") or model_name_or_path.startswith("weka://"):
+                logger.info(f"Downloading model directory from '{model_name_or_path}'")
+                model_cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "olmocr", "model")
+                # Delete existing model cache directory if it exists
+                if os.path.exists(model_cache_dir):
+                    shutil.rmtree(model_cache_dir)
+                download_directory([model_name_or_path], model_cache_dir)
+                return model_cache_dir
+            elif os.path.isabs(model_name_or_path) and os.path.isdir(model_name_or_path):
+                logger.info(f"Using local model path at '{model_name_or_path}'")
+                return model_name_or_path
+            else:
+                logger.info(f"Downloading model with hugging face '{model_name_or_path}'")
+                snapshot_download(repo_id=model_name_or_path)
+                return model_name_or_path
+        except Exception:
+            if retry == max_retries - 1:
+                raise  # Raise on final attempt and fail the job
+            logger.warning(f"Model download failed (attempt {retry + 1}/{max_retries}), retrying...")
+            await asyncio.sleep(2 ** retry)  # Exponential backoff
 
 
 def image_to_base64_data_url(image):
@@ -25,75 +63,95 @@ def image_to_base64_data_url(image):
     return f"data:image/png;base64,{img_str}"
 
 
-def load_wildvision_prompts(num_samples: int = 100, seed: int = 42, max_length: int = 2048) -> List[Dict[str, str]]:
-    """Load prompts and images from WildVision-bench dataset with fixed random seed."""
-    print(f"Loading WildVision-bench dataset with {num_samples} samples and seed {seed}")
+def load_pdf_prompts(num_samples: int = 100, seed: int = 42, max_length: int = 2048) -> List[Dict[str, str]]:
+    """Load prompts and images from olmOCR-mix-0225-benchmarkset dataset with fixed random seed."""
+    print(f"Loading olmOCR-mix-0225-benchmarkset dataset with {num_samples} samples and seed {seed}")
     
     # Set random seed for reproducibility
     random.seed(seed)
     np.random.seed(seed)
     
-    # Load dataset
-    dataset = load_dataset("WildVision/wildvision-bench", "vision_bench_0701", split="test", streaming=True)
-    
-    # Collect prompts and images
-    samples = []
-    examined = 0
-    for example in dataset:
-        examined += 1
-        if len(samples) >= num_samples * 2:  # Collect extra to allow filtering
-            break
+    # Download dataset to a temporary directory
+    with tempfile.TemporaryDirectory() as temp_dir:
+        print("Downloading dataset...")
+        dataset_path = snapshot_download(
+            repo_id="allenai/olmOCR-mix-0225-benchmarkset",
+            repo_type="dataset",
+            local_dir=temp_dir,
+            allow_patterns="pdfs/*.pdf"  # Only download PDF files
+        )
         
-        # Extract prompt and image from the example
-        prompt = example.get('instruction', '').strip()
-        image = example.get('image', None)
+        # Find all PDF files in the pdfs directory
+        pdf_pattern = os.path.join(dataset_path, "pdfs", "*.pdf")
+        pdf_files = glob.glob(pdf_pattern)
         
-        # Filter by prompt length and ensure we have both prompt and image
-        if prompt and image and 10 < len(prompt) <= max_length:
-            samples.append({
-                'prompt': prompt,
-                'image': image  # This is already a PIL Image object
-            })
+        if not pdf_files:
+            raise ValueError(f"No PDF files found in {pdf_pattern}")
         
-        # Stop if we've examined too many without finding enough
-        if examined > num_samples * 10:
-            break
-    
-    # Randomly sample exactly num_samples
-    if len(samples) < num_samples:
-        print(f"Only found {len(samples)} valid samples out of {examined} examined")
-        if len(samples) == 0:
-            raise ValueError("No valid samples found in dataset")
-        samples = random.choices(samples, k=num_samples)
-    else:
-        samples = random.sample(samples, num_samples)
-    
-    print(f"Selected {len(samples)} samples for comparison")
-    return samples
-
+        print(f"Found {len(pdf_files)} PDF files")
+        
+        # Randomly sample num_samples PDFs
+        if len(pdf_files) > num_samples:
+            sampled_pdfs = random.sample(pdf_files, num_samples)
+        else:
+            sampled_pdfs = pdf_files
+            print(f"Warning: Only {len(pdf_files)} PDFs available, less than requested {num_samples}")
+        
+        # Process each PDF and build queries
+        queries = []
+        for pdf_path in sampled_pdfs:
+            try:
+                # Build page query for page 1 of each PDF
+                query = asyncio.run(build_page_query(
+                    local_pdf_path=pdf_path,
+                    page=1,
+                    target_longest_image_dim=1280,
+                    image_rotation=0
+                ))
+                queries.append(query)
+            except Exception as e:
+                print(f"Error processing {os.path.basename(pdf_path)}: {e}")
+                continue
+        
+        print(f"Successfully processed {len(queries)} PDFs")
+        return queries
 
 def process_single_prompt(sample: Dict[str, any], llm, hf_model, processor, sampling_params, device, args):
     """Process a single prompt with image and return comparison results."""
-    prompt = sample['prompt']
-    image = sample['image']  # Already a PIL Image object
+    # Extract messages from the sample (which is the output of build_page_query)
+    messages = sample['messages']
+    
+    # Extract the text prompt and image from the messages
+    user_message = messages[0]
+    text_prompt = None
+    image_base64 = None
+    
+    for content in user_message['content']:
+        if content['type'] == 'text':
+            text_prompt = content['text']
+        elif content['type'] == 'image_url':
+            image_url = content['image_url']['url']
+            # Extract base64 data after the comma
+            if ',' in image_url:
+                image_base64 = image_url.split(',')[1]
+            else:
+                image_base64 = image_url
+    
+    if text_prompt is None or image_base64 is None:
+        raise ValueError("Failed to extract text prompt or image from messages")
+    
+    # Decode the base64 image to PIL Image
+    image_bytes = base64.b64decode(image_base64)
+    image = PIL.Image.open(BytesIO(image_bytes))
     
     print(f"\n{'='*80}")
-    print(f"PROMPT: {prompt[:100]}..." if len(prompt) > 100 else f"PROMPT: {prompt}")
+    print(f"PROMPT: {text_prompt[:100]}..." if len(text_prompt) > 100 else f"PROMPT: {text_prompt}")
     print(f"IMAGE: {image.size} {image.mode}")
     
     # Generate with vLLM
     print("\n=== vLLM Generation ===")
-    # Convert image to base64 data URL
-    image_data_url = image_to_base64_data_url(image)
     
-    # For VLMs, vLLM expects the message format with image
-    messages = [{
-        "role": "user",
-        "content": [
-            {"type": "image_url", "image_url": {"url": image_data_url}},
-            {"type": "text", "text": prompt}
-        ]
-    }]
+    # For VLLM, use the messages just as comes out of build_page_query
     outputs = llm.chat(messages, sampling_params)
     output = outputs[0]
     
@@ -110,19 +168,19 @@ def process_single_prompt(sample: Dict[str, any], llm, hf_model, processor, samp
     
     # HuggingFace forward pass
     print("\n=== HuggingFace Forward Pass ===")
-    # Prepare inputs for HF model
+    # Prepare inputs for HF model using the extracted image and text
     conversation = [
         {
             "role": "user",
             "content": [
                 {"type": "image"},
-                {"type": "text", "text": prompt}
+                {"type": "text", "text": text_prompt}
             ]
         }
     ]
-    text_prompt = processor.apply_chat_template(conversation, add_generation_prompt=True, tokenize=False)
+    hf_text_prompt = processor.apply_chat_template(conversation, add_generation_prompt=True, tokenize=False)
     inputs = processor(
-        text=[text_prompt],
+        text=[hf_text_prompt],
         images=[image],
         return_tensors="pt"
     ).to(device)
@@ -233,7 +291,7 @@ def process_single_prompt(sample: Dict[str, any], llm, hf_model, processor, samp
     }
 
 
-def main():
+async def async_main():
     parser = argparse.ArgumentParser(description="Batch compare VLM inference between vLLM and HuggingFace")
     parser.add_argument("--model", type=str, default="Qwen/Qwen2.5-VL-7B-Instruct", 
                         help="Model name or path")
@@ -253,14 +311,17 @@ def main():
     print(f"Max tokens: {args.max_tokens}")
     print(f"Temperature: {args.temperature}")
     print(f"Probability threshold: {args.prob_threshold}")
-    print(f"Loading {args.num_prompts} samples from WildVision-bench\n")
+    print(f"Loading {args.num_prompts} samples from olmOCR-mix-0225-benchmarkset\n")
+
+    # Download the model before loading prompts
+    model_path = await download_model(args.model)
 
     # Load prompts and images
-    samples = load_wildvision_prompts(num_samples=args.num_prompts, seed=args.seed)
+    samples = load_pdf_prompts(num_samples=args.num_prompts, seed=args.seed)
     
     # Create vLLM engine
     print("\n=== Creating vLLM Engine ===")
-    llm = LLM(model=args.model, trust_remote_code=True, gpu_memory_utilization=0.5)
+    llm = LLM(model=model_path, trust_remote_code=True, gpu_memory_utilization=0.5)
     sampling_params = SamplingParams(
         temperature=args.temperature,
         max_tokens=args.max_tokens,
@@ -278,9 +339,9 @@ def main():
     # Load HuggingFace model and processor
     print("\n=== Loading HuggingFace Model ===")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    processor_hf = AutoProcessor.from_pretrained(args.model, trust_remote_code=True)
+    processor_hf = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
     hf_model = AutoModelForVision2Seq.from_pretrained(
-        args.model,
+        model_path,
         trust_remote_code=True,
         torch_dtype=torch.float16,
         device_map="auto"
@@ -295,7 +356,7 @@ def main():
         print(f"{'#'*80}")
         
         # Recreate vLLM for each prompt
-        llm = LLM(model=args.model, trust_remote_code=True, gpu_memory_utilization=0.5)
+        llm = LLM(model=model_path, trust_remote_code=True, gpu_memory_utilization=0.5)
         
         # Process single sample
         result = process_single_prompt(sample, llm, hf_model, processor_hf, sampling_params, device, args)
@@ -317,6 +378,10 @@ def main():
         print(f"\n\n{'='*80}")
         print(f"=== Processed all {len(samples)} samples without finding significant mismatch ===")
         print(f"{'='*80}")
+
+
+def main():
+    asyncio.run(async_main())
 
 
 if __name__ == "__main__":
