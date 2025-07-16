@@ -2,7 +2,7 @@
 
 # Project metadata
 project_name: olmocr-qwen-vl-training
-run_name: qwen2.5-vl-7b-olmocrv2_soupfull1
+run_name: qwen2.5-vl-7b-olmocrv2-1288-soupfull0
 
 # Model configuration
 model:
@@ -33,7 +33,7 @@ dataset:
         - name: FrontMatterParser
           front_matter_class: PageResponse
         - name: PDFRenderer
-          target_longest_image_dim: 1280
+          target_longest_image_dim: 1288
         - name: NewYamlFinetuningPromptWithNoAnchoring
         - name: FrontMatterOutputFormat
         - name: InstructUserMessages
@@ -78,8 +78,8 @@ training:
   weight_decay: 0.01
   max_grad_norm: 1.0
 
-  seed: 200
-  data_seed: 201
+  seed: 100
+  data_seed: 101
   
   # Evaluation and checkpointing
   evaluation_strategy: steps
