@@ -14,7 +14,6 @@ import shutil
 import torch
 from vllm import LLM, SamplingParams
 from transformers import AutoProcessor, AutoModelForVision2Seq
-from datasets import load_dataset
 from huggingface_hub import snapshot_download
 import random
 import numpy as np
