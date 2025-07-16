@@ -70,46 +70,57 @@ async def load_pdf_prompts(num_samples: int = 100, seed: int = 42, max_length: i
     random.seed(seed)
     np.random.seed(seed)
     
-    # Download dataset to a temporary directory
+    # Import huggingface_hub utilities to list files
+    from huggingface_hub import list_repo_files, hf_hub_download
+    
+    # List all PDF files in the repository
+    print("Listing PDF files in dataset...")
+    all_files = list_repo_files(
+        repo_id="allenai/olmOCR-mix-0225-benchmarkset",
+        repo_type="dataset"
+    )
+    
+    # Filter for PDF files in the pdfs directory
+    pdf_files = [f for f in all_files if f.startswith("pdfs/") and f.endswith(".pdf")]
+    
+    if not pdf_files:
+        raise ValueError("No PDF files found in the dataset")
+    
+    print(f"Found {len(pdf_files)} PDF files in dataset")
+    
+    # Randomly sample num_samples PDFs
+    if len(pdf_files) > num_samples:
+        sampled_pdf_files = random.sample(pdf_files, num_samples)
+    else:
+        sampled_pdf_files = pdf_files
+        print(f"Warning: Only {len(pdf_files)} PDFs available, less than requested {num_samples}")
+    
+    print(f"Sampled {len(sampled_pdf_files)} PDFs to download")
+    
+    # Download only the sampled PDFs and process them
+    queries = []
     with tempfile.TemporaryDirectory() as temp_dir:
-        print("Downloading dataset...")
-        dataset_path = snapshot_download(
-            repo_id="allenai/olmOCR-mix-0225-benchmarkset",
-            repo_type="dataset",
-            local_dir=temp_dir,
-            allow_patterns="pdfs/*.pdf"  # Only download PDF files
-        )
-        
-        # Find all PDF files in the pdfs directory
-        pdf_pattern = os.path.join(dataset_path, "pdfs", "*.pdf")
-        pdf_files = glob.glob(pdf_pattern)
-        
-        if not pdf_files:
-            raise ValueError(f"No PDF files found in {pdf_pattern}")
-        
-        print(f"Found {len(pdf_files)} PDF files")
-        
-        # Randomly sample num_samples PDFs
-        if len(pdf_files) > num_samples:
-            sampled_pdfs = random.sample(pdf_files, num_samples)
-        else:
-            sampled_pdfs = pdf_files
-            print(f"Warning: Only {len(pdf_files)} PDFs available, less than requested {num_samples}")
-        
-        # Process each PDF and build queries
-        queries = []
-        for pdf_path in sampled_pdfs:
+        for pdf_file in sampled_pdf_files:
             try:
+                # Download individual PDF file
+                print(f"Downloading {pdf_file}...")
+                local_pdf_path = hf_hub_download(
+                    repo_id="allenai/olmOCR-mix-0225-benchmarkset",
+                    filename=pdf_file,
+                    repo_type="dataset",
+                    local_dir=temp_dir
+                )
+                
                 # Build page query for page 1 of each PDF
                 query = await build_page_query(
-                    local_pdf_path=pdf_path,
+                    local_pdf_path=local_pdf_path,
                     page=1,
                     target_longest_image_dim=1280,
                     image_rotation=0
                 )
                 queries.append(query)
             except Exception as e:
-                print(f"Error processing {os.path.basename(pdf_path)}: {e}")
+                print(f"Error processing {os.path.basename(pdf_file)}: {e}")
                 continue
         
         print(f"Successfully processed {len(queries)} PDFs")
