@@ -5,11 +5,28 @@ Prepares OlmOCR checkpoints for deployment by:
 2. Copying model files to destination (disk or S3)
 3. Downloading required tokenizer files from Hugging Face
 
+Supports model souping (averaging weights of multiple checkpoints).
+
 Usage:
     python prepare_olmocr_checkpoint.py <source_path> <destination_path>
     
     source_path: Path to checkpoint (local or S3)
     destination_path: Where to save prepared checkpoint (local or S3)
+
+For souping multiple checkpoints:
+    python prepare_olmocr_checkpoint.py <source1> <source2> ... <destination>
+    
+    This will average the weights of all sources and prepare the souped checkpoint.
+
+Examples:
+    # Single local to local
+    python prepare_olmocr_checkpoint.py /path/to/checkpoint /path/to/output
+    
+    # Souping multiple S3 to S3
+    python prepare_olmocr_checkpoint.py s3://bucket/ckpt1 s3://bucket/ckpt2 s3://bucket/souped
+    
+    # Mixed souping
+    python prepare_olmocr_checkpoint.py s3://bucket/ckpt1 /local/ckpt2 s3://bucket/souped
 """
 
 import argparse
@@ -23,6 +40,12 @@ import boto3
 import requests
 from smart_open import smart_open
 from tqdm import tqdm
+import torch
+
+try:
+    from safetensors.torch import load_file, save_file
+except ImportError:
+    raise ImportError("Please install safetensors: pip install safetensors")
 
 from olmocr.s3_utils import parse_s3_path
 
@@ -235,39 +258,136 @@ def copy_s3_to_s3(source_bucket: str, source_prefix: str, dest_bucket: str, dest
         s3_client.copy_object(CopySource=copy_source, Bucket=bucket, Key=key)
 
 
-def prepare_checkpoint(source_path: str, dest_path: str) -> None:
-    """Prepare OlmOCR checkpoint for deployment."""
-    # First, detect the source checkpoint architecture
-    config_path = os.path.join(source_path, "config.json")
-    if is_s3_path(source_path):
-        config_path = f"{source_path}/config.json"
-    
-    architecture = detect_checkpoint_architecture(config_path)
-    
+def get_weight_files(dir_path: str) -> list[str]:
+    """Get list of weight files (full paths) in the directory."""
+    weight_files = []
+    for root, _, files in os.walk(dir_path):
+        for file in files:
+            full_path = os.path.join(root, file)
+            if (file.startswith("pytorch_model") and file.endswith(".bin")) or file.endswith(".safetensors"):
+                weight_files.append(full_path)
+    return weight_files
+
+
+def prepare_checkpoints(sources: list[str], dest_path: str) -> None:
+    """Prepare OlmOCR checkpoint(s) for deployment, with support for souping."""
+    print(f"Preparing {'souped ' if len(sources) > 1 else ''}checkpoint from {len(sources)} source(s) to {dest_path}")
+
+    # Detect architectures
+    architectures = []
+    for source in sources:
+        config_path = f"{source}/config.json" if is_s3_path(source) else os.path.join(source, "config.json")
+        arch = detect_checkpoint_architecture(config_path)
+        architectures.append(arch)
+
+    # Check all same
+    if len(set(architectures)) > 1:
+        raise ValueError("All sources must have the same architecture")
+
+    architecture = architectures[0]
+
     # Get the appropriate HF model ID and base URL
     hf_model_id = HF_MODEL_IDS[architecture]
     hf_base_url = f"https://huggingface.co/{hf_model_id}/resolve/main"
     print(f"Using HuggingFace model: {hf_model_id}")
-    
-    # Copy model files to destination
-    print("\nCopying model files...")
-    if is_s3_path(source_path) and is_s3_path(dest_path):
-        # S3 to S3
-        source_bucket, source_prefix = parse_s3_path(source_path)
-        dest_bucket, dest_prefix = parse_s3_path(dest_path)
-        copy_s3_to_s3(source_bucket, source_prefix, dest_bucket, dest_prefix)
-    elif is_s3_path(source_path) and not is_s3_path(dest_path):
-        # S3 to local
-        source_bucket, source_prefix = parse_s3_path(source_path)
-        copy_s3_to_local(source_bucket, source_prefix, dest_path)
-    elif not is_s3_path(source_path) and is_s3_path(dest_path):
-        # Local to S3
-        dest_bucket, dest_prefix = parse_s3_path(dest_path)
-        copy_local_to_s3(source_path, dest_bucket, dest_prefix)
+
+    if len(sources) == 1:
+        source_path = sources[0]
+        # Single checkpoint: copy as before
+        print("\nCopying model files...")
+        if is_s3_path(source_path) and is_s3_path(dest_path):
+            # S3 to S3
+            source_bucket, source_prefix = parse_s3_path(source_path)
+            dest_bucket, dest_prefix = parse_s3_path(dest_path)
+            copy_s3_to_s3(source_bucket, source_prefix, dest_bucket, dest_prefix)
+        elif is_s3_path(source_path) and not is_s3_path(dest_path):
+            # S3 to local
+            source_bucket, source_prefix = parse_s3_path(source_path)
+            copy_s3_to_local(source_bucket, source_prefix, dest_path)
+        elif not is_s3_path(source_path) and is_s3_path(dest_path):
+            # Local to S3
+            dest_bucket, dest_prefix = parse_s3_path(dest_path)
+            copy_local_to_s3(source_path, dest_bucket, dest_prefix)
+        else:
+            # Local to local
+            copy_local_to_local(source_path, dest_path)
     else:
-        # Local to local
-        copy_local_to_local(source_path, dest_path)
-    
+        # Souping multiple checkpoints
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Download all sources to local temp dirs
+            source_temps = []
+            for i, source in enumerate(sources):
+                source_temp = os.path.join(temp_dir, f"source_{i}")
+                if is_s3_path(source):
+                    bucket, prefix = parse_s3_path(source)
+                    copy_s3_to_local(bucket, prefix, source_temp)
+                else:
+                    copy_local_to_local(source, source_temp)
+                source_temps.append(source_temp)
+
+            first_source = source_temps[0]
+
+            # Get weight files
+            weight_full_paths = get_weight_files(first_source)
+            weight_rel_paths = [os.path.relpath(p, first_source) for p in weight_full_paths]
+
+            # Verify others have same weight files
+            for i in range(1, len(sources)):
+                other_dir = source_temps[i]
+                other_weights = [os.path.relpath(p, other_dir) for p in get_weight_files(other_dir)]
+                if set(other_weights) != set(weight_rel_paths):
+                    raise ValueError(f"Source {sources[i]} has different weight files")
+
+            # Create souped_dir
+            souped_dir = os.path.join(temp_dir, "souped")
+            # Copy first source (including its weights, which will be overwritten)
+            copy_local_to_local(first_source, souped_dir)
+
+            # Average weights
+            for rel_path in tqdm(weight_rel_paths, desc="Averaging weight files"):
+                all_paths = [os.path.join(st, rel_path) for st in source_temps]
+                file_path = all_paths[0]
+                souped_path = os.path.join(souped_dir, rel_path)
+                os.makedirs(os.path.dirname(souped_path), exist_ok=True)
+
+                if file_path.endswith('.safetensors'):
+                    sum_state = load_file(file_path, device='cpu')
+                    for other_path in all_paths[1:]:
+                        other_state = load_file(other_path, device='cpu')
+                        if set(sum_state.keys()) != set(other_state.keys()):
+                            raise ValueError(f"Key mismatch in {rel_path}")
+                        for k in sum_state:
+                            sum_state[k] += other_state[k]
+                        del other_state
+                    n = len(all_paths)
+                    for k in sum_state:
+                        sum_state[k] /= n
+                    save_file(sum_state, souped_path)
+                elif file_path.endswith('.bin'):
+                    sum_state = torch.load(file_path, map_location='cpu')
+                    for other_path in all_paths[1:]:
+                        other_state = torch.load(other_path, map_location='cpu')
+                        if set(sum_state.keys()) != set(other_state.keys()):
+                            raise ValueError(f"Key mismatch in {rel_path}")
+                        for k in sum_state:
+                            sum_state[k] += other_state[k]
+                        del other_state
+                    n = len(all_paths)
+                    for k in sum_state:
+                        sum_state[k] /= n
+                    torch.save(sum_state, souped_path)
+                else:
+                    print(f"Skipping unknown weight file: {rel_path}")
+                    continue
+
+            # Now copy souped_dir to dest_path
+            print("\nCopying souped model files to destination...")
+            if is_s3_path(dest_path):
+                dest_bucket, dest_prefix = parse_s3_path(dest_path)
+                copy_local_to_s3(souped_dir, dest_bucket, dest_prefix)
+            else:
+                copy_local_to_local(souped_dir, dest_path)
+
     # Download tokenizer files from Hugging Face
     print("\nDownloading tokenizer files from Hugging Face...")
     
@@ -316,28 +436,20 @@ def main():
     parser = argparse.ArgumentParser(
         description="Prepare OlmOCR checkpoint for deployment",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-    # Local to local
-    python prepare_olmocr_checkpoint.py /path/to/checkpoint /path/to/output
-    
-    # S3 to S3
-    python prepare_olmocr_checkpoint.py s3://bucket/checkpoint s3://bucket/prepared
-    
-    # S3 to local
-    python prepare_olmocr_checkpoint.py s3://bucket/checkpoint /path/to/output
-    
-    # Local to S3
-    python prepare_olmocr_checkpoint.py /path/to/checkpoint s3://bucket/prepared
-        """
+        epilog=__doc__.split("Usage:")[1]  # Use the docstring for epilog
     )
-    parser.add_argument("source", help="Source checkpoint path (local or S3)")
-    parser.add_argument("destination", help="Destination path (local or S3)")
+    parser.add_argument("paths", nargs='+', help="One or more source paths followed by destination path (local or S3)")
     
     args = parser.parse_args()
     
+    if len(args.paths) < 2:
+        parser.error("At least one source and one destination required")
+    
+    sources = args.paths[:-1]
+    destination = args.paths[-1]
+    
     try:
-        prepare_checkpoint(args.source, args.destination)
+        prepare_checkpoints(sources, destination)
     except Exception as e:
         print(f"\n❌ Error: {e}")
         return 1
