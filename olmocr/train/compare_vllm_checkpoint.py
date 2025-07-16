@@ -62,7 +62,7 @@ def image_to_base64_data_url(image):
     return f"data:image/png;base64,{img_str}"
 
 
-def load_pdf_prompts(num_samples: int = 100, seed: int = 42, max_length: int = 2048) -> List[Dict[str, str]]:
+async def load_pdf_prompts(num_samples: int = 100, seed: int = 42, max_length: int = 2048) -> List[Dict[str, str]]:
     """Load prompts and images from olmOCR-mix-0225-benchmarkset dataset with fixed random seed."""
     print(f"Loading olmOCR-mix-0225-benchmarkset dataset with {num_samples} samples and seed {seed}")
     
@@ -101,12 +101,12 @@ def load_pdf_prompts(num_samples: int = 100, seed: int = 42, max_length: int = 2
         for pdf_path in sampled_pdfs:
             try:
                 # Build page query for page 1 of each PDF
-                query = asyncio.run(build_page_query(
+                query = await build_page_query(
                     local_pdf_path=pdf_path,
                     page=1,
                     target_longest_image_dim=1280,
                     image_rotation=0
-                ))
+                )
                 queries.append(query)
             except Exception as e:
                 print(f"Error processing {os.path.basename(pdf_path)}: {e}")
@@ -316,7 +316,7 @@ async def async_main():
     model_path = await download_model(args.model)
 
     # Load prompts and images
-    samples = load_pdf_prompts(num_samples=args.num_prompts, seed=args.seed)
+    samples = await load_pdf_prompts(num_samples=args.num_prompts, seed=args.seed)
     
     # Create vLLM engine
     print("\n=== Creating vLLM Engine ===")
