@@ -140,6 +140,8 @@ if has_aws_creds:
     ])
 
 commands.extend([
+    # Install accelerate
+    "pip install accelerate",
     # Run comparison
     f'python -m olmocr.train.compare_vllm_checkpoint --model {model_path} --max-tokens {max_tokens} --num-prompts {num_prompts} --prob-threshold {prob_threshold} --seed {seed}'
 ])
