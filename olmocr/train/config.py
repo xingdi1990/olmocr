@@ -319,6 +319,7 @@ class Config:
             NewYamlFinetuningPromptWithNoAnchoring,
             JSONOutputFormat,
             PDFRenderer,
+            RandomTokenFlipper,
             StaticLengthDocumentAnchoring,
             Tokenizer,
         )
@@ -375,6 +376,29 @@ class Config:
                         processor=processor,
                         masking_index=step_config.get("masking_index", -100),
                         end_of_message_token=step_config.get("end_of_message_token", "<|im_end|>"),
+                    )
+                )
+            elif step_name == "RandomTokenFlipper":
+                if processor is None:
+                    raise ValueError("Processor must be provided for RandomTokenFlipper step (to get valid tokens)")
+                tokenizer = processor.tokenizer
+                
+                # Get all special token IDs to exclude
+                special_token_ids = set()
+                for token in tokenizer.all_special_tokens:
+                    special_token_ids.add(tokenizer.convert_tokens_to_ids(token))
+                
+                # Get all token IDs that are not special tokens
+                valid_token_ids = []
+                for token_id in range(len(tokenizer)):
+                    if token_id not in special_token_ids:
+                        valid_token_ids.append(token_id)
+                
+                steps.append(
+                    RandomTokenFlipper(
+                        valid_token_ids=valid_token_ids,
+                        token_flip_rate=step_config.get("token_flip_rate", 1e-4),
+                        masking_index=step_config.get("masking_index", -100),
                     )
                 )
             else:

@@ -490,6 +490,44 @@ class Tokenizer(PipelineStep):
         return sample
 
 
+@dataclass(frozen=True, slots=True)
+class RandomTokenFlipper(PipelineStep):
+    """Randomly flips tokens in the output (non-masked) portion and masks their labels."""
+    
+    valid_token_ids: List[int]  # List of valid token IDs to substitute with
+    token_flip_rate: float = 1e-4
+    masking_index: int = -100
+    
+    def __call__(self, sample: Sample) -> Sample:
+        """Randomly flip tokens in the non-masked portion of labels."""
+        if "labels" not in sample or "input_ids" not in sample:
+            return sample
+            
+        # Work with copies to avoid modifying original arrays
+        labels = sample["labels"].copy()
+        input_ids = sample["input_ids"].copy()
+        
+        # Find indices where labels are not masked (i.e., output tokens)
+        non_masked_indices = np.where(labels != self.masking_index)[0]
+        
+        if len(non_masked_indices) == 0:
+            return sample
+            
+        # For each non-masked token, independently decide whether to flip
+        for idx in non_masked_indices:
+            if np.random.random() < self.token_flip_rate:
+                # Pick a random token from the valid tokens list
+                random_token = np.random.choice(self.valid_token_ids)
+                input_ids[idx] = random_token
+                labels[idx] = self.masking_index
+        
+        # Update sample with modified arrays
+        sample["input_ids"] = input_ids
+        sample["labels"] = labels
+        
+        return sample
+
+
 class MarkdownPDFDocumentDataset(BaseMarkdownPDFDataset):
     """Dataset that includes front matter parsing and PDF rendering by default."""
 
