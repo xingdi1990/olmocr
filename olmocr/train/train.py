@@ -12,10 +12,13 @@ import time
 import numpy as np
 import torch
 from torch.utils.data import ConcatDataset, DataLoader
+from torch.optim import AdamW
+from torch.cuda.amp import autocast
+import wandb
+
 from transformers import (
     AutoProcessor,
     get_scheduler,
-    AdamW,
     Qwen2_5_VLForConditionalGeneration,
     Qwen2VLForConditionalGeneration,
 )
@@ -128,27 +131,29 @@ def save_checkpoint(
 
 
 def load_checkpoint(
-    model: torch.nn.Module,
+    model_class: type,
+    init_kwargs: Dict[str, Any],
     optimizer: torch.optim.Optimizer,
     lr_scheduler: Any,
     checkpoint_dir: str,
-) -> Dict[str, Any]:
+    device: torch.device,
+) -> tuple[torch.nn.Module, Dict[str, Any]]:
     """Load model, optimizer, scheduler, and training state from checkpoint."""
-    model.load_pretrained(checkpoint_dir)
+    model = model_class.from_pretrained(checkpoint_dir, **init_kwargs)
+    model.to(device)
     
-    optimizer.load_state_dict(torch.load(os.path.join(checkpoint_dir, "optimizer.pt")))
-    lr_scheduler.load_state_dict(torch.load(os.path.join(checkpoint_dir, "scheduler.pt")))
+    optimizer.load_state_dict(torch.load(os.path.join(checkpoint_dir, "optimizer.pt"), map_location=device))
+    lr_scheduler.load_state_dict(torch.load(os.path.join(checkpoint_dir, "scheduler.pt"), map_location=device))
     
-    state = torch.load(os.path.join(checkpoint_dir, "training_state.pt"))
+    state = torch.load(os.path.join(checkpoint_dir, "training_state.pt"), map_location=device)
     logger.info(f"Resumed from checkpoint: {checkpoint_dir} at epoch {state['epoch']}, step {state['global_step']}")
-    return state
+    return model, state
 
 
 def evaluate_model(
     model: torch.nn.Module,
     eval_dataloaders: Dict[str, DataLoader],
     device: torch.device,
-    amp_scaler: Any,  # For bf16
 ) -> Dict[str, float]:
     """Evaluate on all eval datasets and return average loss per dataset."""
     model.eval()
@@ -161,7 +166,7 @@ def evaluate_model(
         with torch.no_grad():
             for batch in dataloader:
                 batch = {k: v.to(device) for k, v in batch.items()}
-                with amp_scaler.autocast(enabled=True):  # bf16
+                with autocast(enabled=True, dtype=torch.bfloat16):
                     outputs = model(**batch)
                 total_loss += outputs.loss.item()
                 num_batches += 1
@@ -202,7 +207,6 @@ def main():
     
     # Initialize wandb if reporting to it
     if "wandb" in config.training.report_to:
-        import wandb
         wandb.init(project=config.project_name, name=config.run_name, config=config.to_dict())
     
     # Load processor for tokenization
@@ -211,24 +215,22 @@ def main():
         config.model.name,
     )
 
+    # Model init kwargs to reuse for loading checkpoints
+    model_init_kwargs = {
+        "torch_dtype": getattr(torch, config.model.torch_dtype) if config.model.torch_dtype != "auto" else "auto",
+        "device_map": config.model.device_map,
+        "trust_remote_code": config.model.trust_remote_code,
+        "attn_implementation": config.model.attn_implementation if config.model.use_flash_attention else None,
+    }
+
     # Load model
     logger.info(f"Loading model: {config.model.name}")
     if "Qwen2.5-VL" in config.model.name:
-        model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-            config.model.name,
-            torch_dtype=getattr(torch, config.model.torch_dtype) if config.model.torch_dtype != "auto" else "auto",
-            device_map=config.model.device_map,
-            trust_remote_code=config.model.trust_remote_code,
-            attn_implementation=config.model.attn_implementation if config.model.use_flash_attention else None,
-        )
+        model_class = Qwen2_5_VLForConditionalGeneration
+        model = model_class.from_pretrained(config.model.name, **model_init_kwargs)
     elif "Qwen2-VL" in config.model.name:
-        model = Qwen2VLForConditionalGeneration.from_pretrained(
-            config.model.name,
-            torch_dtype=getattr(torch, config.model.torch_dtype) if config.model.torch_dtype != "auto" else "auto",
-            device_map=config.model.device_map,
-            trust_remote_code=config.model.trust_remote_code,
-            attn_implementation=config.model.attn_implementation if config.model.use_flash_attention else None,
-        )
+        model_class = Qwen2VLForConditionalGeneration
+        model = model_class.from_pretrained(config.model.name, **model_init_kwargs)
     else:
         raise NotImplementedError()
 
@@ -338,10 +340,6 @@ def main():
         scheduler_specific_kwargs=config.training.lr_scheduler_kwargs,
     )
 
-    # Set up mixed precision (bf16)
-    from torch.cuda.amp import GradScaler, autocast
-    amp_scaler = GradScaler(enabled=True)  # For bf16, but note: bf16 doesn't need scaling like fp16
-
     # Data collator
     data_collator = QwenDataCollator(max_token_len=config.training.collator_max_token_len)
 
@@ -371,21 +369,15 @@ def main():
     start_epoch = 0
     global_step = 0
     best_metric = float("inf") if config.training.greater_is_better else -float("inf")
-    best_metric_key = config.training.metric_for_best_model  # e.g., "eval_loss"
     if found_resumable_checkpoint:
-        state = load_checkpoint(model, optimizer, lr_scheduler, found_resumable_checkpoint)
+        model, state = load_checkpoint(model_class, model_init_kwargs, optimizer, lr_scheduler, found_resumable_checkpoint, device)
         start_epoch = state["epoch"] + 1  # Start from next epoch
         global_step = state["global_step"]
         best_metric = state["best_metric"]
 
-    # Early stopping setup
-    patience_counter = 0
-    early_stopping_patience = config.training.early_stopping_patience if config.training.use_early_stopping else float("inf")
-    early_stopping_threshold = config.training.early_stopping_threshold
-
     # Evaluate on start if configured
     if config.training.eval_on_start:
-        metrics = evaluate_model(model, eval_dataloaders, device, autocast)
+        metrics = evaluate_model(model, eval_dataloaders, device)
         logger.info(f"Initial evaluation: {metrics}")
         if "wandb" in config.training.report_to:
             wandb.log(metrics, step=global_step)
@@ -401,22 +393,20 @@ def main():
         for batch_idx, batch in enumerate(train_dataloader):
             batch = {k: v.to(device) for k, v in batch.items()}
             
-            with autocast(enabled=True):  # bf16
+            with autocast(enabled=True, dtype=torch.bfloat16):
                 outputs = model(**batch)
             loss = outputs.loss / config.training.gradient_accumulation_steps
-            amp_scaler.scale(loss).backward()
+            loss.backward()
             
             train_loss += loss.item() * config.training.gradient_accumulation_steps
             num_batches += 1
             
             if (batch_idx + 1) % config.training.gradient_accumulation_steps == 0:
                 # Clip gradients
-                amp_scaler.unscale_(optimizer)
                 torch.nn.utils.clip_grad_norm_(model.parameters(), config.training.max_grad_norm)
                 
                 # Step optimizer and scheduler
-                amp_scaler.step(optimizer)
-                amp_scaler.update()
+                optimizer.step()
                 lr_scheduler.step()
                 optimizer.zero_grad()
                 
@@ -439,26 +429,17 @@ def main():
             
             # Evaluation
             if config.training.eval_steps > 0 and global_step % config.training.eval_steps == 0:
-                metrics = evaluate_model(model, eval_dataloaders, device, autocast)
+                metrics = evaluate_model(model, eval_dataloaders, device)
                 logger.info(f"Evaluation at step {global_step}: {metrics}")
                 if "wandb" in config.training.report_to:
                     wandb.log(metrics, step=global_step)
                 
-                # Early stopping check
-                current_metric = metrics.get(best_metric_key, None)
+                # Update best metric (for potential load_best_model_at_end, though not implemented here)
+                current_metric = metrics.get(config.training.metric_for_best_model, None)
                 if current_metric is not None:
-                    if (config.training.greater_is_better and current_metric > best_metric + early_stopping_threshold) or \
-                       (not config.training.greater_is_better and current_metric < best_metric - early_stopping_threshold):
+                    if (config.training.greater_is_better and current_metric > best_metric) or \
+                       (not config.training.greater_is_better and current_metric < best_metric):
                         best_metric = current_metric
-                        patience_counter = 0
-                        if config.training.load_best_model_at_end:
-                            # Save best model (optional: implement loading best at end)
-                            pass
-                    else:
-                        patience_counter += 1
-                        if patience_counter >= early_stopping_patience:
-                            logger.info(f"Early stopping at step {global_step}")
-                            break
             
             # Saving
             if config.training.save_steps > 0 and global_step % config.training.save_steps == 0:
@@ -470,16 +451,13 @@ def main():
         # End of epoch logging
         epoch_time = time.time() - epoch_start_time
         logger.info(f"Epoch {epoch} completed in {epoch_time:.2f}s")
-        
-        if patience_counter >= early_stopping_patience:
-            break
 
     # Save the final model
     logger.info("Saving final model...")
     model.save_pretrained(full_output_dir)
     
     # Final evaluation
-    final_metrics = evaluate_model(model, eval_dataloaders, device, autocast)
+    final_metrics = evaluate_model(model, eval_dataloaders, device)
     logger.info(f"Training completed! Final metrics: {final_metrics}")
     if "wandb" in config.training.report_to:
         wandb.log(final_metrics, step=global_step)
