@@ -118,12 +118,27 @@ async def prepare_calibration_dataset(pdf_paths: List[str], processor) -> Datase
     
     # Convert list of dicts to HuggingFace Dataset
     if dataset_items:
-        # Flatten the list of dicts into a single dict of lists
-        dataset_dict = {}
-        for key in dataset_items[0].keys():
-            dataset_dict[key] = [item[key] for item in dataset_items]
+        # Create dataset in batches to avoid overflow
+        batch_size = 50  # Process in smaller batches
+        all_datasets = []
         
-        return Dataset.from_dict(dataset_dict)
+        for i in range(0, len(dataset_items), batch_size):
+            batch = dataset_items[i:i + batch_size]
+            # Flatten the batch into a dict of lists
+            batch_dict = {}
+            for key in batch[0].keys():
+                batch_dict[key] = [item[key] for item in batch]
+            
+            # Create dataset for this batch
+            batch_dataset = Dataset.from_dict(batch_dict)
+            all_datasets.append(batch_dataset)
+        
+        # Concatenate all batch datasets
+        if len(all_datasets) == 1:
+            return all_datasets[0]
+        else:
+            from datasets import concatenate_datasets
+            return concatenate_datasets(all_datasets)
     else:
         return Dataset.from_dict({})
 
