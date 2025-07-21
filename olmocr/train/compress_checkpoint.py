@@ -308,7 +308,7 @@ def compress_checkpoint(source_path: str, dest_path: str, recipe_path: str, num_
                 model=model,
                 recipe=recipe_path,
                 dataset=dataset,
-                max_seq_len=8192,
+                max_seq_length=8192,
                 num_calibration_samples=len(dataset),
                 data_collator=data_collator
             )
