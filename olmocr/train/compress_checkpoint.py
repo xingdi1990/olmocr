@@ -11,7 +11,7 @@ Usage:
     source_path: Path to checkpoint (local or S3)
     destination_path: Where to save compressed checkpoint (local or S3)
     recipe_path: Path to quantization config YAML file
-    num_calibration_samples: Number of calibration samples to use (default: 256, set to 0 to disable)
+    num_calibration_samples: Number of calibration samples to use (default: 512, set to 0 to disable)
     calibration_pdfs: Glob pattern for PDF paths to use for calibration (required when num_calibration_samples > 0)
 """
 
@@ -253,7 +253,7 @@ def data_collator(batch):
     return {key: torch.tensor(value) for key, value in batch[0].items()}
 
 
-def compress_checkpoint(source_path: str, dest_path: str, recipe_path: str, num_calibration_samples: int = 256, calibration_pdfs: Optional[List[str]] = None) -> None:
+def compress_checkpoint(source_path: str, dest_path: str, recipe_path: str, num_calibration_samples: int = 512, calibration_pdfs: Optional[List[str]] = None) -> None:
     """Compress OlmOCR checkpoint using FP8 quantization."""
     # Load model and tokenizer
     model, tokenizer, temp_source_dir = load_model_and_tokenizer(source_path)
@@ -293,6 +293,7 @@ def compress_checkpoint(source_path: str, dest_path: str, recipe_path: str, num_
                 model=model,
                 recipe=recipe_path,
                 dataset=dataset,
+                max_seq_len=8192,
                 num_calibration_samples=len(dataset),
                 data_collator=data_collator
             )
@@ -366,8 +367,8 @@ Examples:
     parser.add_argument("source", help="Source checkpoint path (local or S3)")
     parser.add_argument("destination", help="Destination path for compressed checkpoint (local or S3)")
     parser.add_argument("--recipe", required=True, help="Path to quantization recipe YAML file")
-    parser.add_argument("--num-calibration-samples", type=int, default=256, 
-                       help="Number of calibration samples to use (default: 256s, set to 0 to disable)")
+    parser.add_argument("--num-calibration-samples", type=int, default=512, 
+                       help="Number of calibration samples to use (default: 512, set to 0 to disable)")
     parser.add_argument("--calibration-pdfs", type=str, default=None,
                        help="Glob pattern for calibration PDF paths (e.g., '/path/to/pdfs/*.pdf' or '/data/**/*.pdf'). Required when num-calibration-samples > 0.")
     
