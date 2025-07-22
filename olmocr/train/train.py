@@ -36,6 +36,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+
 class QwenDataCollator:
     """Data collator for vision-language models that handles numpy arrays."""
 
@@ -91,8 +92,9 @@ def save_checkpoint(
     model: torch.nn.Module,
     optimizer: torch.optim.Optimizer,
     lr_scheduler: Any,
-    epoch: int,
+    epoch: float,
     global_step: int,
+    samples_seen: int,
     best_metric: float,
     output_dir: str,
     save_total_limit: Optional[int] = None,
@@ -112,6 +114,7 @@ def save_checkpoint(
     state = {
         "epoch": epoch,
         "global_step": global_step,
+        "samples_seen": samples_seen,
         "best_metric": best_metric,
     }
     torch.save(state, os.path.join(checkpoint_dir, "training_state.pt"))
@@ -146,7 +149,7 @@ def load_checkpoint(
     lr_scheduler.load_state_dict(torch.load(os.path.join(checkpoint_dir, "scheduler.pt"), map_location=device))
     
     state = torch.load(os.path.join(checkpoint_dir, "training_state.pt"), map_location=device)
-    logger.info(f"Resumed from checkpoint: {checkpoint_dir} at epoch {state['epoch']}, step {state['global_step']}")
+    logger.info(f"Resumed from checkpoint: {checkpoint_dir} at epoch {state['epoch']:.2f}, step {state['global_step']}, samples seen {state['samples_seen']}")
     return model, state
 
 
@@ -339,8 +342,10 @@ def main():
         raise NotImplementedError(f"Optimizer {config.training.optim} not supported in custom loop")
 
     # Total training steps calculation
-    num_update_steps_per_epoch = math.ceil(len(train_dataset) / (config.training.per_device_train_batch_size * config.training.gradient_accumulation_steps))
-    max_train_steps = int(config.training.num_train_epochs * num_update_steps_per_epoch)
+    samples_per_step = config.training.per_device_train_batch_size * config.training.gradient_accumulation_steps
+    num_update_steps_per_epoch = math.ceil(len(train_dataset) / samples_per_step)
+    max_train_steps = int(math.ceil(config.training.num_train_epochs * num_update_steps_per_epoch))
+    max_train_samples = int(math.ceil(config.training.num_train_epochs * len(train_dataset)))
 
     # Set up scheduler
     lr_scheduler = get_scheduler(
@@ -353,6 +358,17 @@ def main():
 
     # Data collator
     data_collator = QwenDataCollator(max_token_len=config.training.collator_max_token_len)
+
+    # Resume from checkpoint if available
+    global_step = 0
+    samples_seen = 0
+    best_metric = float("inf") if not config.training.greater_is_better else -float("inf")
+    
+    if found_resumable_checkpoint:
+        model, state = load_checkpoint(model_class, model_init_kwargs, optimizer, lr_scheduler, found_resumable_checkpoint, device)
+        global_step = state["global_step"]
+        best_metric = state["best_metric"]
+        samples_seen = state["samples_seen"]
 
     # Create dataloaders
     train_dataloader = DataLoader(
@@ -378,16 +394,6 @@ def main():
         for name, dataset in eval_datasets.items()
     }
 
-    # Resume from checkpoint if available
-    start_epoch = 0
-    global_step = 0
-    best_metric = float("inf") if config.training.greater_is_better else -float("inf")
-    if found_resumable_checkpoint:
-        model, state = load_checkpoint(model_class, model_init_kwargs, optimizer, lr_scheduler, found_resumable_checkpoint, device)
-        start_epoch = state["epoch"] + 1  # Start from next epoch
-        global_step = state["global_step"]
-        best_metric = state["best_metric"]
-
     # Always evaluate on start
     metrics = evaluate_model(model, eval_dataloaders, device)
     logger.info(f"Initial evaluation: {metrics}")
@@ -395,14 +401,42 @@ def main():
         wandb.log(metrics, step=global_step)
 
     # Main training loop
-    logger.info("Starting training...")
-    model.train()
-    for epoch in range(start_epoch, int(config.training.num_train_epochs)):
-        epoch_start_time = time.time()
-        train_loss = 0.0
-        num_batches = 0
+    current_epoch = samples_seen / len(train_dataset)
+    logger.info(f"Starting training from epoch {current_epoch:.2f} (step {global_step}, samples {samples_seen}) to {config.training.num_train_epochs} epochs")
+    logger.info(f"Total training steps: {max_train_steps}, Total samples to process: {max_train_samples}")
+    
+    if samples_seen >= max_train_samples:
+        logger.info("Training already completed based on samples seen!")
+        logger.info("Skipping to final model save.")
+    else:
+        model.train()
+        accumulated_loss = 0.0
+        num_losses_accumulated = 0
         
-        for batch_idx, batch in enumerate(train_dataloader):
+        # Create epoch iterator and skip samples if resuming
+        epoch_iterator = iter(train_dataloader)
+        if samples_seen > 0:
+            samples_to_skip = samples_seen % len(train_dataset)
+            batches_to_skip = samples_to_skip // config.training.per_device_train_batch_size
+            logger.info(f"Resuming training: skipping {batches_to_skip} batches ({samples_to_skip} samples) to reach position {samples_seen}")
+            for _ in range(batches_to_skip):
+                try:
+                    next(epoch_iterator)
+                except StopIteration:
+                    # We've reached the end of the epoch while skipping, create new iterator
+                    epoch_iterator = iter(train_dataloader)
+                    break
+        
+        while samples_seen < max_train_samples and global_step < max_train_steps:
+            try:
+                batch = next(epoch_iterator)
+            except StopIteration:
+                # End of epoch, create new iterator
+                current_epoch = samples_seen / len(train_dataset)
+                logger.info(f"Completed epoch {current_epoch:.2f}")
+                epoch_iterator = iter(train_dataloader)
+                batch = next(epoch_iterator)
+            
             batch = {k: v.to(device) for k, v in batch.items()}
             
             with autocast(device_type="cuda", enabled=True, dtype=torch.bfloat16):
@@ -410,10 +444,12 @@ def main():
             loss = outputs.loss / config.training.gradient_accumulation_steps
             loss.backward()
             
-            train_loss += loss.item() * config.training.gradient_accumulation_steps
-            num_batches += 1
+            accumulated_loss += loss.item()
+            num_losses_accumulated += 1
+            samples_seen += config.training.per_device_train_batch_size
             
-            if (batch_idx + 1) % config.training.gradient_accumulation_steps == 0:
+            # Check if we should do a gradient update
+            if samples_seen % samples_per_step == 0 or samples_seen >= max_train_samples:
                 # Clip gradients
                 torch.nn.utils.clip_grad_norm_(model.parameters(), config.training.max_grad_norm)
                 
@@ -423,55 +459,63 @@ def main():
                 optimizer.zero_grad()
                 
                 global_step += 1
+                current_epoch = samples_seen / len(train_dataset)
                 
                 # Logging
                 if config.training.logging_steps > 0 and global_step % config.training.logging_steps == 0:
-                    avg_train_loss = train_loss / num_batches
+                    avg_train_loss = accumulated_loss / num_losses_accumulated if num_losses_accumulated > 0 else 0
                     logs = {
                         "train_loss": avg_train_loss,
                         "learning_rate": lr_scheduler.get_last_lr()[0],
-                        "epoch": epoch + (batch_idx / len(train_dataloader)),
+                        "epoch": current_epoch,
+                        "samples_seen": samples_seen,
                     }
-                    logger.info(f"Step {global_step}: {logs}")
+                    logger.info(f"Step {global_step}: epoch={current_epoch:.3f}, loss={avg_train_loss:.4f}, lr={lr_scheduler.get_last_lr()[0]:.2e}")
                     if "wandb" in config.training.report_to:
                         wandb.log(logs, step=global_step)
                     
-                    train_loss = 0.0
-                    num_batches = 0
+                    accumulated_loss = 0.0
+                    num_losses_accumulated = 0
             
-            # Evaluation (only after gradient accumulation is complete)
-            if (batch_idx + 1) % config.training.gradient_accumulation_steps == 0 and \
-               config.training.eval_steps > 0 and global_step % config.training.eval_steps == 0 and global_step > 0:
-                metrics = evaluate_model(model, eval_dataloaders, device)
-                logger.info(f"Evaluation at step {global_step}: {metrics}")
-                if "wandb" in config.training.report_to:
-                    wandb.log(metrics, step=global_step)
+                # Evaluation
+                if config.training.eval_steps > 0 and global_step % config.training.eval_steps == 0 and global_step > 0:
+                    metrics = evaluate_model(model, eval_dataloaders, device)
+                    logger.info(f"Evaluation at step {global_step}: {metrics}")
+                    if "wandb" in config.training.report_to:
+                        wandb.log(metrics, step=global_step)
+                    
+                    # Update best metric
+                    current_metric = metrics.get(config.training.metric_for_best_model, None)
+                    if current_metric is not None:
+                        if (config.training.greater_is_better and current_metric > best_metric) or \
+                           (not config.training.greater_is_better and current_metric < best_metric):
+                            best_metric = current_metric
+                    
+                    # Return to training mode
+                    model.train()
                 
-                # Update best metric (for potential load_best_model_at_end, though not implemented here)
-                current_metric = metrics.get(config.training.metric_for_best_model, None)
-                if current_metric is not None:
-                    if (config.training.greater_is_better and current_metric > best_metric) or \
-                       (not config.training.greater_is_better and current_metric < best_metric):
-                        best_metric = current_metric
+                # Saving
+                if config.training.save_steps > 0 and global_step % config.training.save_steps == 0:
+                    save_checkpoint(
+                        model, optimizer, lr_scheduler, current_epoch, global_step, samples_seen, best_metric,
+                        full_output_dir, config.training.save_total_limit
+                    )
             
-            # Saving
-            if config.training.save_steps > 0 and global_step % config.training.save_steps == 0:
-                save_checkpoint(
-                    model, optimizer, lr_scheduler, epoch, global_step, best_metric,
-                    full_output_dir, config.training.save_total_limit
-                )
-        
-        # End of epoch logging
-        epoch_time = time.time() - epoch_start_time
-        logger.info(f"Epoch {epoch} completed in {epoch_time:.2f}s")
+            # Check if we've reached our training limit
+            if samples_seen >= max_train_samples or global_step >= max_train_steps:
+                break
 
     # Save the final model
     logger.info("Saving final model...")
     model.save_pretrained(full_output_dir)
     
+    # Log final training state
+    final_epoch = samples_seen / len(train_dataset)
+    logger.info(f"Training completed at epoch {final_epoch:.3f}, step {global_step}, samples {samples_seen}")
+    
     # Final evaluation
     final_metrics = evaluate_model(model, eval_dataloaders, device)
-    logger.info(f"Training completed! Final metrics: {final_metrics}")
+    logger.info(f"Final evaluation metrics: {final_metrics}")
     if "wandb" in config.training.report_to:
         wandb.log(final_metrics, step=global_step)
         wandb.finish()
