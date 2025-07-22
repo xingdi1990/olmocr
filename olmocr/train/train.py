@@ -298,8 +298,19 @@ def main():
 
     # Set seeds
     torch.manual_seed(config.training.seed)
+    
+    # Set up data loader seed worker function
+    def seed_worker(worker_id):
+        worker_seed = torch.initial_seed() % 2**32
+        np.random.seed(worker_seed)
+        import random
+        random.seed(worker_seed)
+    
+    # Create generator for data loader
+    generator = None
     if config.training.data_seed is not None:
-        torch.utils.data.dataset.random.seed(config.training.data_seed)
+        generator = torch.Generator()
+        generator.manual_seed(config.training.data_seed)
 
     # Device setup
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -351,6 +362,8 @@ def main():
         collate_fn=data_collator,
         num_workers=config.training.dataloader_num_workers,
         drop_last=config.training.dataloader_drop_last,
+        worker_init_fn=seed_worker,
+        generator=generator,
     )
 
     eval_dataloaders = {
