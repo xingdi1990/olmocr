@@ -375,12 +375,11 @@ def main():
         global_step = state["global_step"]
         best_metric = state["best_metric"]
 
-    # Evaluate on start if configured
-    if config.training.eval_on_start:
-        metrics = evaluate_model(model, eval_dataloaders, device)
-        logger.info(f"Initial evaluation: {metrics}")
-        if "wandb" in config.training.report_to:
-            wandb.log(metrics, step=global_step)
+    # Always evaluate on start
+    metrics = evaluate_model(model, eval_dataloaders, device)
+    logger.info(f"Initial evaluation: {metrics}")
+    if "wandb" in config.training.report_to:
+        wandb.log(metrics, step=global_step)
 
     # Main training loop
     logger.info("Starting training...")

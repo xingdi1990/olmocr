@@ -298,6 +298,11 @@ class Config:
             self.training.logging_dir = os.path.join(self.training.output_dir, "logs")
         Path(self.training.logging_dir).mkdir(parents=True, exist_ok=True)
 
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert configuration to dictionary."""
+        cfg = OmegaConf.structured(self)
+        return OmegaConf.to_container(cfg, resolve=True)
+
     def get_pipeline_steps(self, pipeline_config: List[Dict[str, Any]], processor=None):
         """Create actual pipeline step instances from pipeline configuration.
 
