@@ -3,7 +3,7 @@
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 import yaml
 from omegaconf import DictConfig, OmegaConf
@@ -128,7 +128,7 @@ class ModelConfig:
     # Model initialization
     load_in_8bit: bool = False
     load_in_4bit: bool = False
-    device_map: Optional[Union[str, Dict[str, Any]]] = "auto"
+    device_map: Any = "auto"  # Can be string or dict
     torch_dtype: str = "auto"  # "auto", "float16", "bfloat16", "float32"
 
     # Flash attention
@@ -235,7 +235,7 @@ class Config:
     local_rank: int = -1
 
     @classmethod
-    def from_yaml(cls, yaml_path: Union[str, Path]) -> "Config":
+    def from_yaml(cls, yaml_path: str | Path) -> "Config":
         """Load configuration from YAML file."""
         yaml_path = Path(yaml_path)
         if not yaml_path.exists():
@@ -264,7 +264,7 @@ class Config:
 
         return cls(model=model_cfg, dataset=dataset_cfg, training=training_cfg, **main_cfg_dict)
 
-    def to_yaml(self, yaml_path: Union[str, Path]) -> None:
+    def to_yaml(self, yaml_path: str | Path) -> None:
         """Save configuration to YAML file."""
         yaml_path = Path(yaml_path)
         yaml_path.parent.mkdir(parents=True, exist_ok=True)
