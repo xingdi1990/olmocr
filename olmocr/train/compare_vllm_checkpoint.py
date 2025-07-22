@@ -373,11 +373,6 @@ async def async_main():
             print(f"*** First mismatch probability difference: {result['max_prob_first_diff']:.6f} > {args.prob_threshold} ***")
             print(f"*** Stopping after sample {i+1}/{len(samples)} ***")
             print(f"{'*'*80}")
-            break
-    else:
-        print(f"\n\n{'='*80}")
-        print(f"=== Processed all {len(samples)} samples without finding significant mismatch ===")
-        print(f"{'='*80}")
     
     # Report aggregated statistics
     print(f"\n\n{'='*80}")
