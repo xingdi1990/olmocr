@@ -207,6 +207,7 @@ async def apost(url, json_data):
 async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path: str, page_num: int) -> PageResult:
     COMPLETION_URL = f"http://localhost:{BASE_SERVER_PORT}/v1/chat/completions"
     MAX_RETRIES = args.max_page_retries
+    MODEL_MAX_CONTEXT = 16384
     TEMPERATURE_BY_ATTEMPT = [0.1, 0.1, 0.2, 0.3, 0.5, 0.8, 0.9, 1.0]
     exponential_backoffs = 0
     local_anchor_text_len = args.target_anchor_text_len
@@ -245,10 +246,10 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
 
             base_response_data = json.loads(response_body)
 
-            if base_response_data["usage"]["total_tokens"] > args.model_max_context:
+            if base_response_data["usage"]["total_tokens"] > MODEL_MAX_CONTEXT:
                 local_anchor_text_len = max(1, local_anchor_text_len // 2)
                 logger.info(f"Reducing anchor text len to {local_anchor_text_len} for {pdf_orig_path}-{page_num}")
-                raise ValueError("Response exceeded model_max_context, cannot use this response")
+                raise ValueError(f"Response exceeded model_max_context of {MODEL_MAX_CONTEXT}, cannot use this response")
 
             if base_response_data["choices"][0]["finish_reason"] != "stop":
                 local_anchor_text_len = max(1, local_anchor_text_len // 2)
@@ -1023,13 +1024,8 @@ async def main():
     )
 
     parser.add_argument("--gpu-memory-utilization", type=float, help="Fraction of VRAM vLLM may pre-allocate for KV-cache " "(passed through to vllm serve).")
-    parser.add_argument(
-        "--max_model_len",
-        type=int,
-        help="Upper bound (tokens) vLLM will allocate KV-cache for; " "passed through to vllm serve as --max-model-len.",
-    )
+    parser.add_argument("--max_model_len", type=int, default=16384, help="Upper bound (tokens) vLLM will allocate KV-cache for, lower if VLLM won't start")
 
-    parser.add_argument("--model_max_context", type=int, default="8192", help="Maximum context length that the model was fine tuned under")
     parser.add_argument("--target_longest_image_dim", type=int, help="Dimension on longest side to use for rendering the pdf pages", default=1288)
     parser.add_argument("--target_anchor_text_len", type=int, help="Maximum amount of anchor text to use (characters), not used for new models", default=-1)
     parser.add_argument("--guided_decoding", action="store_true", help="Enable guided decoding for model YAML type outputs")
