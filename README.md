@@ -63,7 +63,7 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
   </thead>
   <tbody>
     <tr>
-      <td align="left">Marker v1.7.5 (base)</td>
+      <td align="left">Marker v1.7.5 (base, force_ocr)</td>
       <td align="center">76.0</td>
       <td align="center">57.9</td>
       <td align="center">57.6</td>
@@ -88,7 +88,7 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
     </tr>
     <tr>
       <td align="left">Mistral OCR API</td>
-      <td align="center"><strong>77.2</strong></td>
+      <td align="center">77.2</td>
       <td align="center">67.5</td>
       <td align="center">60.6</td>
       <td align="center">29.3</td>
@@ -105,21 +105,21 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
       <td align="center">71.0</td>
       <td align="center">42.2</td>
       <td align="center">94.5</td>
-      <td align="center"><strong>78.3</strong></td>
+      <td align="center">78.3</td>
       <td align="center">73.3</td>
       <td align="center">98.3</td>
-      <td align="center"><strong>75.5 ± 1.0</strong></td>
+      <td align="center">75.5 ± 1.0</td>
     </tr>
     <tr>
       <td align="left">olmOCR v0.2.0</td>
-      <td align="center">78.8</td>
-      <td align="center">77.5</td>
+      <td align="center"><strong>78.8</strong></td>
+      <td align="center"><strong>77.5</strong></td>
       <td align="center">71.9</td>
-      <td align="center">45.4</td>
+      <td align="center"><strong>45.4</strong></td>
       <td align="center">94.2</td>
       <td align="center"><strong>78.6</strong></td>
       <td align="center">81.4</td>
-      <td align="center">99.8</td>
+      <td align="center"><strong>99.8</strong></td>
       <td align="center"><strong>78.5 ± 1.1</strong></td>
     </tr>
   </tbody>
