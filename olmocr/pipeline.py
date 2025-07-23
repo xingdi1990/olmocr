@@ -584,6 +584,12 @@ async def vllm_server_task(model_name_or_path, args, semaphore):
         str(args.data_parallel_size),
     ]
 
+    if args.gpu_memory_utilization is not None:
+        cmd.extend(["--gpu-memory-utilization", str(args.gpu_memory_utilization)])
+   
+    if args.max_model_len is not None:
+        cmd.extend(["--max-model-len", str(args.max_model_len)]) 
+
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,
@@ -1008,6 +1014,10 @@ async def main():
         help="List of paths where you can find the model to convert this pdf. You can specify several different paths here, and the script will try to use the one which is fastest to access",
         default="allenai/olmOCR-7B-0225-preview",
     )
+
+    parser.add_argument("--gpu-memory-utilization", type=float, help="Fraction of VRAM vLLM may pre-allocate for KV-cache " "(passed through to vllm serve).")
+    parser.add_argument("--max_model_len", type=int, help="Upper bound (tokens) vLLM will allocate KV-cache for; " "passed through to vllm serve as --max-model-len.",)
+
     parser.add_argument("--model_max_context", type=int, default="8192", help="Maximum context length that the model was fine tuned under")
     parser.add_argument("--target_longest_image_dim", type=int, help="Dimension on longest side to use for rendering the pdf pages", default=1288)
     parser.add_argument("--target_anchor_text_len", type=int, help="Maximum amount of anchor text to use (characters), not used for new models", default=-1)
@@ -1028,6 +1038,10 @@ async def main():
     parser.add_argument("--data-parallel-size", "-dp", type=int, default=1, help="Data parallel size for vLLM")
     args = parser.parse_args()
 
+    logger.info(
+        "If you run out of GPU memory during start-up or get 'KV cache is larger than available memory' errors, retry with lower values, e.g. --gpu_memory_utilization 0.80  --max_model_len 16384"
+    )
+  
     global workspace_s3, pdf_s3
     # set the global BASE_SERVER_PORT from args
     global BASE_SERVER_PORT
