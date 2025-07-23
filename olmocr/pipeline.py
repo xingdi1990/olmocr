@@ -602,7 +602,10 @@ async def vllm_server_task(model_name_or_path, args, semaphore):
 
     # Ensure the subprocess is terminated on exit
     def _kill_proc():
-        proc.terminate()
+        try:
+            proc.terminate()
+        except:
+            logger.info("VLLM Process already terminated")
 
     atexit.register(_kill_proc)
 
