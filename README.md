@@ -70,7 +70,7 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
       <td align="center">27.8</td>
       <td align="center">84.9</td>
       <td align="center">72.9</td>
-      <td align="center">84.6</td>
+      <td align="center"><strong>84.6</strong></td>
       <td align="center">99.1</td>
       <td align="center">70.1 ± 1.1</td>
     </tr>

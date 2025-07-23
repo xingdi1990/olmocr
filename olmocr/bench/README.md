@@ -56,7 +56,7 @@ to run it against your own OCR tools. Your tool just needs to support Markdown o
       <td align="center">27.8</td>
       <td align="center">84.9</td>
       <td align="center">72.9</td>
-      <td align="center">84.6</td>
+      <td align="center"><strong>84.6</strong></td>
       <td align="center">99.1</td>
       <td align="center">70.1 ± 1.1</td>
     </tr>
@@ -128,7 +128,7 @@ to run it against your own OCR tools. Your tool just needs to support Markdown o
       <td align="center">27.8</td>
       <td align="center">48.0</td>
       <td align="center">58.7</td>
-      <td align="center"><strong>84.4</strong></td>
+      <td align="center">84.4</td>
       <td align="center">94.0</td>
       <td align="center">57.8 ± 1.1</td>
     </tr>
