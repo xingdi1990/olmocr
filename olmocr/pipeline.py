@@ -1012,7 +1012,7 @@ async def main():
     parser.add_argument(
         "--model",
         help="List of paths where you can find the model to convert this pdf. You can specify several different paths here, and the script will try to use the one which is fastest to access",
-        default="allenai/olmOCR-7B-0225-preview",
+        default="allenai/olmOCR-7B-0725-FP8",
     )
 
     parser.add_argument("--gpu-memory-utilization", type=float, help="Fraction of VRAM vLLM may pre-allocate for KV-cache " "(passed through to vllm serve).")
