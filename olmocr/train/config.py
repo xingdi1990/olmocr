@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import yaml
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import OmegaConf
 
 
 @dataclass
@@ -200,7 +200,7 @@ class TrainingConfig:
     # Performance
     dataloader_drop_last: bool = True
     dataloader_num_workers: int = 16
-    
+
     # Data collator settings
     collator_max_token_len: Optional[int] = None
     remove_unused_columns: bool = False  # Important for custom datasets
@@ -314,10 +314,10 @@ class Config:
             FrontMatterOutputFormat,
             FrontMatterParser,
             InstructUserMessages,
+            JSONOutputFormat,
             LatexBracketNormalizer,
             NewYamlFinetuningPromptWithAnchoring,
             NewYamlFinetuningPromptWithNoAnchoring,
-            JSONOutputFormat,
             PDFRenderer,
             RandomTokenFlipper,
             StaticLengthDocumentAnchoring,
@@ -382,18 +382,18 @@ class Config:
                 if processor is None:
                     raise ValueError("Processor must be provided for RandomTokenFlipper step (to get valid tokens)")
                 tokenizer = processor.tokenizer
-                
+
                 # Get all special token IDs to exclude
                 special_token_ids = set()
                 for token in tokenizer.all_special_tokens:
                     special_token_ids.add(tokenizer.convert_tokens_to_ids(token))
-                
+
                 # Get all token IDs that are not special tokens
                 valid_token_ids = []
                 for token_id in range(len(tokenizer)):
                     if token_id not in special_token_ids:
                         valid_token_ids.append(token_id)
-                
+
                 steps.append(
                     RandomTokenFlipper(
                         valid_token_ids=valid_token_ids,

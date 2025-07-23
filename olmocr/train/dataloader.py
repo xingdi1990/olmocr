@@ -1,4 +1,5 @@
 import base64
+import json
 import logging
 import re
 from abc import ABC, abstractmethod
@@ -8,8 +9,7 @@ from functools import reduce
 from io import BytesIO
 from os import PathLike
 from pathlib import Path
-import json
-from typing import Any, Callable, Dict, List, Optional, Type, TypeAlias, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeAlias
 
 import numpy as np
 import yaml
@@ -31,10 +31,10 @@ logger = logging.getLogger(__name__)
 
 def validate_pdf_pair(md_path: Path) -> Tuple[Optional[Dict[str, Path]], Optional[Tuple[Path, str]]]:
     """Validate a single markdown-PDF pair.
-    
+
     Args:
         md_path: Path to the markdown file
-        
+
     Returns:
         Tuple of (valid_sample, invalid_pdf_info)
         - valid_sample: Dict with markdown_path and pdf_path if valid, None otherwise
@@ -42,31 +42,32 @@ def validate_pdf_pair(md_path: Path) -> Tuple[Optional[Dict[str, Path]], Optiona
     """
     # Look for PDF with same stem (filename without extension)
     pdf_path = md_path.with_suffix(".pdf")
-    
+
     if pdf_path.exists() or pdf_path.is_symlink():
         # Resolve symlink if it is one
         if pdf_path.is_symlink():
             pdf_path = pdf_path.resolve()
-        
+
         # Verify the resolved path exists
         if pdf_path.exists():
             # Validate PDF - check it loads and has exactly one page and that you can get document-anchoring from it
             try:
                 reader = PdfReader(str(pdf_path))
                 num_pages = len(reader.pages)
-                
+
                 if num_pages != 1:
                     return None, (pdf_path, f"Expected 1 page, found {num_pages}")
-                
+
                 # Test that document anchoring works
                 from olmocr.prompts.anchor import get_anchor_text
+
                 get_anchor_text(pdf_path, page=1, pdf_engine="pdfreport", target_length=100)
-                
+
                 return {"markdown_path": md_path, "pdf_path": pdf_path}, None
-                
+
             except Exception as e:
                 return None, (pdf_path, f"Failed to load: {str(e)}")
-    
+
     return None, None
 
 
@@ -104,29 +105,29 @@ class BaseMarkdownPDFDataset(Dataset):
         invalid_pdfs = []
 
         logger.info(f"Validating {len(md_files)} markdown-PDF pairs using ProcessPoolExecutor...")
-        
+
         # Use ProcessPoolExecutor for parallel validation
         with ProcessPoolExecutor(max_workers=8) as executor:
             # Submit all validation tasks
             future_to_md = {executor.submit(validate_pdf_pair, md_path): md_path for md_path in md_files}
-            
+
             # Process results as they complete
             with tqdm(total=len(md_files), desc="Validating PDFs") as pbar:
                 for future in as_completed(future_to_md):
                     md_path = future_to_md[future]
                     try:
                         valid_sample, invalid_pdf_info = future.result()
-                        
+
                         if valid_sample:
                             self.samples.append(valid_sample)
                             valid_count += 1
                         elif invalid_pdf_info:
                             invalid_pdfs.append(invalid_pdf_info)
-                            
+
                     except Exception as e:
                         logger.error(f"Error processing {md_path}: {str(e)}")
                         invalid_pdfs.append((md_path.with_suffix(".pdf"), f"Processing error: {str(e)}"))
-                    
+
                     pbar.update(1)
 
         logger.info(f"Found {valid_count} valid markdown-PDF pairs")
@@ -205,11 +206,11 @@ class FrontMatterParser(PipelineStep):
             value = front_matter_dict[field_name]
 
             # Handle type conversions
-            if field_type == int and isinstance(value, str):
+            if field_type is int and isinstance(value, str):
                 kwargs[field_name] = int(value)
-            elif field_type == bool and isinstance(value, str):
+            elif field_type is bool and isinstance(value, str):
                 kwargs[field_name] = value.lower() == "true"
-            elif field_type == Optional[str]:
+            elif field_type is Optional[str]:
                 kwargs[field_name] = value if value else None
             else:
                 kwargs[field_name] = value
@@ -288,7 +289,7 @@ class FinetuningPrompt(PipelineStep):
     def __call__(self, sample: Sample) -> Sample:
         sample["instruction_prompt"] = build_finetuning_prompt(sample["anchor_text"])
         return sample
-    
+
 
 @dataclass(frozen=True, slots=True)
 class NewYamlFinetuningPromptWithAnchoring(PipelineStep):
@@ -323,7 +324,7 @@ class FrontMatterOutputFormat(PipelineStep):
 
     def __call__(self, sample: Sample) -> Sample:
         page_data = sample["page_data"]
-        assert type(page_data) == PageResponse
+        assert type(page_data) is PageResponse
 
         sample["response"] = (
             f"""---
@@ -346,58 +347,63 @@ class JSONOutputFormat(PipelineStep):
 
     def __call__(self, sample: Sample) -> Sample:
         page_data = sample["page_data"]
-        assert type(page_data) == PageResponse
+        assert type(page_data) is PageResponse
 
-        sample["response"] = json.dumps({
-            "primary_language": page_data.primary_language,
-            "is_rotation_valid": page_data.is_rotation_valid,
-            "rotation_correction": page_data.rotation_correction,
-            "is_table": page_data.is_table,
-            "is_diagram": page_data.is_diagram,
-            "natural_text": page_data.natural_text
-        }, ensure_ascii=False)
+        sample["response"] = json.dumps(
+            {
+                "primary_language": page_data.primary_language,
+                "is_rotation_valid": page_data.is_rotation_valid,
+                "rotation_correction": page_data.rotation_correction,
+                "is_table": page_data.is_table,
+                "is_diagram": page_data.is_diagram,
+                "natural_text": page_data.natural_text,
+            },
+            ensure_ascii=False,
+        )
 
         return sample
+
 
 @dataclass(frozen=True, slots=True)
 class LatexBracketNormalizer(PipelineStep):
     """Normalizes LaTeX brackets in natural text field."""
-    
+
     def __call__(self, sample: Sample) -> Sample:
         """Normalize LaTeX brackets in the natural text field."""
         # Get the page_data object
         if "page_data" not in sample:
             return sample
-            
+
         page_data = sample["page_data"]
         if not hasattr(page_data, "natural_text") or not page_data.natural_text:
             return sample
-        
+
         text = page_data.natural_text
-        
+
         # Define patterns for LaTeX normalization
         # Order matters: process display math first, then inline
         patterns = [
             (r"\$\$(.+?)\$\$", r"\[\1\]"),  # $$...$$ to \[...\]
-            (r"\$(.+?)\$", r"\(\1\)"),      # $...$ to \(...\)
+            (r"\$(.+?)\$", r"\(\1\)"),  # $...$ to \(...\)
         ]
-        
+
         # Apply replacements
         for pattern, replacement in patterns:
             text = re.sub(pattern, replacement, text, flags=re.DOTALL)
-        
+
         # Update the page_data with normalized text
         # Since PageResponse is frozen, we need to create a new instance
         from olmocr.prompts.prompts import PageResponse
+
         new_page_data = PageResponse(
             primary_language=page_data.primary_language,
             is_rotation_valid=page_data.is_rotation_valid,
             rotation_correction=page_data.rotation_correction,
             is_table=page_data.is_table,
             is_diagram=page_data.is_diagram,
-            natural_text=text
+            natural_text=text,
         )
-        
+
         sample["page_data"] = new_page_data
         return sample
 
@@ -493,26 +499,26 @@ class Tokenizer(PipelineStep):
 @dataclass(frozen=True, slots=True)
 class RandomTokenFlipper(PipelineStep):
     """Randomly flips tokens in the output (non-masked) portion and masks their labels."""
-    
+
     valid_token_ids: List[int]  # List of valid token IDs to substitute with
     token_flip_rate: float = 1e-4
     masking_index: int = -100
-    
+
     def __call__(self, sample: Sample) -> Sample:
         """Randomly flip tokens in the non-masked portion of labels."""
         if "labels" not in sample or "input_ids" not in sample:
             return sample
-            
+
         # Work with copies to avoid modifying original arrays
         labels = sample["labels"].copy()
         input_ids = sample["input_ids"].copy()
-        
+
         # Find indices where labels are not masked (i.e., output tokens)
         non_masked_indices = np.where(labels != self.masking_index)[0]
-        
+
         if len(non_masked_indices) == 0:
             return sample
-            
+
         # For each non-masked token, independently decide whether to flip
         for idx in non_masked_indices:
             if np.random.random() < self.token_flip_rate:
@@ -520,11 +526,11 @@ class RandomTokenFlipper(PipelineStep):
                 random_token = np.random.choice(self.valid_token_ids)
                 input_ids[idx] = random_token
                 labels[idx] = self.masking_index
-        
+
         # Update sample with modified arrays
         sample["input_ids"] = input_ids
         sample["labels"] = labels
-        
+
         return sample
 
 
@@ -590,26 +596,27 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    
+
     # Import config module
     from olmocr.train.config import Config
 
     # Load configuration
     print(f"\n=== Loading configuration from {args.config} ===")
     config = Config.from_yaml(args.config)
-    
+
     # Validate configuration
     try:
         config.validate()
     except ValueError as e:
         print(f"Configuration validation failed: {e}")
         exit(1)
-    
+
     # Load processor for tokenization
     print(f"\nLoading processor: {config.model.name}")
     from transformers import AutoProcessor
+
     processor = AutoProcessor.from_pretrained(config.model.name)
-    
+
     # Select dataset based on type
     if args.dataset_type == "train":
         dataset_configs = config.dataset.train
@@ -617,19 +624,19 @@ if __name__ == "__main__":
     else:
         dataset_configs = config.dataset.eval
         dataset_name = "eval"
-    
+
     if args.dataset_index >= len(dataset_configs):
         print(f"Error: Dataset index {args.dataset_index} out of range. Only {len(dataset_configs)} {dataset_name} datasets available.")
         exit(1)
-    
+
     dataset_cfg = dataset_configs[args.dataset_index]
     root_dir = dataset_cfg["root_dir"]
     pipeline_steps = config.get_pipeline_steps(dataset_cfg["pipeline"], processor)
-    
+
     print(f"\n=== Testing {dataset_name} dataset {args.dataset_index} ===")
     print(f"Root directory: {root_dir}")
     print(f"Pipeline steps: {[step.__class__.__name__ for step in pipeline_steps]}")
-    
+
     # Create dataset
     dataset = BaseMarkdownPDFDataset(root_dir, pipeline_steps)
 
@@ -641,7 +648,7 @@ if __name__ == "__main__":
         for i in range(min(5, len(dataset))):
             sample = dataset.samples[i]
             print(f"  {i}: MD: {sample['markdown_path'].name}, PDF: {sample['pdf_path'].name}")
-        
+
         # Check if sample index is valid
         if args.sample_index >= len(dataset):
             print(f"\nError: Sample index {args.sample_index} out of range. Only {len(dataset)} samples available.")
@@ -650,39 +657,39 @@ if __name__ == "__main__":
         # Get the requested sample
         print(f"\n=== Displaying sample {args.sample_index} ===")
         sample = dataset[args.sample_index]
-        
+
         # Display sample information based on pipeline output
         print("\nSample keys:", list(sample.keys()))
-        
+
         # If it's raw data (no tokenization)
-        if 'markdown_path' in sample:
+        if "markdown_path" in sample:
             print(f"\nMarkdown file: {sample['markdown_path'].name}")
-        if 'pdf_path' in sample:
+        if "pdf_path" in sample:
             print(f"PDF file: {sample['pdf_path'].name}")
-        if 'image' in sample and hasattr(sample['image'], 'size'):
+        if "image" in sample and hasattr(sample["image"], "size"):
             print(f"Image size: {sample['image'].size}")
-        if 'page_data' in sample:
+        if "page_data" in sample:
             print(f"\nPage data: {sample['page_data']}")
-        if 'messages' in sample:
+        if "messages" in sample:
             print(f"\n=== Messages ===")
-            for i, msg in enumerate(sample['messages']):
+            for i, msg in enumerate(sample["messages"]):
                 print(f"\nMessage {i}:")
                 print(f"  Role: {msg['role']}")
                 print(f"  Content preview: {str(msg['content'])[:200]}...")
-        
+
         # If it's tokenized data
-        if 'input_ids' in sample:
+        if "input_ids" in sample:
             print(f"\n=== Tokenized Output ===")
             print(f"  Keys: {list(sample.keys())}")
             print(f"  Input IDs shape: {sample['input_ids'].shape}")
             print(f"  Labels shape: {sample['labels'].shape}")
             print(f"  Attention mask shape: {sample['attention_mask'].shape}")
-            
+
             if "pixel_values" in sample:
                 print(f"  Pixel values shape: {sample['pixel_values'].shape}")
             if "image_grid_thw" in sample:
                 print(f"  Image grid THW: {sample['image_grid_thw']}")
-            
+
             # Show label masking
             print(f"\nLabel masking analysis:")
             labels = sample["labels"]
@@ -691,29 +698,29 @@ if __name__ == "__main__":
             print(f"  Total tokens: {total_count}")
             print(f"  Masked tokens: {masked_count} ({masked_count/total_count*100:.1f}%)")
             print(f"  Unmasked tokens: {total_count - masked_count} ({(total_count - masked_count)/total_count*100:.1f}%)")
-            
+
             # Find the transition point
             transition_idx = None
             for i in range(len(labels) - 1):
                 if labels[i] == -100 and labels[i + 1] != -100:
                     transition_idx = i + 1
                     break
-            
+
             if transition_idx:
                 print(f"  Transition from masked to unmasked at position: {transition_idx}")
-            
+
             # Print all tokens
             input_ids = sample["input_ids"]
             print(f"\nAll tokens ({len(input_ids)} total):")
             print("Format: [index] Token (repr) | Label | Token ID")
             print("-" * 80)
-            
+
             for i in range(len(input_ids)):
                 token = processor.tokenizer.decode([input_ids[i]])
                 token_repr = repr(token)
                 label = labels[i] if i < len(labels) else "N/A"
                 token_id = input_ids[i]
-                
+
                 # Mark special positions
                 marker = ""
                 if transition_idx and i == transition_idx:
@@ -722,64 +729,65 @@ if __name__ == "__main__":
                     marker = " <-- START"
                 elif label != -100 and i > 0 and labels[i - 1] == -100:
                     marker = " <-- response begins"
-                
+
                 print(f"[{i:4d}] {token_repr:20s} | {str(label):6s} | {token_id:6d}{marker}")
-            
+
             # Calculate and show token statistics after the table
             print(f"\nToken statistics:")
-            
+
             # Count consecutive high-value tokens that represent the image
             # Qwen uses tokens like 151859, 151860, etc. for image patches
             image_token_threshold = 151000  # Typical threshold for Qwen image tokens
             image_token_count = np.sum(input_ids > image_token_threshold)
-            
+
             # Calculate prompt tokens (everything masked)
             prompt_token_count = masked_count
-            
+
             # Calculate output tokens (everything not masked)
             output_token_count = total_count - masked_count
-            
+
             # Calculate non-image prompt tokens
             non_image_prompt_tokens = prompt_token_count - image_token_count
-            
+
             print(f"  Image tokens: {image_token_count}")
             print(f"  Prompt tokens (total): {prompt_token_count}")
             print(f"  Prompt tokens (non-image): {non_image_prompt_tokens}")
             print(f"  Output tokens: {output_token_count}")
             print(f"  Total sequence length: {total_count}")
-        
+
         # Analyze token length distribution across entire dataset
-        if 'input_ids' in sample:
+        if "input_ids" in sample:
             print(f"\n\n=== Analyzing token length distribution across entire dataset ===")
             print(f"Processing {len(dataset)} samples...")
-            
+
             # Function to process a single sample
             def process_sample(idx):
                 try:
                     current_sample = dataset[idx]
-                    if 'labels' in current_sample:
+                    if "labels" in current_sample:
                         # Count total sequence length (all tokens, prompt + completion)
-                        labels = current_sample['labels']
+                        labels = current_sample["labels"]
                         total_length = len(labels)
                         return (idx, total_length, None)
                     return (idx, None, "No labels in sample")
                 except Exception as e:
                     return (idx, None, str(e))
-            
+
             # Process samples in parallel with progress bar
             sequence_lengths = []
             max_sequence_length = 0
             max_sequence_sample_idx = 0
             errors = []
-            
+
             # Determine number of workers (use fewer workers to avoid memory issues)
             import multiprocessing
+
             num_workers = min(multiprocessing.cpu_count() // 2, 8)
-            
+
             with ProcessPoolExecutor(max_workers=num_workers) as executor:
                 # Submit all tasks
                 futures = {executor.submit(process_sample, idx): idx for idx in range(len(dataset))}
-                
+
                 # Process results with progress bar
                 with tqdm(total=len(dataset), desc="Analyzing samples") as pbar:
                     for future in as_completed(futures):
@@ -796,16 +804,16 @@ if __name__ == "__main__":
                         except Exception as e:
                             errors.append((idx, f"Future error: {e}"))
                         pbar.update(1)
-            
+
             if errors:
                 print(f"\nEncountered {len(errors)} errors during processing")
                 if len(errors) <= 5:
                     for idx, error in errors:
                         print(f"  Sample {idx}: {error}")
-            
+
             if sequence_lengths:
                 sequence_lengths = np.array(sequence_lengths)
-                
+
                 print(f"\nTotal sequence length statistics (prompt + completion):")
                 print(f"  Total samples analyzed: {len(sequence_lengths)}")
                 print(f"  Max sequence length: {max_sequence_length} tokens (sample index: {max_sequence_sample_idx})")
@@ -813,37 +821,37 @@ if __name__ == "__main__":
                 print(f"  Mean sequence length: {np.mean(sequence_lengths):.1f} tokens")
                 print(f"  Median sequence length: {np.median(sequence_lengths):.1f} tokens")
                 print(f"  Std dev: {np.std(sequence_lengths):.1f} tokens")
-                
+
                 # Create histogram with 100-token buckets
                 print(f"\nSequence length histogram (100-token buckets):")
-                
+
                 # Define buckets
                 bucket_size = 100
                 max_bucket = ((max_sequence_length // bucket_size) + 1) * bucket_size
                 buckets = list(range(0, max_bucket + bucket_size, bucket_size))
-                
+
                 # Count samples in each bucket
                 hist, _ = np.histogram(sequence_lengths, bins=buckets)
-                
+
                 # Find max count for scaling
                 max_count = max(hist)
                 bar_width = 50  # Width of histogram bars
-                
+
                 print(f"\n{'Range':>15} | {'Count':>6} | Distribution")
                 print("-" * 80)
-                
+
                 for i in range(len(hist)):
                     start = buckets[i]
                     end = buckets[i + 1] - 1
                     count = hist[i]
-                    
+
                     # Create bar
                     if max_count > 0:
                         bar_length = int((count / max_count) * bar_width)
                         bar = "█" * bar_length
                     else:
                         bar = ""
-                    
+
                     range_str = f"{start:>5}-{end:>5}"
                     print(f"{range_str:>15} | {count:>6} | {bar}")
 

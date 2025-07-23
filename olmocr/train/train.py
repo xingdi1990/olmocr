@@ -5,6 +5,7 @@ Simple script to test OlmOCR dataset loading with YAML configuration.
 import argparse
 import logging
 import os
+from typing import Optional
 
 import numpy as np
 import torch
@@ -18,7 +19,6 @@ from transformers import (
     TrainingArguments,
 )
 
-from typing import Optional
 from olmocr.train.config import Config
 from olmocr.train.dataloader import BaseMarkdownPDFDataset
 
@@ -47,13 +47,13 @@ class QwenDataCollator:
                 input_ids = torch.from_numpy(example["input_ids"]) if isinstance(example["input_ids"], np.ndarray) else example["input_ids"]
                 attention_mask = torch.from_numpy(example["attention_mask"]) if isinstance(example["attention_mask"], np.ndarray) else example["attention_mask"]
                 labels = torch.from_numpy(example["labels"]) if isinstance(example["labels"], np.ndarray) else example["labels"]
-                
+
                 # Trim to max_token_len if specified
                 if self.max_token_len is not None:
-                    input_ids = input_ids[:self.max_token_len]
-                    attention_mask = attention_mask[:self.max_token_len]
-                    labels = labels[:self.max_token_len]
-                
+                    input_ids = input_ids[: self.max_token_len]
+                    attention_mask = attention_mask[: self.max_token_len]
+                    labels = labels[: self.max_token_len]
+
                 batch["input_ids"].append(input_ids)
                 batch["attention_mask"].append(attention_mask)
                 batch["labels"].append(labels)
@@ -103,7 +103,7 @@ def main():
     if config.project_name:
         os.environ["WANDB_PROJECT"] = config.project_name
         logger.info(f"Setting WANDB_PROJECT to: {config.project_name}")
-    
+
     # Load processor for tokenization
     logger.info(f"Loading processor: {config.model.name}")
     processor = AutoProcessor.from_pretrained(
@@ -209,7 +209,7 @@ def main():
         adam_epsilon=config.training.adam_epsilon,
         weight_decay=config.training.weight_decay,
         max_grad_norm=config.training.max_grad_norm,
-        bf16=True, # We're sticking with this known good reduced precision option
+        bf16=True,  # We're sticking with this known good reduced precision option
         eval_strategy=config.training.evaluation_strategy,
         eval_steps=config.training.eval_steps,
         save_strategy=config.training.save_strategy,

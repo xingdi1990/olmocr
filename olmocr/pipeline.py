@@ -17,7 +17,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass
-from functools import cache, partial
+from functools import cache
 from io import BytesIO
 from urllib.parse import urlparse
 
@@ -34,7 +34,6 @@ from olmocr.check import (
     check_torch_gpu_available,
 )
 from olmocr.data.renderpdf import render_pdf_to_base64png
-from olmocr.train.dataloader import FrontMatterParser
 from olmocr.filter.filter import Language, PdfFilter
 from olmocr.image_utils import convert_image_to_pdf_bytes, is_jpeg, is_png
 from olmocr.metrics import MetricsKeeper, WorkerTracker
@@ -48,6 +47,7 @@ from olmocr.s3_utils import (
     get_s3_bytes_with_backoff,
     parse_s3_path,
 )
+from olmocr.train.dataloader import FrontMatterParser
 from olmocr.version import VERSION
 from olmocr.work_queue import LocalWorkQueue, S3WorkQueue, WorkQueue
 
@@ -227,7 +227,9 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
 
         # Enable guided decoding regex if needed
         if args.guided_decoding:
-            query["guided_regex"] = r"---\nprimary_language: (?:[a-z]{2}|null)\nis_rotation_valid: (?:True|False|true|false)\nrotation_correction: (?:0|90|180|270)\nis_table: (?:True|False|true|false)\nis_diagram: (?:True|False|true|false)\n(?:---|---\n[\s\S]+)"
+            query["guided_regex"] = (
+                r"---\nprimary_language: (?:[a-z]{2}|null)\nis_rotation_valid: (?:True|False|true|false)\nrotation_correction: (?:0|90|180|270)\nis_table: (?:True|False|true|false)\nis_diagram: (?:True|False|true|false)\n(?:---|---\n[\s\S]+)"
+            )
 
         logger.info(f"Built page query for {pdf_orig_path}-{page_num}")
 
@@ -247,7 +249,7 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
                 local_anchor_text_len = max(1, local_anchor_text_len // 2)
                 logger.info(f"Reducing anchor text len to {local_anchor_text_len} for {pdf_orig_path}-{page_num}")
                 raise ValueError("Response exceeded model_max_context, cannot use this response")
-            
+
             if base_response_data["choices"][0]["finish_reason"] != "stop":
                 local_anchor_text_len = max(1, local_anchor_text_len // 2)
                 logger.info(f"Reducing anchor text len to {local_anchor_text_len} for {pdf_orig_path}-{page_num}")
@@ -328,6 +330,7 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
         output_tokens=0,
         is_fallback=True,
     )
+
 
 async def process_pdf(args, worker_id: int, pdf_orig_path: str):
     with tempfile.NamedTemporaryFile("wb+", suffix=".pdf", delete=False) as tf:
@@ -586,9 +589,9 @@ async def vllm_server_task(model_name_or_path, args, semaphore):
 
     if args.gpu_memory_utilization is not None:
         cmd.extend(["--gpu-memory-utilization", str(args.gpu_memory_utilization)])
-   
+
     if args.max_model_len is not None:
-        cmd.extend(["--max-model-len", str(args.max_model_len)]) 
+        cmd.extend(["--max-model-len", str(args.max_model_len)])
 
     proc = await asyncio.create_subprocess_exec(
         *cmd,
@@ -1016,7 +1019,11 @@ async def main():
     )
 
     parser.add_argument("--gpu-memory-utilization", type=float, help="Fraction of VRAM vLLM may pre-allocate for KV-cache " "(passed through to vllm serve).")
-    parser.add_argument("--max_model_len", type=int, help="Upper bound (tokens) vLLM will allocate KV-cache for; " "passed through to vllm serve as --max-model-len.",)
+    parser.add_argument(
+        "--max_model_len",
+        type=int,
+        help="Upper bound (tokens) vLLM will allocate KV-cache for; " "passed through to vllm serve as --max-model-len.",
+    )
 
     parser.add_argument("--model_max_context", type=int, default="8192", help="Maximum context length that the model was fine tuned under")
     parser.add_argument("--target_longest_image_dim", type=int, help="Dimension on longest side to use for rendering the pdf pages", default=1288)
@@ -1041,7 +1048,7 @@ async def main():
     logger.info(
         "If you run out of GPU memory during start-up or get 'KV cache is larger than available memory' errors, retry with lower values, e.g. --gpu_memory_utilization 0.80  --max_model_len 16384"
     )
-  
+
     global workspace_s3, pdf_s3
     # set the global BASE_SERVER_PORT from args
     global BASE_SERVER_PORT
@@ -1227,12 +1234,12 @@ async def main():
 
     # Output finished_on_attempt statistics
     logger.info("\nPages finished by attempt number:")
-    total_finished = sum(total_metrics.get(f'finished_on_attempt_{i}', 0) for i in range(args.max_page_retries))
+    total_finished = sum(total_metrics.get(f"finished_on_attempt_{i}", 0) for i in range(args.max_page_retries))
     cumulative = 0
-    
+
     for i in range(args.max_page_retries):
-        if f'finished_on_attempt_{i}' in total_metrics:
-            count = total_metrics[f'finished_on_attempt_{i}']
+        if f"finished_on_attempt_{i}" in total_metrics:
+            count = total_metrics[f"finished_on_attempt_{i}"]
             cumulative += count
             percentage = (count / total_finished * 100) if total_finished > 0 else 0
             cumulative_percentage = (cumulative / total_finished * 100) if total_finished > 0 else 0
