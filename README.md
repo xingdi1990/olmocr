@@ -256,11 +256,9 @@ python -m olmocr.pipeline ./localworkspace --markdown --pdfs olmocr-sample.pdf
 
 ```bash
 python -m olmocr.pipeline --help
-usage: pipeline.py [-h] [--pdfs [PDFS ...]] [--workspace_profile WORKSPACE_PROFILE] [--pdf_profile PDF_PROFILE] [--pages_per_group PAGES_PER_GROUP] [--max_page_retries MAX_PAGE_RETRIES]
-                   [--max_page_error_rate MAX_PAGE_ERROR_RATE] [--workers WORKERS] [--apply_filter] [--stats] [--markdown] [--model MODEL] [--gpu-memory-utilization GPU_MEMORY_UTILIZATION]
-                   [--max_model_len MAX_MODEL_LEN] [--model_max_context MODEL_MAX_CONTEXT] [--model_chat_template MODEL_CHAT_TEMPLATE] [--target_longest_image_dim TARGET_LONGEST_IMAGE_DIM]
-                   [--target_anchor_text_len TARGET_ANCHOR_TEXT_LEN] [--beaker] [--beaker_workspace BEAKER_WORKSPACE] [--beaker_cluster BEAKER_CLUSTER] [--beaker_gpus BEAKER_GPUS]
-                   [--beaker_priority BEAKER_PRIORITY] [--port PORT] [--tensor-parallel-size TENSOR_PARALLEL_SIZE] [--data-parallel-size DATA_PARALLEL_SIZE]
+usage: pipeline.py [-h] [--pdfs [PDFS ...]] [--model MODEL] [--workspace_profile WORKSPACE_PROFILE] [--pdf_profile PDF_PROFILE] [--pages_per_group PAGES_PER_GROUP] [--max_page_retries MAX_PAGE_RETRIES] [--max_page_error_rate MAX_PAGE_ERROR_RATE] [--workers WORKERS]
+                   [--apply_filter] [--stats] [--markdown] [--target_longest_image_dim TARGET_LONGEST_IMAGE_DIM] [--target_anchor_text_len TARGET_ANCHOR_TEXT_LEN] [--guided_decoding] [--gpu-memory-utilization GPU_MEMORY_UTILIZATION] [--max_model_len MAX_MODEL_LEN]
+                   [--tensor-parallel-size TENSOR_PARALLEL_SIZE] [--data-parallel-size DATA_PARALLEL_SIZE] [--port PORT] [--beaker] [--beaker_workspace BEAKER_WORKSPACE] [--beaker_cluster BEAKER_CLUSTER] [--beaker_gpus BEAKER_GPUS] [--beaker_priority BEAKER_PRIORITY]
                    workspace
 
 Manager for running millions of PDFs through a batch inference pipeline
@@ -270,7 +268,8 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  --pdfs PDFS           Path to add pdfs stored in s3 to the workspace, can be a glob path s3://bucket/prefix/*.pdf or path to file containing list of pdf paths
+  --pdfs [PDFS ...]     Path to add pdfs stored in s3 to the workspace, can be a glob path s3://bucket/prefix/*.pdf or path to file containing list of pdf paths
+  --model MODEL         Path where the model is located, allenai/olmOCR-7B-0725-FP8 is the default, can be local, s3, or hugging face.
   --workspace_profile WORKSPACE_PROFILE
                         S3 configuration profile for accessing the workspace
   --pdf_profile PDF_PROFILE
@@ -285,20 +284,24 @@ options:
   --apply_filter        Apply basic filtering to English pdfs which are not forms, and not likely seo spam
   --stats               Instead of running any job, reports some statistics about the current workspace
   --markdown            Also write natural text to markdown files preserving the folder structure of the input pdfs
-  --model MODEL         List of paths where you can find the model to convert this pdf. You can specify several different paths here, and the script will try to use the
-                        one which is fastest to access
-  --gpu-memory-utilization GPU_MEMORY_UTILIZATION
-                        Fraction of VRAM vLLM may pre-allocate for KV-cache (passed through to vllm serve).
-  --max_model_len MAX_MODEL_LEN
-                        Upper bound (tokens) vLLM will allocate KV-cache for; passed through to vllm serve as --max-model-len.
-  --model_max_context MODEL_MAX_CONTEXT
-                        Maximum context length that the model was fine tuned under
-  --model_chat_template MODEL_CHAT_TEMPLATE
-                        Chat template to pass to sglang server
   --target_longest_image_dim TARGET_LONGEST_IMAGE_DIM
                         Dimension on longest side to use for rendering the pdf pages
   --target_anchor_text_len TARGET_ANCHOR_TEXT_LEN
-                        Maximum amount of anchor text to use (characters)
+                        Maximum amount of anchor text to use (characters), not used for new models
+  --guided_decoding     Enable guided decoding for model YAML type outputs
+
+VLLM Forwarded arguments:
+  --gpu-memory-utilization GPU_MEMORY_UTILIZATION
+                        Fraction of VRAM vLLM may pre-allocate for KV-cache (passed through to vllm serve).
+  --max_model_len MAX_MODEL_LEN
+                        Upper bound (tokens) vLLM will allocate KV-cache for, lower if VLLM won't start
+  --tensor-parallel-size TENSOR_PARALLEL_SIZE, -tp TENSOR_PARALLEL_SIZE
+                        Tensor parallel size for vLLM
+  --data-parallel-size DATA_PARALLEL_SIZE, -dp DATA_PARALLEL_SIZE
+                        Data parallel size for vLLM
+  --port PORT           Port to use for the VLLM server
+
+beaker/cluster execution:
   --beaker              Submit this job to beaker instead of running locally
   --beaker_workspace BEAKER_WORKSPACE
                         Beaker workspace to submit to

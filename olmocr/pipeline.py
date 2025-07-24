@@ -1009,6 +1009,14 @@ async def main():
         help="Path to add pdfs stored in s3 to the workspace, can be a glob path s3://bucket/prefix/*.pdf or path to file containing list of pdf paths",
         default=None,
     )
+    parser.add_argument(
+        "--model",
+        help="Path where the model is located, allenai/olmOCR-7B-0725-FP8 is the default, can be local, s3, or hugging face.",
+        default="allenai/olmOCR-7B-0725-FP8",
+    )
+
+
+    # More detailed config options, usually you shouldn't have to change these
     parser.add_argument("--workspace_profile", help="S3 configuration profile for accessing the workspace", default=None)
     parser.add_argument("--pdf_profile", help="S3 configuration profile for accessing the raw pdf documents", default=None)
     parser.add_argument("--pages_per_group", type=int, default=500, help="Aiming for this many pdf pages per work item group")
@@ -1019,33 +1027,29 @@ async def main():
     parser.add_argument("--stats", action="store_true", help="Instead of running any job, reports some statistics about the current workspace")
     parser.add_argument("--markdown", action="store_true", help="Also write natural text to markdown files preserving the folder structure of the input pdfs")
 
-    # Model parameters
-    parser.add_argument(
-        "--model",
-        help="List of paths where you can find the model to convert this pdf. You can specify several different paths here, and the script will try to use the one which is fastest to access",
-        default="allenai/olmOCR-7B-0725-FP8",
-    )
-
-    parser.add_argument("--gpu-memory-utilization", type=float, help="Fraction of VRAM vLLM may pre-allocate for KV-cache " "(passed through to vllm serve).")
-    parser.add_argument("--max_model_len", type=int, default=16384, help="Upper bound (tokens) vLLM will allocate KV-cache for, lower if VLLM won't start")
-
     parser.add_argument("--target_longest_image_dim", type=int, help="Dimension on longest side to use for rendering the pdf pages", default=1288)
     parser.add_argument("--target_anchor_text_len", type=int, help="Maximum amount of anchor text to use (characters), not used for new models", default=-1)
     parser.add_argument("--guided_decoding", action="store_true", help="Enable guided decoding for model YAML type outputs")
 
+    vllm_group = parser.add_argument_group("VLLM Forwarded arguments")
+    vllm_group.add_argument("--gpu-memory-utilization", type=float, help="Fraction of VRAM vLLM may pre-allocate for KV-cache " "(passed through to vllm serve).")
+    vllm_group.add_argument("--max_model_len", type=int, default=16384, help="Upper bound (tokens) vLLM will allocate KV-cache for, lower if VLLM won't start")
+    vllm_group.add_argument("--tensor-parallel-size", "-tp", type=int, default=1, help="Tensor parallel size for vLLM")
+    vllm_group.add_argument("--data-parallel-size", "-dp", type=int, default=1, help="Data parallel size for vLLM")
+    vllm_group.add_argument("--port", type=int, default=30024, help="Port to use for the VLLM server")
+
     # Beaker/job running stuff
-    parser.add_argument("--beaker", action="store_true", help="Submit this job to beaker instead of running locally")
-    parser.add_argument("--beaker_workspace", help="Beaker workspace to submit to", default="ai2/olmocr")
-    parser.add_argument(
+    beaker_group = parser.add_argument_group("beaker/cluster execution")
+    beaker_group.add_argument("--beaker", action="store_true", help="Submit this job to beaker instead of running locally")
+    beaker_group.add_argument("--beaker_workspace", help="Beaker workspace to submit to", default="ai2/olmocr")
+    beaker_group.add_argument(
         "--beaker_cluster",
         help="Beaker clusters you want to run on",
         default=["ai2/jupiter-cirrascale-2", "ai2/ceres-cirrascale", "ai2/neptune-cirrascale", "ai2/saturn-cirrascale", "ai2/augusta-google-1"],
     )
-    parser.add_argument("--beaker_gpus", type=int, default=1, help="Number of gpu replicas to run")
-    parser.add_argument("--beaker_priority", type=str, default="normal", help="Beaker priority level for the job")
-    parser.add_argument("--port", type=int, default=30024, help="Port to use for the VLLM server")
-    parser.add_argument("--tensor-parallel-size", "-tp", type=int, default=1, help="Tensor parallel size for vLLM")
-    parser.add_argument("--data-parallel-size", "-dp", type=int, default=1, help="Data parallel size for vLLM")
+    beaker_group.add_argument("--beaker_gpus", type=int, default=1, help="Number of gpu replicas to run")
+    beaker_group.add_argument("--beaker_priority", type=str, default="normal", help="Beaker priority level for the job")
+
     args = parser.parse_args()
 
     logger.info(
