@@ -1015,7 +1015,6 @@ async def main():
         default="allenai/olmOCR-7B-0725-FP8",
     )
 
-
     # More detailed config options, usually you shouldn't have to change these
     parser.add_argument("--workspace_profile", help="S3 configuration profile for accessing the workspace", default=None)
     parser.add_argument("--pdf_profile", help="S3 configuration profile for accessing the raw pdf documents", default=None)
@@ -1032,7 +1031,9 @@ async def main():
     parser.add_argument("--guided_decoding", action="store_true", help="Enable guided decoding for model YAML type outputs")
 
     vllm_group = parser.add_argument_group("VLLM Forwarded arguments")
-    vllm_group.add_argument("--gpu-memory-utilization", type=float, help="Fraction of VRAM vLLM may pre-allocate for KV-cache " "(passed through to vllm serve).")
+    vllm_group.add_argument(
+        "--gpu-memory-utilization", type=float, help="Fraction of VRAM vLLM may pre-allocate for KV-cache " "(passed through to vllm serve)."
+    )
     vllm_group.add_argument("--max_model_len", type=int, default=16384, help="Upper bound (tokens) vLLM will allocate KV-cache for, lower if VLLM won't start")
     vllm_group.add_argument("--tensor-parallel-size", "-tp", type=int, default=1, help="Tensor parallel size for vLLM")
     vllm_group.add_argument("--data-parallel-size", "-dp", type=int, default=1, help="Data parallel size for vLLM")
