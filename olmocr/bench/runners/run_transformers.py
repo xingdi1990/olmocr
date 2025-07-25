@@ -51,7 +51,12 @@ def run_transformers(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     if _cached_model is None:
-        model = Qwen2_5_VLForConditionalGeneration.from_pretrained(model_name, torch_dtype=torch.bfloat16).eval()
+        model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+            model_name, 
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            attn_implementation="flash_attention_2"
+        ).eval()
         processor = AutoProcessor.from_pretrained(model_name)
  
         model = model.to(device)

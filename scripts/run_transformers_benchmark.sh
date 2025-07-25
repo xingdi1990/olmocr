@@ -5,14 +5,14 @@ set -e
 
 
 # Check for uncommitted changes
-if ! git diff-index --quiet HEAD --; then
-    echo "Error: There are uncommitted changes in the repository."
-    echo "Please commit or stash your changes before running the benchmark."
-    echo ""
-    echo "Uncommitted changes:"
-    git status --short
-    exit 1
-fi
+# if ! git diff-index --quiet HEAD --; then
+#     echo "Error: There are uncommitted changes in the repository."
+#     echo "Please commit or stash your changes before running the benchmark."
+#     echo ""
+#     echo "Uncommitted changes:"
+#     git status --short
+#     exit 1
+# fi
 
 # Use conda environment Python if available, otherwise use system Python
 if [ -n "$CONDA_PREFIX" ]; then
@@ -90,7 +90,9 @@ if has_aws_creds:
 commands.extend([
     "git clone https://huggingface.co/datasets/allenai/olmOCR-bench",
     "cd olmOCR-bench && git lfs pull && cd ..",
-    "python -m olmocr.bench.convert transformers:target_longest_image_dim=1288:prompt_template=yaml:response_template=yaml: --dir ./olmOCR-bench/bench_data",
+    "pip install accelerate",
+    "pip install flash-attn==2.8.0.post2 --no-build-isolation",
+    "python -m olmocr.bench.convert transformers:target_longest_image_dim=1288:prompt_template=yaml:response_template=yaml --dir ./olmOCR-bench/bench_data",
     "python -m olmocr.bench.benchmark --dir ./olmOCR-bench/bench_data"
 ])
 
@@ -107,7 +109,7 @@ task_spec_args = {
         preemptible=True,
     ),
     "resources": TaskResources(gpu_count=1),
-    "constraints": Constraints(cluster=["ai2/ceres-cirrascale", "ai2/jupiter-cirrascale-2"]),
+    "constraints": Constraints(cluster=["ai2/titan-cirrascale"]),
     "result": ResultSpec(path="/noop-results"),
 }
 
