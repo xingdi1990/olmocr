@@ -165,12 +165,18 @@ class TrainingConfig:
     lr_scheduler_kwargs: Dict[str, Any] = field(default_factory=dict)
 
     # Optimization
-    optim: str = "adamw_torch"
+    optim: str = "adamw_torch"  # "adamw_torch", "muon"
     adam_beta1: float = 0.9
     adam_beta2: float = 0.999
     adam_epsilon: float = 1e-8
     weight_decay: float = 0.01
     max_grad_norm: float = 1.0
+    
+    # Muon optimizer specific settings
+    muon_momentum: float = 0.95
+    muon_lr_multiplier_head: float = 11.0  # Learning rate multiplier for head parameters
+    muon_lr_multiplier_embed: float = 30.0  # Learning rate multiplier for embedding parameters 
+    muon_lr_multiplier_scalar: float = 2.0  # Learning rate multiplier for scalar parameters
 
     # Gradient checkpointing
     gradient_checkpointing: bool = False

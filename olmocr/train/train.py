@@ -15,6 +15,7 @@ from torch.utils.data import ConcatDataset, DataLoader
 from torch.optim import AdamW
 from torch.amp import autocast
 import wandb
+from tqdm import tqdm
 
 from transformers import (
     AutoProcessor,
@@ -26,6 +27,7 @@ from transformers import (
 from typing import Optional, Dict, Any
 from olmocr.train.config import Config
 from olmocr.train.dataloader import BaseMarkdownPDFDataset
+from olmocr.train.muon import SingleDeviceMuonWithAuxAdam
 
 # Configure logging
 logging.basicConfig(
@@ -321,24 +323,56 @@ def main():
     model.to(device)
 
     # Set up optimizer
-    no_decay = ["bias", "LayerNorm.weight"]
-    optimizer_grouped_parameters = [
-        {
-            "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
-            "weight_decay": config.training.weight_decay,
-        },
-        {
-            "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
-            "weight_decay": 0.0,
-        },
-    ]
     if config.training.optim == "adamw_torch":
+        no_decay = ["bias", "LayerNorm.weight"]
+        optimizer_grouped_parameters = [
+            {
+                "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
+                "weight_decay": config.training.weight_decay,
+            },
+            {
+                "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
+                "weight_decay": 0.0,
+            },
+        ]
         optimizer = AdamW(
             optimizer_grouped_parameters,
             lr=float(config.training.learning_rate),
             betas=(config.training.adam_beta1, config.training.adam_beta2),
             eps=config.training.adam_epsilon,
         )
+    elif config.training.optim == "muon":
+        # Separate parameters for Muon (hidden matrices) and Adam (embeddings, scalars, head)
+        hidden_matrix_params = [p for n, p in model.named_parameters() if p.ndim >= 2 and "embed" not in n and "lm_head" not in n]
+        embed_params = [p for n, p in model.named_parameters() if "embed" in n]
+        scalar_params = [p for p in model.parameters() if p.ndim < 2]
+        head_params = [p for n, p in model.named_parameters() if "lm_head" in n]
+        
+        # Create Adam groups with different learning rates
+        adam_groups = [
+            dict(params=head_params, lr=float(config.training.learning_rate) * config.training.muon_lr_multiplier_head, use_muon=False),
+            dict(params=embed_params, lr=float(config.training.learning_rate) * config.training.muon_lr_multiplier_embed, use_muon=False),
+            dict(params=scalar_params, lr=float(config.training.learning_rate) * config.training.muon_lr_multiplier_scalar, use_muon=False)
+        ]
+        
+        # Add Adam hyperparameters to groups
+        for g in adam_groups:
+            g["betas"] = (config.training.adam_beta1, config.training.adam_beta2)
+            g["eps"] = config.training.adam_epsilon
+            g["weight_decay"] = config.training.weight_decay
+        
+        # Create Muon group
+        muon_group = dict(
+            params=hidden_matrix_params,
+            lr=float(config.training.learning_rate),
+            momentum=config.training.muon_momentum,
+            weight_decay=config.training.weight_decay,
+            use_muon=True
+        )
+        
+        # Combine all groups
+        param_groups = [*adam_groups, muon_group]
+        optimizer = SingleDeviceMuonWithAuxAdam(param_groups)
     else:
         raise NotImplementedError(f"Optimizer {config.training.optim} not supported in custom loop")
 
@@ -428,6 +462,9 @@ def main():
                     epoch_iterator = iter(train_dataloader)
                     break
         
+        # Create progress bar
+        pbar = tqdm(total=max_train_samples - samples_seen, desc=f"Training from step {global_step}", unit="samples")
+        
         while samples_seen < max_train_samples and global_step < max_train_steps:
             try:
                 batch = next(epoch_iterator)
@@ -449,6 +486,9 @@ def main():
             num_losses_accumulated += 1
             samples_seen += config.training.per_device_train_batch_size
             
+            # Update progress bar
+            pbar.update(config.training.per_device_train_batch_size)
+            
             # Check if we should do a gradient update
             if samples_seen % samples_per_step == 0 or samples_seen >= max_train_samples:
                 # Clip gradients
@@ -461,6 +501,16 @@ def main():
                 
                 global_step += 1
                 current_epoch = samples_seen / len(train_dataset)
+                
+                # Update progress bar with current stats
+                current_lr = lr_scheduler.get_last_lr()[0]
+                avg_loss = accumulated_loss / num_losses_accumulated if num_losses_accumulated > 0 else 0
+                pbar.set_postfix({
+                    'loss': f'{avg_loss:.4f}',
+                    'lr': f'{current_lr:.2e}',
+                    'epoch': f'{current_epoch:.2f}',
+                    'step': global_step
+                })
                 
                 # Logging
                 if config.training.logging_steps > 0 and global_step % config.training.logging_steps == 0:
@@ -505,10 +555,16 @@ def main():
             # Check if we've reached our training limit
             if samples_seen >= max_train_samples or global_step >= max_train_steps:
                 break
+        
+        # Close progress bar
+        pbar.close()
 
-    # Save the final model
-    logger.info("Saving final model...")
-    model.save_pretrained(full_output_dir)
+    # Save the final checkpoint with step number
+    logger.info(f"Saving final checkpoint at step {global_step}...")
+    save_checkpoint(
+        model, optimizer, lr_scheduler, current_epoch, global_step, samples_seen, best_metric,
+        full_output_dir, config.training.save_total_limit
+    )
     
     # Log final training state
     final_epoch = samples_seen / len(train_dataset)
