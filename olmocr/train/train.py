@@ -339,7 +339,7 @@ def main():
             optimizer_grouped_parameters,
             lr=float(config.training.learning_rate),
             betas=(config.training.adam_beta1, config.training.adam_beta2),
-            eps=config.training.adam_epsilon,
+            eps=float(config.training.adam_epsilon),
         )
     elif config.training.optim == "muon":
         # Separate parameters for Muon (hidden matrices) and Adam (embeddings, scalars, head)
@@ -358,7 +358,7 @@ def main():
         # Add Adam hyperparameters to groups
         for g in adam_groups:
             g["betas"] = (config.training.adam_beta1, config.training.adam_beta2)
-            g["eps"] = config.training.adam_epsilon
+            g["eps"] = float(config.training.adam_epsilon)
             g["weight_decay"] = config.training.weight_decay
         
         # Create Muon group
