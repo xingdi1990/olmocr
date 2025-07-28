@@ -2,7 +2,7 @@
 
 # Project metadata
 project_name: olmocr-qwen-vl-training
-run_name: qwen2.5-vl-7b-olmocrv2_1epoch_muon
+run_name: qwen2.5-vl-7b-olmocrv2_1epoch_muon_2e-5
 
 # Model configuration
 model:
