@@ -2,7 +2,7 @@
 
 # Project metadata
 project_name: olmocr-qwen-vl-training
-run_name: qwen2.5-vl-7b-olmocrv2_1epoch_muon_2e-4
+run_name: qwen2.5-vl-7b-olmocrv2_1epoch_muon_2e-6
 
 # Model configuration
 model:
@@ -69,7 +69,7 @@ training:
   collator_max_token_len: 8192
   
   # Learning rate
-  learning_rate: 2e-4
+  learning_rate: 2e-6
   lr_scheduler_type: linear
   warmup_ratio: 0.1
   
