@@ -417,8 +417,8 @@ class InstructUserMessages(PipelineStep):
         messages = {
             "role": "user",
             "content": [
-                {"type": "image", "image": sample["image"]},
                 {"type": "text", "text": sample["instruction_prompt"]},
+                {"type": "image", "image": sample["image"]},
             ],
         }
 
