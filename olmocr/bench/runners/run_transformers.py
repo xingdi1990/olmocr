@@ -7,8 +7,8 @@ import torch
 from PIL import Image
 from transformers import (
     AutoProcessor,
-    Qwen2VLForConditionalGeneration,
     Qwen2_5_VLForConditionalGeneration,
+    Qwen2VLForConditionalGeneration,
 )
 
 from olmocr.data.renderpdf import render_pdf_to_base64png
@@ -16,8 +16,8 @@ from olmocr.prompts.anchor import get_anchor_text
 from olmocr.prompts.prompts import (
     PageResponse,
     build_finetuning_prompt,
-    build_openai_silver_data_prompt,
     build_no_anchoring_yaml_prompt,
+    build_openai_silver_data_prompt,
 )
 from olmocr.train.dataloader import FrontMatterParser
 
@@ -52,13 +52,10 @@ def run_transformers(
 
     if _cached_model is None:
         model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-            model_name, 
-            torch_dtype=torch.bfloat16,
-            device_map="auto",
-            attn_implementation="flash_attention_2"
+            model_name, torch_dtype=torch.bfloat16, device_map="auto", attn_implementation="flash_attention_2"
         ).eval()
         processor = AutoProcessor.from_pretrained(model_name)
- 
+
         model = model.to(device)
 
         _cached_model = model
@@ -69,7 +66,7 @@ def run_transformers(
 
     # Convert the first page of the PDF to a base64-encoded PNG image.
     image_base64 = render_pdf_to_base64png(pdf_path, page_num=page_num, target_longest_image_dim=target_longest_image_dim)
-    
+
     if prompt_template == "yaml":
         prompt = build_no_anchoring_yaml_prompt()
     else:
