@@ -9,7 +9,19 @@ from functools import reduce
 from io import BytesIO
 from os import PathLike
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeAlias
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeAlias,
+    Union,
+    get_args,
+    get_origin,
+)
 
 import numpy as np
 import yaml
@@ -166,6 +178,12 @@ class FrontMatterParser(PipelineStep):
 
     front_matter_class: Optional[Type] = None
 
+    def _is_optional_str(self, field_type: Type) -> bool:
+        """Check if a type is Optional[str]."""
+        origin = get_origin(field_type)
+        args = get_args(field_type)
+        return origin is Union and type(None) in args and str in args
+
     def _extract_front_matter_and_text(self, markdown_content: str) -> tuple[Dict[str, Any], str]:
         """Extract YAML front matter and text from markdown content."""
         if markdown_content.startswith("---\n"):
@@ -210,8 +228,14 @@ class FrontMatterParser(PipelineStep):
                 kwargs[field_name] = int(value)
             elif field_type is bool and isinstance(value, str):
                 kwargs[field_name] = value.lower() == "true"
-            elif field_type is Optional[str]:
-                kwargs[field_name] = value if value else None
+            elif self._is_optional_str(field_type):
+                # Handle boolean values that YAML might produce (e.g., 'no' -> False)
+                if isinstance(value, bool):
+                    kwargs[field_name] = None
+                elif isinstance(value, str):
+                    kwargs[field_name] = value if value else None
+                else:
+                    kwargs[field_name] = None if not value else value
             else:
                 kwargs[field_name] = value
 
