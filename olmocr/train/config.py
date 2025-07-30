@@ -210,6 +210,13 @@ class TrainingConfig:
     # Data collator settings
     collator_max_token_len: Optional[int] = None
     remove_unused_columns: bool = False  # Important for custom datasets
+    
+    # Torch compile settings
+    torch_compile: bool = False
+    torch_compile_backend: str = "inductor"  # "inductor", "aot_eager", "cudagraphs", etc.
+    torch_compile_mode: str = "default"  # "default", "reduce-overhead", "max-autotune"
+    torch_compile_fullgraph: bool = False
+    torch_compile_dynamic: bool = False
 
     # Early stopping
     use_early_stopping: bool = False

@@ -7,7 +7,6 @@ import logging
 import os
 import math
 import shutil
-import time
 
 import numpy as np
 import torch
@@ -321,6 +320,18 @@ def main():
     # Device setup
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
+    
+    # Apply torch compile if enabled
+    if config.training.torch_compile:
+        logger.info(f"Compiling model with torch.compile (backend={config.training.torch_compile_backend}, mode={config.training.torch_compile_mode})")
+        model = torch.compile(
+            model,
+            backend=config.training.torch_compile_backend,
+            mode=config.training.torch_compile_mode,
+            fullgraph=config.training.torch_compile_fullgraph,
+            dynamic=config.training.torch_compile_dynamic,
+        )
+        logger.info("Model compilation complete")
 
     # Set up optimizer
     if config.training.optim == "adamw_torch":
