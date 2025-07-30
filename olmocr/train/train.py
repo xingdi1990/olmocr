@@ -482,7 +482,7 @@ def main():
             loss = outputs.loss / config.training.gradient_accumulation_steps
             loss.backward()
             
-            accumulated_loss += loss.item()
+            accumulated_loss += outputs.loss.item()  # Use undivided loss for logging
             num_losses_accumulated += 1
             samples_seen += config.training.per_device_train_batch_size
             
