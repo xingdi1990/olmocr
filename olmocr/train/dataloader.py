@@ -459,7 +459,13 @@ class Tokenizer(PipelineStep):
         # user_messages is a single dict, so wrap it in a list
         text = self.processor.apply_chat_template([user_messages], tokenize=False, add_generation_prompt=True)
 
-        main_image = user_messages["content"][0]["image"]
+        main_image = None
+        for usg_msg in user_messages["content"]:
+            if "image" in usg_msg:
+                main_image = usg_msg["image"]
+                break
+
+        assert main_image is not None
 
         # Process inputs using processor
         inputs = self.processor(
