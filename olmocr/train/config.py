@@ -81,6 +81,7 @@ class InstructUserMessagesConfig(PipelineStepConfig):
     """Configuration for InstructUserMessages step."""
 
     name: str = "InstructUserMessages"
+    prompt_first: bool = False
 
 
 @dataclass
@@ -363,7 +364,9 @@ class Config:
                 steps.append(FrontMatterOutputFormat())
 
             elif step_name == "InstructUserMessages":
-                steps.append(InstructUserMessages())
+                steps.append(InstructUserMessages(
+                    prompt_first=step_config.get("prompt_first", False)
+                ))
 
             elif step_name == "LatexBracketNormalizer":
                 steps.append(LatexBracketNormalizer())

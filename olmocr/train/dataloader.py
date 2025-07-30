@@ -411,16 +411,27 @@ class LatexBracketNormalizer(PipelineStep):
 @dataclass(frozen=True, slots=True)
 class InstructUserMessages(PipelineStep):
     """Creates instruction-following messages format for training."""
+    
+    prompt_first: bool = False
 
     def __call__(self, sample: Sample) -> Sample:
         # Prepare messages
-        messages = {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": sample["instruction_prompt"]},
-                {"type": "image", "image": sample["image"]},
-            ],
-        }
+        if self.prompt_first:
+            messages = {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": sample["instruction_prompt"]},
+                    {"type": "image", "image": sample["image"]},
+                ],
+            }
+        else:
+            messages = {
+                "role": "user",
+                "content": [
+                    {"type": "image", "image": sample["image"]},
+                    {"type": "text", "text": sample["instruction_prompt"]},
+                ],
+            }
 
         sample["user_messages"] = messages
 
