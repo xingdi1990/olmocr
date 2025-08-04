@@ -101,6 +101,30 @@ class TokenizerStepConfig(PipelineStepConfig):
 
 
 @dataclass
+class RandomTokenFlipperConfig(PipelineStepConfig):
+    """Configuration for RandomTokenFlipper step."""
+
+    name: str = "RandomTokenFlipper"
+    token_flip_rate: float = 1e-4
+    masking_index: int = -100
+
+
+@dataclass
+class FilterOutRotatedDocumentsConfig(PipelineStepConfig):
+    """Configuration for FilterOutRotatedDocuments step."""
+
+    name: str = "FilterOutRotatedDocuments"
+
+
+@dataclass
+class RotationAugmentationConfig(PipelineStepConfig):
+    """Configuration for RotationAugmentation step."""
+
+    name: str = "RotationAugmentation"
+    probability: float = 0.5
+
+
+@dataclass
 class DatasetItemConfig:
     """Configuration for a single dataset item."""
 
@@ -329,6 +353,7 @@ class Config:
         """
         from olmocr.prompts.prompts import PageResponse
         from olmocr.train.dataloader import (
+            FilterOutRotatedDocuments,
             FinetuningPrompt,
             FrontMatterOutputFormat,
             FrontMatterParser,
@@ -339,6 +364,7 @@ class Config:
             NewYamlFinetuningPromptWithNoAnchoring,
             PDFRenderer,
             RandomTokenFlipper,
+            RotationAugmentation,
             StaticLengthDocumentAnchoring,
             Tokenizer,
         )
@@ -422,6 +448,17 @@ class Config:
                         masking_index=step_config.get("masking_index", -100),
                     )
                 )
+            
+            elif step_name == "FilterOutRotatedDocuments":
+                steps.append(FilterOutRotatedDocuments())
+            
+            elif step_name == "RotationAugmentation":
+                steps.append(
+                    RotationAugmentation(
+                        probability=step_config.get("probability", 0.5)
+                    )
+                )
+            
             else:
                 raise ValueError(f"Unknown pipeline step: {step_name}")
 

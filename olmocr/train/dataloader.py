@@ -439,6 +439,92 @@ class LatexBracketNormalizer(PipelineStep):
 
 
 @dataclass(frozen=True, slots=True)
+class RotationAugmentation(PipelineStep):
+    """Pipeline step that randomly rotates images for augmentation."""
+    
+    probability: float = 0.5  # Probability of applying rotation
+    
+    def __call__(self, sample: Sample) -> Optional[Sample]:
+        """Randomly rotate image and update rotation metadata."""
+        # Only proceed with given probability
+        if np.random.random() > self.probability:
+            return sample
+        
+        # Check if image exists
+        if "image" not in sample:
+            return sample
+        
+        # Check if page_data exists (we need to update it)
+        if "page_data" not in sample:
+            return sample
+        
+        # Randomly choose a rotation (90, 180, or 270 degrees)
+        rotation_degrees = np.random.choice([90, 180, 270])
+        
+        # Apply rotation to image
+        image = sample["image"]
+        if rotation_degrees == 90:
+            transpose = Image.Transpose.ROTATE_90
+        elif rotation_degrees == 180:
+            transpose = Image.Transpose.ROTATE_180
+        else:  # 270
+            transpose = Image.Transpose.ROTATE_270
+        
+        rotated_image = image.transpose(transpose)
+        sample["image"] = rotated_image
+        
+        # Update page_data
+        page_data = sample["page_data"]
+        
+        # Create new PageResponse with updated rotation info
+        # The rotation_correction should be the inverse of what we applied
+        # If we rotated 90 clockwise, we need 270 counter-clockwise to correct it
+        if rotation_degrees == 90:
+            correction = 270
+        elif rotation_degrees == 180:
+            correction = 180
+        else:  # 270
+            correction = 90
+        
+        from olmocr.prompts.prompts import PageResponse
+        
+        new_page_data = PageResponse(
+            primary_language=page_data.primary_language,
+            is_rotation_valid=False,  # Mark as invalid since we rotated it
+            rotation_correction=correction,  # The correction needed to fix it
+            is_table=page_data.is_table,
+            is_diagram=page_data.is_diagram,
+            natural_text=page_data.natural_text,
+        )
+        
+        sample["page_data"] = new_page_data
+        return sample
+
+
+@dataclass(frozen=True, slots=True)
+class FilterOutRotatedDocuments(PipelineStep):
+    """Pipeline step that filters out documents with rotation issues."""
+
+    def __call__(self, sample: Sample) -> Optional[Sample]:
+        """Filter out samples where rotation is invalid or rotation correction is needed."""
+        # Check if page_data exists
+        if "page_data" not in sample:
+            return sample
+        
+        page_data = sample["page_data"]
+        
+        # Check if page_data has the required attributes
+        if not hasattr(page_data, "is_rotation_valid") or not hasattr(page_data, "rotation_correction"):
+            return sample
+        
+        # Filter out if rotation is invalid or rotation correction is not 0
+        if page_data.is_rotation_valid is False or page_data.rotation_correction != 0:
+            return None
+        
+        return sample
+
+
+@dataclass(frozen=True, slots=True)
 class InstructUserMessages(PipelineStep):
     """Creates instruction-following messages format for training."""
     
