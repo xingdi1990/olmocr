@@ -89,6 +89,8 @@ commands = [
     "pip install -r gantry-train-requirements.txt",
     "pip install transformers==4.52.4",
     "pip install flash-attn==2.8.0.post2 --no-build-isolation",
+    "pip install s5cmd",
+    "s5cmd cp s3://ai2-oe-data/jakep/olmocr/olmOCR-mix-0225/preprocessed_v0_2_3/* /data/olmOCR-mix-0225/",
     f"python -m olmocr.train.train --config {config}"
 ]
 
@@ -114,8 +116,8 @@ task_spec = TaskSpec(
         EnvVar(name="LOG_FILTER_TYPE", value="local_rank0_only"),
         EnvVar(name="OMP_NUM_THREADS", value="8"),
         EnvVar(name="BEAKER_USER_ID", value=beaker_user),
-        EnvVar(name="AWS_ACCESS_KEY_ID", secret="S2_AWS_ACCESS_KEY_ID"),
-        EnvVar(name="AWS_SECRET_ACCESS_KEY", secret="S2_AWS_SECRET_ACCESS_KEY"),
+        EnvVar(name="AWS_ACCESS_KEY_ID", secret="ALLENNLP_AWS_ACCESS_KEY_ID"),
+        EnvVar(name="AWS_SECRET_ACCESS_KEY", secret="ALLENNLP_AWS_SECRET_ACCESS_KEY"),
         EnvVar(name="WANDB_API_KEY", secret="JAKE_WANDB_API_KEY")
     ],
     datasets=[
