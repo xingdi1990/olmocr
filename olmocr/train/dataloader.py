@@ -195,10 +195,10 @@ class FrontMatterParser(PipelineStep):
         if markdown_content.startswith("---\n"):
             try:
                 # Find the closing --- delimiter
-                end_index = markdown_content.find("\n---\n", 4)
+                end_index = markdown_content.find("\n---", 4)
                 if end_index != -1:
                     front_matter_str = markdown_content[4:end_index]
-                    text = markdown_content[end_index + 5 :].strip()
+                    text = markdown_content[end_index + 4 :].strip()
 
                     # Parse YAML
                     front_matter = yaml.safe_load(front_matter_str) or {}
@@ -364,7 +364,7 @@ rotation_correction: {page_data.rotation_correction}
 is_table: {page_data.is_table}
 is_diagram: {page_data.is_diagram}
 ---
-{page_data.natural_text}
+{page_data.natural_text if page_data.natural_text is not None and len(page_data.natural_text.strip()) > 0 else ""}
 """.strip()
         )
 
