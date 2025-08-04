@@ -398,8 +398,8 @@ Document is now correctly oriented after 180 degree rotation."""
 
         # Verify build_page_query was called with correct cumulative rotations
         assert len(build_page_query_calls) == 3
-        assert build_page_query_calls[0] == 0    # First call with no rotation
-        assert build_page_query_calls[1] == 90   # Second call with 90 degree rotation
+        assert build_page_query_calls[0] == 0  # First call with no rotation
+        assert build_page_query_calls[1] == 90  # Second call with 90 degree rotation
         assert build_page_query_calls[2] == 180  # Third call with cumulative 180 degree rotation
 
         # Verify tracker was called correctly
@@ -501,6 +501,6 @@ Document correctly oriented at 90 degrees total rotation."""
 
         # Verify build_page_query was called with correct cumulative rotations
         assert len(build_page_query_calls) == 3
-        assert build_page_query_calls[0] == 0    # First call with no rotation
+        assert build_page_query_calls[0] == 0  # First call with no rotation
         assert build_page_query_calls[1] == 270  # Second call with 270 degree rotation
-        assert build_page_query_calls[2] == 90   # Third call with wrapped rotation (270 + 180 = 450 % 360 = 90)
+        assert build_page_query_calls[2] == 90  # Third call with wrapped rotation (270 + 180 = 450 % 360 = 90)

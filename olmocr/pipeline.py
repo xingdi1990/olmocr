@@ -1034,8 +1034,7 @@ async def main():
     parser.add_argument("--guided_decoding", action="store_true", help="Enable guided decoding for model YAML type outputs")
 
     vllm_group = parser.add_argument_group(
-        "VLLM arguments", 
-        "These arguments are passed to vLLM. Any unrecognized arguments are also automatically forwarded to vLLM."
+        "VLLM arguments", "These arguments are passed to vLLM. Any unrecognized arguments are also automatically forwarded to vLLM."
     )
     vllm_group.add_argument(
         "--gpu-memory-utilization", type=float, help="Fraction of VRAM vLLM may pre-allocate for KV-cache " "(passed through to vllm serve)."
