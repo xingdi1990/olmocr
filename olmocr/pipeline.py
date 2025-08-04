@@ -114,7 +114,14 @@ async def build_page_query(local_pdf_path: str, page: int, target_longest_image_
     if image_rotation != 0:
         image_bytes = base64.b64decode(image_base64)
         with Image.open(BytesIO(image_bytes)) as img:
-            rotated_img = img.rotate(-image_rotation, expand=True)
+            if image_rotation == 90:
+                tranpose = Image.Transpose.ROTATE_90
+            elif image_rotation == 180:
+                tranpose = Image.Transpose.ROTATE_180
+            else:
+                tranpose = Image.Transpose.ROTATE_270
+
+            rotated_img = img.transpose(tranpose)
 
             # Save the rotated image to a bytes buffer
             buffered = BytesIO()
