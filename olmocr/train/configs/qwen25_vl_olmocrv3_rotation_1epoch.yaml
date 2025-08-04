@@ -2,7 +2,7 @@
 
 # Project metadata
 project_name: olmocr-qwen-vl-training
-run_name: qwen2.5-vl-7b-olmocrv3_1epoch_prompt_first
+run_name: qwen2.5-vl-7b-olmocrv3_1epoch_prompt_first_rotation
 
 # Model configuration
 model:
