@@ -62,6 +62,7 @@ dev = [
     "pytest",
     "pytest-sphinx",
     "pytest-cov",
+    "pytest-asyncio",
     "twine>=1.11.0",
     "build",
     "setuptools",

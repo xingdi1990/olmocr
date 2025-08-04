@@ -114,7 +114,14 @@ async def build_page_query(local_pdf_path: str, page: int, target_longest_image_
     if image_rotation != 0:
         image_bytes = base64.b64decode(image_base64)
         with Image.open(BytesIO(image_bytes)) as img:
-            rotated_img = img.rotate(-image_rotation, expand=True)
+            if image_rotation == 90:
+                tranpose = Image.Transpose.ROTATE_90
+            elif image_rotation == 180:
+                tranpose = Image.Transpose.ROTATE_180
+            else:
+                tranpose = Image.Transpose.ROTATE_270
+
+            rotated_img = img.transpose(tranpose)
 
             # Save the rotated image to a bytes buffer
             buffered = BytesIO()
@@ -210,8 +217,7 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
     MODEL_MAX_CONTEXT = 16384
     TEMPERATURE_BY_ATTEMPT = [0.1, 0.1, 0.2, 0.3, 0.5, 0.8, 0.9, 1.0]
     exponential_backoffs = 0
-    local_anchor_text_len = args.target_anchor_text_len
-    local_image_rotation = 0
+    cumulative_rotation = 0  # Track cumulative rotation instead of local
     attempt = 0
     await tracker.track_work(worker_id, f"{pdf_orig_path}-{page_num}", "started")
 
@@ -221,7 +227,7 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
             pdf_local_path,
             page_num,
             args.target_longest_image_dim,
-            image_rotation=local_image_rotation,
+            image_rotation=cumulative_rotation,
         )
         # Change temperature as number of attempts increases to overcome repetition issues at expense of quality
         query["temperature"] = TEMPERATURE_BY_ATTEMPT[lookup_attempt]
@@ -247,13 +253,9 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
             base_response_data = json.loads(response_body)
 
             if base_response_data["usage"]["total_tokens"] > MODEL_MAX_CONTEXT:
-                local_anchor_text_len = max(1, local_anchor_text_len // 2)
-                logger.info(f"Reducing anchor text len to {local_anchor_text_len} for {pdf_orig_path}-{page_num}")
                 raise ValueError(f"Response exceeded model_max_context of {MODEL_MAX_CONTEXT}, cannot use this response")
 
             if base_response_data["choices"][0]["finish_reason"] != "stop":
-                local_anchor_text_len = max(1, local_anchor_text_len // 2)
-                logger.info(f"Reducing anchor text len to {local_anchor_text_len} for {pdf_orig_path}-{page_num}")
                 raise ValueError("Response did not finish with reason code 'stop', cannot use this response")
 
             metrics.add_metrics(
@@ -271,7 +273,9 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
                 logger.info(
                     f"Got invalid_page rotation for {pdf_orig_path}-{page_num} attempt {attempt}, retrying with {page_response.rotation_correction} rotation"
                 )
-                local_image_rotation = page_response.rotation_correction
+                # Add the rotation correction to the cumulative rotation
+                cumulative_rotation = (cumulative_rotation + page_response.rotation_correction) % 360
+                logger.info(f"Cumulative rotation is now {cumulative_rotation} degrees")
                 raise ValueError(f"invalid_page rotation for {pdf_orig_path}-{page_num}")
 
             metrics.add_metrics(**{"completed_pages": 1, f"finished_on_attempt_{attempt}": 1})
@@ -300,10 +304,6 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
             raise
         except json.JSONDecodeError as e:
             logger.warning(f"JSON decode error on attempt {attempt} for {pdf_orig_path}-{page_num}: {e}")
-
-            local_anchor_text_len = max(1, local_anchor_text_len // 2)
-            logger.info(f"Reducing anchor text len to {local_anchor_text_len} for {pdf_orig_path}-{page_num}")
-
             attempt += 1
         except ValueError as e:
             logger.warning(f"ValueError on attempt {attempt} for {pdf_orig_path}-{page_num}: {type(e)} - {e}")
@@ -449,7 +449,14 @@ def build_dolma_document(pdf_orig_path, page_results):
         "added": datetime.datetime.now().strftime("%Y-%m-%d"),
         "created": datetime.datetime.now().strftime("%Y-%m-%d"),
         "metadata": metadata,
-        "attributes": {"pdf_page_numbers": pdf_page_spans},
+        "attributes": {
+            "pdf_page_numbers": pdf_page_spans,
+            "primary_language": [p.response.primary_language for p in page_results],
+            "is_rotation_valid": [p.response.is_rotation_valid for p in page_results],
+            "rotation_correction": [p.response.rotation_correction for p in page_results],
+            "is_table": [p.response.is_table for p in page_results],
+            "is_diagram": [p.response.is_diagram for p in page_results],
+        },
     }
     return dolma_doc
 
@@ -570,7 +577,7 @@ async def worker(args, work_queue: WorkQueue, semaphore, worker_id):
             semaphore.release()
 
 
-async def vllm_server_task(model_name_or_path, args, semaphore):
+async def vllm_server_task(model_name_or_path, args, semaphore, unknown_args=None):
     cmd = [
         "vllm",
         "serve",
@@ -593,6 +600,9 @@ async def vllm_server_task(model_name_or_path, args, semaphore):
 
     if args.max_model_len is not None:
         cmd.extend(["--max-model-len", str(args.max_model_len)])
+
+    if unknown_args:
+        cmd.extend(unknown_args)
 
     proc = await asyncio.create_subprocess_exec(
         *cmd,
@@ -683,12 +693,12 @@ async def vllm_server_task(model_name_or_path, args, semaphore):
     await asyncio.gather(stdout_task, stderr_task, timeout_task, return_exceptions=True)
 
 
-async def vllm_server_host(model_name_or_path, args, semaphore):
+async def vllm_server_host(model_name_or_path, args, semaphore, unknown_args=None):
     MAX_RETRIES = 5
     retry = 0
 
     while retry < MAX_RETRIES:
-        await vllm_server_task(model_name_or_path, args, semaphore)
+        await vllm_server_task(model_name_or_path, args, semaphore, unknown_args)
         logger.warning("VLLM server task ended")
         retry += 1
 
@@ -998,7 +1008,7 @@ def print_stats(args, root_work_queue):
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="Manager for running millions of PDFs through a batch inference pipeline")
+    parser = argparse.ArgumentParser(description="Manager for running millions of PDFs through a batch inference pipeline.")
     parser.add_argument(
         "workspace",
         help="The filesystem path where work will be stored, can be a local folder, or an s3 path if coordinating work with many workers, s3://bucket/prefix/ ",
@@ -1030,7 +1040,9 @@ async def main():
     parser.add_argument("--target_anchor_text_len", type=int, help="Maximum amount of anchor text to use (characters), not used for new models", default=-1)
     parser.add_argument("--guided_decoding", action="store_true", help="Enable guided decoding for model YAML type outputs")
 
-    vllm_group = parser.add_argument_group("VLLM Forwarded arguments")
+    vllm_group = parser.add_argument_group(
+        "VLLM arguments", "These arguments are passed to vLLM. Any unrecognized arguments are also automatically forwarded to vLLM."
+    )
     vllm_group.add_argument(
         "--gpu-memory-utilization", type=float, help="Fraction of VRAM vLLM may pre-allocate for KV-cache " "(passed through to vllm serve)."
     )
@@ -1051,7 +1063,7 @@ async def main():
     beaker_group.add_argument("--beaker_gpus", type=int, default=1, help="Number of gpu replicas to run")
     beaker_group.add_argument("--beaker_priority", type=str, default="normal", help="Beaker priority level for the job")
 
-    args = parser.parse_args()
+    args, unknown_args = parser.parse_known_args()
 
     logger.info(
         "If you run out of GPU memory during start-up or get 'KV cache is larger than available memory' errors, retry with lower values, e.g. --gpu_memory_utilization 0.80  --max_model_len 16384"
@@ -1196,7 +1208,7 @@ async def main():
     # As soon as one worker is no longer saturating the gpu, the next one can start sending requests
     semaphore = asyncio.Semaphore(1)
 
-    vllm_server = asyncio.create_task(vllm_server_host(model_name_or_path, args, semaphore))
+    vllm_server = asyncio.create_task(vllm_server_host(model_name_or_path, args, semaphore, unknown_args))
 
     await vllm_server_ready()
 
