@@ -77,6 +77,10 @@ class QwenDataCollator:
                     image_grid_thw = torch.from_numpy(image_grid_thw)
                 batch["image_grid_thw"].append(image_grid_thw)
 
+        # Check if we have any valid samples
+        if not batch["input_ids"]:
+            return None
+        
         # Convert lists to tensors with proper padding
         # Note: For Qwen2-VL, we typically handle variable length sequences
         # The model's processor should handle the padding internally
@@ -169,6 +173,9 @@ def evaluate_model(
         
         with torch.no_grad():
             for batch in dataloader:
+                # Skip if batch is None (all samples were filtered out)
+                if batch is None:
+                    continue
                 batch = {k: v.to(device) for k, v in batch.items()}
                 with autocast(device_type="cuda", enabled=True, dtype=torch.bfloat16):
                     outputs = model(**batch)
@@ -485,6 +492,10 @@ def main():
                 logger.info(f"Completed epoch {current_epoch:.2f}")
                 epoch_iterator = iter(train_dataloader)
                 batch = next(epoch_iterator)
+            
+            # Skip if batch is None (all samples were filtered out)
+            if batch is None:
+                continue
             
             batch = {k: v.to(device) for k, v in batch.items()}
             

@@ -88,8 +88,8 @@ class PipelineStep(ABC):
     """Abstract base class for pipeline steps."""
 
     @abstractmethod
-    def __call__(self, sample: Sample) -> Sample:
-        """Process a sample and return the modified sample."""
+    def __call__(self, sample: Sample) -> Optional[Sample]:
+        """Process a sample and return the modified sample, or None to skip this sample."""
         ...
 
 
@@ -154,7 +154,7 @@ class BaseMarkdownPDFDataset(Dataset):
     def __len__(self) -> int:
         return len(self.samples)
 
-    def __getitem__(self, idx: int) -> Dict[str, Any]:
+    def __getitem__(self, idx: int) -> Optional[Dict[str, Any]]:
         """
         Get a single sample from the dataset.
 
@@ -164,12 +164,18 @@ class BaseMarkdownPDFDataset(Dataset):
                 - 'pdf_path': Path to the PDF file
 
             Additional fields will be added by pipeline steps.
+            Returns None if any pipeline step returns None.
         """
         # Start with basic sample info
         sample = self.samples[idx].copy()
 
-        # Apply pipeline steps using reduce
-        return reduce(lambda s, f: f(s), self.pipeline_steps, sample)
+        # Apply pipeline steps, returning None if any step returns None
+        for step in self.pipeline_steps:
+            sample = step(sample)
+            if sample is None:
+                return None
+        
+        return sample
 
 
 @dataclass(frozen=True, slots=True)
