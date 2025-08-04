@@ -217,7 +217,7 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
     MODEL_MAX_CONTEXT = 16384
     TEMPERATURE_BY_ATTEMPT = [0.1, 0.1, 0.2, 0.3, 0.5, 0.8, 0.9, 1.0]
     exponential_backoffs = 0
-    local_image_rotation = 0
+    cumulative_rotation = 0  # Track cumulative rotation instead of local
     attempt = 0
     await tracker.track_work(worker_id, f"{pdf_orig_path}-{page_num}", "started")
 
@@ -227,7 +227,7 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
             pdf_local_path,
             page_num,
             args.target_longest_image_dim,
-            image_rotation=local_image_rotation,
+            image_rotation=cumulative_rotation,
         )
         # Change temperature as number of attempts increases to overcome repetition issues at expense of quality
         query["temperature"] = TEMPERATURE_BY_ATTEMPT[lookup_attempt]
@@ -273,7 +273,9 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
                 logger.info(
                     f"Got invalid_page rotation for {pdf_orig_path}-{page_num} attempt {attempt}, retrying with {page_response.rotation_correction} rotation"
                 )
-                local_image_rotation = page_response.rotation_correction
+                # Add the rotation correction to the cumulative rotation
+                cumulative_rotation = (cumulative_rotation + page_response.rotation_correction) % 360
+                logger.info(f"Cumulative rotation is now {cumulative_rotation} degrees")
                 raise ValueError(f"invalid_page rotation for {pdf_orig_path}-{page_num}")
 
             metrics.add_metrics(**{"completed_pages": 1, f"finished_on_attempt_{attempt}": 1})
