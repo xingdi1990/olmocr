@@ -54,13 +54,13 @@ class QwenDataCollator:
                 input_ids = torch.from_numpy(example["input_ids"]) if isinstance(example["input_ids"], np.ndarray) else example["input_ids"]
                 attention_mask = torch.from_numpy(example["attention_mask"]) if isinstance(example["attention_mask"], np.ndarray) else example["attention_mask"]
                 labels = torch.from_numpy(example["labels"]) if isinstance(example["labels"], np.ndarray) else example["labels"]
-                
+
                 # Trim to max_token_len if specified
                 if self.max_token_len is not None:
-                    input_ids = input_ids[:self.max_token_len]
-                    attention_mask = attention_mask[:self.max_token_len]
-                    labels = labels[:self.max_token_len]
-                
+                    input_ids = input_ids[: self.max_token_len]
+                    attention_mask = attention_mask[: self.max_token_len]
+                    labels = labels[: self.max_token_len]
+
                 batch["input_ids"].append(input_ids)
                 batch["attention_mask"].append(attention_mask)
                 batch["labels"].append(labels)

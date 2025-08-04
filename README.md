@@ -35,6 +35,8 @@ Features:
  - (Based on a 7B parameter VLM, so it requires a GPU)
 
 ### News
+ - July 24, 2025 - v0.2.1 - [New model release](https://huggingface.co/allenai/olmOCR-7B-0725-FP8), scores 3 points higher on [olmOCR-Bench](https://github.com/allenai/olmocr/tree/main/olmocr/bench), also runs significantly faster because it's default FP8, and needs much fewer retries per document.
+ - July 23, 2025 - v0.2.0 - New cleaned up [trainer code](https://github.com/allenai/olmocr/tree/main/olmocr/train), makes it much simpler to train olmOCR models yourself.
  - June 17, 2025 - v0.1.75 - Switch from sglang to vllm based inference pipeline, updated docker image to CUDA 12.8.
  - May 23, 2025 - v0.1.70 - Official docker support and images are now available! [See Docker usage](#using-docker)
  - May 19, 2025 - v0.1.68 - [olmOCR-Bench](https://github.com/allenai/olmocr/tree/main/olmocr/bench) launch, scoring 77.4. Launch includes 2 point performance boost in olmOCR pipeline due to bug fixes with prompts.
@@ -63,14 +65,14 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
   </thead>
   <tbody>
     <tr>
-      <td align="left">Marker v1.7.5 (base)</td>
+      <td align="left">Marker v1.7.5 (base, force_ocr)</td>
       <td align="center">76.0</td>
       <td align="center">57.9</td>
       <td align="center">57.6</td>
       <td align="center">27.8</td>
       <td align="center">84.9</td>
       <td align="center">72.9</td>
-      <td align="center">84.6</td>
+      <td align="center"><strong>84.6</strong></td>
       <td align="center">99.1</td>
       <td align="center">70.1 ± 1.1</td>
     </tr>
@@ -88,7 +90,7 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
     </tr>
     <tr>
       <td align="left">Mistral OCR API</td>
-      <td align="center"><strong>77.2</strong></td>
+      <td align="center">77.2</td>
       <td align="center">67.5</td>
       <td align="center">60.6</td>
       <td align="center">29.3</td>
@@ -105,10 +107,22 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
       <td align="center">71.0</td>
       <td align="center">42.2</td>
       <td align="center">94.5</td>
-      <td align="center"><strong>78.3</strong></td>
+      <td align="center">78.3</td>
       <td align="center">73.3</td>
       <td align="center">98.3</td>
-      <td align="center"><strong>75.5 ± 1.0</strong></td>
+      <td align="center">75.5 ± 1.0</td>
+    </tr>
+    <tr>
+      <td align="left">olmOCR v0.2.0</td>
+      <td align="center"><strong>78.8</strong></td>
+      <td align="center"><strong>77.5</strong></td>
+      <td align="center">71.9</td>
+      <td align="center"><strong>45.4</strong></td>
+      <td align="center">94.2</td>
+      <td align="center"><strong>78.6</strong></td>
+      <td align="center">81.4</td>
+      <td align="center"><strong>99.8</strong></td>
+      <td align="center"><strong>78.5 ± 1.1</strong></td>
     </tr>
   </tbody>
 </table>
@@ -138,7 +152,7 @@ conda activate olmocr
 pip install olmocr[bench]
 
 # For actually converting the files with your own GPU
-pip install olmocr.[gpu]  --extra-index-url https://download.pytorch.org/whl/cu128
+pip install olmocr[gpu]  --extra-index-url https://download.pytorch.org/whl/cu128
 
 # Recommended: Install flash infer for faster inference on GPU
 pip install https://download.pytorch.org/whl/cu128/flashinfer/flashinfer_python-0.2.5%2Bcu128torch2.7-cp38-abi3-linux_x86_64.whl
@@ -242,11 +256,9 @@ python -m olmocr.pipeline ./localworkspace --markdown --pdfs olmocr-sample.pdf
 
 ```bash
 python -m olmocr.pipeline --help
-usage: pipeline.py [-h] [--pdfs PDFS] [--workspace_profile WORKSPACE_PROFILE] [--pdf_profile PDF_PROFILE] [--pages_per_group PAGES_PER_GROUP]
-                   [--max_page_retries MAX_PAGE_RETRIES] [--max_page_error_rate MAX_PAGE_ERROR_RATE] [--workers WORKERS] [--apply_filter] [--stats] [--model MODEL]
-                   [--model_max_context MODEL_MAX_CONTEXT] [--model_chat_template MODEL_CHAT_TEMPLATE] [--target_longest_image_dim TARGET_LONGEST_IMAGE_DIM]
-                   [--target_anchor_text_len TARGET_ANCHOR_TEXT_LEN] [--beaker] [--beaker_workspace BEAKER_WORKSPACE] [--beaker_cluster BEAKER_CLUSTER]
-                   [--beaker_gpus BEAKER_GPUS] [--beaker_priority BEAKER_PRIORITY]
+usage: pipeline.py [-h] [--pdfs [PDFS ...]] [--model MODEL] [--workspace_profile WORKSPACE_PROFILE] [--pdf_profile PDF_PROFILE] [--pages_per_group PAGES_PER_GROUP] [--max_page_retries MAX_PAGE_RETRIES] [--max_page_error_rate MAX_PAGE_ERROR_RATE] [--workers WORKERS]
+                   [--apply_filter] [--stats] [--markdown] [--target_longest_image_dim TARGET_LONGEST_IMAGE_DIM] [--target_anchor_text_len TARGET_ANCHOR_TEXT_LEN] [--guided_decoding] [--gpu-memory-utilization GPU_MEMORY_UTILIZATION] [--max_model_len MAX_MODEL_LEN]
+                   [--tensor-parallel-size TENSOR_PARALLEL_SIZE] [--data-parallel-size DATA_PARALLEL_SIZE] [--port PORT] [--beaker] [--beaker_workspace BEAKER_WORKSPACE] [--beaker_cluster BEAKER_CLUSTER] [--beaker_gpus BEAKER_GPUS] [--beaker_priority BEAKER_PRIORITY]
                    workspace
 
 Manager for running millions of PDFs through a batch inference pipeline
@@ -256,7 +268,8 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  --pdfs PDFS           Path to add pdfs stored in s3 to the workspace, can be a glob path s3://bucket/prefix/*.pdf or path to file containing list of pdf paths
+  --pdfs [PDFS ...]     Path to add pdfs stored in s3 to the workspace, can be a glob path s3://bucket/prefix/*.pdf or path to file containing list of pdf paths
+  --model MODEL         Path where the model is located, allenai/olmOCR-7B-0725-FP8 is the default, can be local, s3, or hugging face.
   --workspace_profile WORKSPACE_PROFILE
                         S3 configuration profile for accessing the workspace
   --pdf_profile PDF_PROFILE
@@ -271,16 +284,24 @@ options:
   --apply_filter        Apply basic filtering to English pdfs which are not forms, and not likely seo spam
   --stats               Instead of running any job, reports some statistics about the current workspace
   --markdown            Also write natural text to markdown files preserving the folder structure of the input pdfs
-  --model MODEL         List of paths where you can find the model to convert this pdf. You can specify several different paths here, and the script will try to use the
-                        one which is fastest to access
-  --model_max_context MODEL_MAX_CONTEXT
-                        Maximum context length that the model was fine tuned under
-  --model_chat_template MODEL_CHAT_TEMPLATE
-                        Chat template to pass to sglang server
   --target_longest_image_dim TARGET_LONGEST_IMAGE_DIM
                         Dimension on longest side to use for rendering the pdf pages
   --target_anchor_text_len TARGET_ANCHOR_TEXT_LEN
-                        Maximum amount of anchor text to use (characters)
+                        Maximum amount of anchor text to use (characters), not used for new models
+  --guided_decoding     Enable guided decoding for model YAML type outputs
+
+VLLM Forwarded arguments:
+  --gpu-memory-utilization GPU_MEMORY_UTILIZATION
+                        Fraction of VRAM vLLM may pre-allocate for KV-cache (passed through to vllm serve).
+  --max_model_len MAX_MODEL_LEN
+                        Upper bound (tokens) vLLM will allocate KV-cache for, lower if VLLM won't start
+  --tensor-parallel-size TENSOR_PARALLEL_SIZE, -tp TENSOR_PARALLEL_SIZE
+                        Tensor parallel size for vLLM
+  --data-parallel-size DATA_PARALLEL_SIZE, -dp DATA_PARALLEL_SIZE
+                        Data parallel size for vLLM
+  --port PORT           Port to use for the VLLM server
+
+beaker/cluster execution:
   --beaker              Submit this job to beaker instead of running locally
   --beaker_workspace BEAKER_WORKSPACE
                         Beaker workspace to submit to

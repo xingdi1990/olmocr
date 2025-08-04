@@ -17,7 +17,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from concurrent.futures.process import BrokenProcessPool
 from dataclasses import dataclass
-from functools import cache, partial
+from functools import cache
 from io import BytesIO
 from urllib.parse import urlparse
 
@@ -34,7 +34,6 @@ from olmocr.check import (
     check_torch_gpu_available,
 )
 from olmocr.data.renderpdf import render_pdf_to_base64png
-from olmocr.train.dataloader import FrontMatterParser
 from olmocr.filter.filter import Language, PdfFilter
 from olmocr.image_utils import convert_image_to_pdf_bytes, is_jpeg, is_png
 from olmocr.metrics import MetricsKeeper, WorkerTracker
@@ -48,6 +47,7 @@ from olmocr.s3_utils import (
     get_s3_bytes_with_backoff,
     parse_s3_path,
 )
+from olmocr.train.dataloader import FrontMatterParser
 from olmocr.version import VERSION
 from olmocr.work_queue import LocalWorkQueue, S3WorkQueue, WorkQueue
 
@@ -129,8 +129,8 @@ async def build_page_query(local_pdf_path: str, page: int, target_longest_image_
             {
                 "role": "user",
                 "content": [
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_base64}"}},
                     {"type": "text", "text": build_no_anchoring_yaml_prompt()},
+                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_base64}"}},
                 ],
             }
         ],
@@ -207,7 +207,8 @@ async def apost(url, json_data):
 async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path: str, page_num: int) -> PageResult:
     COMPLETION_URL = f"http://localhost:{BASE_SERVER_PORT}/v1/chat/completions"
     MAX_RETRIES = args.max_page_retries
-    TEMPERATURE_BY_ATTEMPT = [0.1, 0.1, 0.2, 0.3, 0.5, 0.8, 0.1, 0.8]
+    MODEL_MAX_CONTEXT = 16384
+    TEMPERATURE_BY_ATTEMPT = [0.1, 0.1, 0.2, 0.3, 0.5, 0.8, 0.9, 1.0]
     exponential_backoffs = 0
     local_anchor_text_len = args.target_anchor_text_len
     local_image_rotation = 0
@@ -227,7 +228,9 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
 
         # Enable guided decoding regex if needed
         if args.guided_decoding:
-            query["guided_regex"] = r"---\nprimary_language: (?:[a-z]{2}|null)\nis_rotation_valid: (?:True|False|true|false)\nrotation_correction: (?:0|90|180|270)\nis_table: (?:True|False|true|false)\nis_diagram: (?:True|False|true|false)\n(?:---|---\n[\s\S]+)"
+            query["guided_regex"] = (
+                r"---\nprimary_language: (?:[a-z]{2}|null)\nis_rotation_valid: (?:True|False|true|false)\nrotation_correction: (?:0|90|180|270)\nis_table: (?:True|False|true|false)\nis_diagram: (?:True|False|true|false)\n(?:---|---\n[\s\S]+)"
+            )
 
         logger.info(f"Built page query for {pdf_orig_path}-{page_num}")
 
@@ -243,11 +246,11 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
 
             base_response_data = json.loads(response_body)
 
-            if base_response_data["usage"]["total_tokens"] > args.model_max_context:
+            if base_response_data["usage"]["total_tokens"] > MODEL_MAX_CONTEXT:
                 local_anchor_text_len = max(1, local_anchor_text_len // 2)
                 logger.info(f"Reducing anchor text len to {local_anchor_text_len} for {pdf_orig_path}-{page_num}")
-                raise ValueError("Response exceeded model_max_context, cannot use this response")
-            
+                raise ValueError(f"Response exceeded model_max_context of {MODEL_MAX_CONTEXT}, cannot use this response")
+
             if base_response_data["choices"][0]["finish_reason"] != "stop":
                 local_anchor_text_len = max(1, local_anchor_text_len // 2)
                 logger.info(f"Reducing anchor text len to {local_anchor_text_len} for {pdf_orig_path}-{page_num}")
@@ -328,6 +331,7 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
         output_tokens=0,
         is_fallback=True,
     )
+
 
 async def process_pdf(args, worker_id: int, pdf_orig_path: str):
     with tempfile.NamedTemporaryFile("wb+", suffix=".pdf", delete=False) as tf:
@@ -584,6 +588,12 @@ async def vllm_server_task(model_name_or_path, args, semaphore):
         str(args.data_parallel_size),
     ]
 
+    if args.gpu_memory_utilization is not None:
+        cmd.extend(["--gpu-memory-utilization", str(args.gpu_memory_utilization)])
+
+    if args.max_model_len is not None:
+        cmd.extend(["--max-model-len", str(args.max_model_len)])
+
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,
@@ -592,7 +602,10 @@ async def vllm_server_task(model_name_or_path, args, semaphore):
 
     # Ensure the subprocess is terminated on exit
     def _kill_proc():
-        proc.terminate()
+        try:
+            proc.terminate()
+        except:
+            logger.info("VLLM Process already terminated")
 
     atexit.register(_kill_proc)
 
@@ -660,6 +673,10 @@ async def vllm_server_task(model_name_or_path, args, semaphore):
     except asyncio.CancelledError:
         logger.info("Got cancellation request for VLLM server")
         proc.terminate()
+        try:
+            await asyncio.wait_for(proc.wait(), timeout=10.0)
+        except asyncio.TimeoutError:
+            logger.warning("VLLM server did not terminate within 10 seconds")
         raise
 
     timeout_task.cancel()
@@ -992,6 +1009,13 @@ async def main():
         help="Path to add pdfs stored in s3 to the workspace, can be a glob path s3://bucket/prefix/*.pdf or path to file containing list of pdf paths",
         default=None,
     )
+    parser.add_argument(
+        "--model",
+        help="Path where the model is located, allenai/olmOCR-7B-0725-FP8 is the default, can be local, s3, or hugging face.",
+        default="allenai/olmOCR-7B-0725-FP8",
+    )
+
+    # More detailed config options, usually you shouldn't have to change these
     parser.add_argument("--workspace_profile", help="S3 configuration profile for accessing the workspace", default=None)
     parser.add_argument("--pdf_profile", help="S3 configuration profile for accessing the raw pdf documents", default=None)
     parser.add_argument("--pages_per_group", type=int, default=500, help="Aiming for this many pdf pages per work item group")
@@ -1002,31 +1026,36 @@ async def main():
     parser.add_argument("--stats", action="store_true", help="Instead of running any job, reports some statistics about the current workspace")
     parser.add_argument("--markdown", action="store_true", help="Also write natural text to markdown files preserving the folder structure of the input pdfs")
 
-    # Model parameters
-    parser.add_argument(
-        "--model",
-        help="List of paths where you can find the model to convert this pdf. You can specify several different paths here, and the script will try to use the one which is fastest to access",
-        default="allenai/olmOCR-7B-0225-preview",
-    )
-    parser.add_argument("--model_max_context", type=int, default="8192", help="Maximum context length that the model was fine tuned under")
     parser.add_argument("--target_longest_image_dim", type=int, help="Dimension on longest side to use for rendering the pdf pages", default=1288)
     parser.add_argument("--target_anchor_text_len", type=int, help="Maximum amount of anchor text to use (characters), not used for new models", default=-1)
     parser.add_argument("--guided_decoding", action="store_true", help="Enable guided decoding for model YAML type outputs")
 
+    vllm_group = parser.add_argument_group("VLLM Forwarded arguments")
+    vllm_group.add_argument(
+        "--gpu-memory-utilization", type=float, help="Fraction of VRAM vLLM may pre-allocate for KV-cache " "(passed through to vllm serve)."
+    )
+    vllm_group.add_argument("--max_model_len", type=int, default=16384, help="Upper bound (tokens) vLLM will allocate KV-cache for, lower if VLLM won't start")
+    vllm_group.add_argument("--tensor-parallel-size", "-tp", type=int, default=1, help="Tensor parallel size for vLLM")
+    vllm_group.add_argument("--data-parallel-size", "-dp", type=int, default=1, help="Data parallel size for vLLM")
+    vllm_group.add_argument("--port", type=int, default=30024, help="Port to use for the VLLM server")
+
     # Beaker/job running stuff
-    parser.add_argument("--beaker", action="store_true", help="Submit this job to beaker instead of running locally")
-    parser.add_argument("--beaker_workspace", help="Beaker workspace to submit to", default="ai2/olmocr")
-    parser.add_argument(
+    beaker_group = parser.add_argument_group("beaker/cluster execution")
+    beaker_group.add_argument("--beaker", action="store_true", help="Submit this job to beaker instead of running locally")
+    beaker_group.add_argument("--beaker_workspace", help="Beaker workspace to submit to", default="ai2/olmocr")
+    beaker_group.add_argument(
         "--beaker_cluster",
         help="Beaker clusters you want to run on",
         default=["ai2/jupiter-cirrascale-2", "ai2/ceres-cirrascale", "ai2/neptune-cirrascale", "ai2/saturn-cirrascale", "ai2/augusta-google-1"],
     )
-    parser.add_argument("--beaker_gpus", type=int, default=1, help="Number of gpu replicas to run")
-    parser.add_argument("--beaker_priority", type=str, default="normal", help="Beaker priority level for the job")
-    parser.add_argument("--port", type=int, default=30024, help="Port to use for the VLLM server")
-    parser.add_argument("--tensor-parallel-size", "-tp", type=int, default=1, help="Tensor parallel size for vLLM")
-    parser.add_argument("--data-parallel-size", "-dp", type=int, default=1, help="Data parallel size for vLLM")
+    beaker_group.add_argument("--beaker_gpus", type=int, default=1, help="Number of gpu replicas to run")
+    beaker_group.add_argument("--beaker_priority", type=str, default="normal", help="Beaker priority level for the job")
+
     args = parser.parse_args()
+
+    logger.info(
+        "If you run out of GPU memory during start-up or get 'KV cache is larger than available memory' errors, retry with lower values, e.g. --gpu_memory_utilization 0.80  --max_model_len 16384"
+    )
 
     global workspace_s3, pdf_s3
     # set the global BASE_SERVER_PORT from args
@@ -1188,6 +1217,9 @@ async def main():
     vllm_server.cancel()
     metrics_task.cancel()
 
+    # Wait for cancelled tasks to complete
+    await asyncio.gather(vllm_server, metrics_task, return_exceptions=True)
+
     # Output final metrics summary
     metrics_summary = metrics.get_metrics_summary()
     logger.info("=" * 80)
@@ -1212,13 +1244,14 @@ async def main():
     )
 
     # Output finished_on_attempt statistics
-    logger.info("\nPages finished by attempt number:")
-    total_finished = sum(total_metrics.get(f'finished_on_attempt_{i}', 0) for i in range(args.max_page_retries))
+    logger.info("")
+    logger.info("Pages finished by attempt number:")
+    total_finished = sum(total_metrics.get(f"finished_on_attempt_{i}", 0) for i in range(args.max_page_retries))
     cumulative = 0
-    
+
     for i in range(args.max_page_retries):
-        if f'finished_on_attempt_{i}' in total_metrics:
-            count = total_metrics[f'finished_on_attempt_{i}']
+        if f"finished_on_attempt_{i}" in total_metrics:
+            count = total_metrics[f"finished_on_attempt_{i}"]
             cumulative += count
             percentage = (count / total_finished * 100) if total_finished > 0 else 0
             cumulative_percentage = (cumulative / total_finished * 100) if total_finished > 0 else 0
