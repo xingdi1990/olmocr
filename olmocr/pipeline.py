@@ -1001,10 +1001,7 @@ def print_stats(args, root_work_queue):
 
 
 async def main():
-    parser = argparse.ArgumentParser(
-        description="Manager for running millions of PDFs through a batch inference pipeline. "
-        "Unknown arguments are forwarded to vLLM."
-    )
+    parser = argparse.ArgumentParser(description="Manager for running millions of PDFs through a batch inference pipeline.")
     parser.add_argument(
         "workspace",
         help="The filesystem path where work will be stored, can be a local folder, or an s3 path if coordinating work with many workers, s3://bucket/prefix/ ",
