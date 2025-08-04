@@ -2,7 +2,7 @@
 
 # Project metadata
 project_name: olmocr-qwen-vl-training
-run_name: qwen2.5-vl-7b-olmocrv2_1epoch_compile_v2
+run_name: qwen2.5-vl-7b-olmocrv3_1epoch_prompt_first
 
 # Model configuration
 model:
@@ -37,6 +37,7 @@ dataset:
         - name: NewYamlFinetuningPromptWithNoAnchoring
         - name: FrontMatterOutputFormat
         - name: InstructUserMessages
+          prompt_first: true
         - name: Tokenizer
           masking_index: -100
           end_of_message_token: "<|im_end|>"
