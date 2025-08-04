@@ -449,7 +449,14 @@ def build_dolma_document(pdf_orig_path, page_results):
         "added": datetime.datetime.now().strftime("%Y-%m-%d"),
         "created": datetime.datetime.now().strftime("%Y-%m-%d"),
         "metadata": metadata,
-        "attributes": {"pdf_page_numbers": pdf_page_spans},
+        "attributes": {
+            "pdf_page_numbers": pdf_page_spans,
+            "primary_language": [p.response.primary_language for p in page_results],
+            "is_rotation_valid": [p.response.is_rotation_valid for p in page_results],
+            "rotation_correction": [p.response.rotation_correction for p in page_results],
+            "is_table": [p.response.is_table for p in page_results],
+            "is_diagram": [p.response.is_diagram for p in page_results],
+        },
     }
     return dolma_doc
 
