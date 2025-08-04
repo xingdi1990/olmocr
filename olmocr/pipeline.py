@@ -210,7 +210,6 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
     MODEL_MAX_CONTEXT = 16384
     TEMPERATURE_BY_ATTEMPT = [0.1, 0.1, 0.2, 0.3, 0.5, 0.8, 0.9, 1.0]
     exponential_backoffs = 0
-    local_anchor_text_len = args.target_anchor_text_len
     local_image_rotation = 0
     attempt = 0
     await tracker.track_work(worker_id, f"{pdf_orig_path}-{page_num}", "started")
@@ -247,13 +246,9 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
             base_response_data = json.loads(response_body)
 
             if base_response_data["usage"]["total_tokens"] > MODEL_MAX_CONTEXT:
-                local_anchor_text_len = max(1, local_anchor_text_len // 2)
-                logger.info(f"Reducing anchor text len to {local_anchor_text_len} for {pdf_orig_path}-{page_num}")
                 raise ValueError(f"Response exceeded model_max_context of {MODEL_MAX_CONTEXT}, cannot use this response")
 
             if base_response_data["choices"][0]["finish_reason"] != "stop":
-                local_anchor_text_len = max(1, local_anchor_text_len // 2)
-                logger.info(f"Reducing anchor text len to {local_anchor_text_len} for {pdf_orig_path}-{page_num}")
                 raise ValueError("Response did not finish with reason code 'stop', cannot use this response")
 
             metrics.add_metrics(
@@ -300,10 +295,6 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
             raise
         except json.JSONDecodeError as e:
             logger.warning(f"JSON decode error on attempt {attempt} for {pdf_orig_path}-{page_num}: {e}")
-
-            local_anchor_text_len = max(1, local_anchor_text_len // 2)
-            logger.info(f"Reducing anchor text len to {local_anchor_text_len} for {pdf_orig_path}-{page_num}")
-
             attempt += 1
         except ValueError as e:
             logger.warning(f"ValueError on attempt {attempt} for {pdf_orig_path}-{page_num}: {type(e)} - {e}")

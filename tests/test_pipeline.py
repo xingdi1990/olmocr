@@ -313,7 +313,116 @@ Perfect! This is the correct orientation."""
         assert not result.is_fallback
 
 
+@pytest.mark.asyncio
+async def test_rotated_pdf_correction():
+    """Test rotation correction on edgar-rotated90.pdf - a PDF that's already rotated 90 degrees."""
+
+    import os
+    from pathlib import Path
+
+    # Path to the pre-rotated PDF
+    pdf_path = "tests/gnarly_pdfs/edgar-rotated90.pdf"
+    output_dir = "tests/rotation_output"
+
+    # Create output directory
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+    print(f"\nTesting rotation correction on pre-rotated PDF: {pdf_path}")
+
+    mock_args = mock.Mock()
+    mock_args.max_page_retries = 4
+    mock_args.target_longest_image_dim = 1288
+    mock_args.target_anchor_text_len = 1000
+    mock_args.guided_decoding = False
+
+    # Track images at each rotation attempt
+    captured_images = []
+    rotation_values = []
+
+    async def mock_build_page_query_capture(local_pdf_path, page, target_dim, image_rotation=0):
+        rotation_values.append(image_rotation)
+        # Actually build the query to get the real image
+        real_result = await build_page_query(local_pdf_path, page, target_dim, image_rotation)
+
+        # Capture the image
+        image_data = real_result["messages"][0]["content"][0]["image_url"]["url"]
+        base64_data = image_data.split(",")[1]
+        decoded_image = Image.open(BytesIO(base64.b64decode(base64_data)))
+        captured_images.append((image_rotation, decoded_image))
+
+        return real_result
+
+    # Mock responses that simulate the server detecting the rotation
+    responses = [
+        {  # First try - detects 90 degree rotation already in the PDF
+            "choices": [
+                {
+                    "message": {
+                        "content": """---
+primary_language: en
+is_rotation_valid: false
+rotation_correction: 270
+is_table: false
+is_diagram: false
+---
+90 degree rotation detected in the document"""
+                    },
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1000, "completion_tokens": 50, "total_tokens": 1050},
+        },
+        {  # Second try - after applying 270 degree correction (to undo the 90)
+            "choices": [
+                {
+                    "message": {
+                        "content": """---
+primary_language: en
+is_rotation_valid: true
+rotation_correction: 0
+is_table: false
+is_diagram: false
+---
+Document is now correctly oriented after rotation correction."""
+                    },
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1000, "completion_tokens": 60, "total_tokens": 1060},
+        },
+    ]
+
+    response_iter = iter((200, json.dumps(resp).encode()) for resp in responses)
+
+    with (
+        mock.patch("olmocr.pipeline.build_page_query", side_effect=mock_build_page_query_capture),
+        mock.patch("olmocr.pipeline.apost", side_effect=lambda url, json_data: next(response_iter)),
+        mock.patch("olmocr.metrics.MetricsKeeper.add_metrics"),
+        mock.patch("olmocr.metrics.WorkerTracker.track_work"),
+    ):
+        result = await process_page(mock_args, 0, pdf_path, pdf_path, 1)
+
+        # Save the captured images from the rotation correction process
+        for i, (rotation, image) in enumerate(captured_images):
+            output_path = os.path.join(output_dir, f"edgar_rotated90_attempt{i}_rotation{rotation}.png")
+            image.save(output_path)
+            print(f"\nRotation correction attempt {i}: {rotation} degrees")
+            print(f"Saved to: {output_path}")
+            print(f"Dimensions: {image.size}")
+
+    print(f"\nImages saved to: {output_dir}")
+    print("The first image should show the PDF rotated 90 degrees (sideways)")
+    print("The second image should show it correctly oriented after 270 degree correction")
+
+    # Verify the test results
+    assert len(rotation_values) == 2
+    assert rotation_values[0] == 0  # First attempt with no additional rotation
+    assert rotation_values[1] == 270  # Second attempt with 270 degree rotation to correct
+    assert result.response.is_rotation_valid == True
+
+
 if __name__ == "__main__":
     asyncio.run(test_build_page_query_rotation())
     asyncio.run(test_process_page_rotation_correction())
     asyncio.run(test_process_page_rotation_multiple_corrections())
+    asyncio.run(test_rotated_pdf_correction())
