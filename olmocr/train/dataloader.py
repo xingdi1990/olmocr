@@ -23,6 +23,7 @@ from typing import (
     get_origin,
 )
 
+import cv2
 import numpy as np
 import yaml
 from PIL import Image
@@ -519,6 +520,109 @@ class FilterOutRotatedDocuments(PipelineStep):
         return sample
 
 
+@dataclass(frozen=True, slots=True)
+class AugraphyBasicAugmentations(PipelineStep):
+    """Pipeline step that applies a decent selection of augraphy augmentations to the data"""
+    
+    probability: float = 0.5  # Overall probability of applying any augmentation
+
+    def __call__(self, sample: Sample) -> Optional[Sample]:
+        """Apply augraphy augmentations to the image in the sample."""
+        # Check that the image data exists
+        if "image" not in sample:
+            return sample
+        
+        image = sample["image"]
+        
+        # Skip all augmentations based on overall probability
+        if np.random.random() > self.probability:
+            return sample
+        
+        # Convert from PIL to BGR for OpenCV/Augraphy
+        image_numpy = np.array(image)
+        if len(image_numpy.shape) < 3:
+            image_bgr = cv2.cvtColor(image_numpy, cv2.COLOR_GRAY2BGR)
+        else:
+            image_bgr = cv2.cvtColor(image_numpy, cv2.COLOR_RGB2BGR)
+        
+        # Apply a basic augraphy pipeline
+        from augraphy import (
+            AugraphyPipeline,
+            InkBleed,
+            LowInkPeriodicLines,
+            LowInkRandomLines,
+            OneOf,
+            
+            Jpeg,
+            InkMottling,
+            InkShifter,
+            Brightness,
+        )
+
+         # Apply geometric transformations first, maintaing scale
+        if np.random.random() < 0.50:
+            # Get dimensions
+            height, width = image_bgr.shape[:2]
+            
+            # Random parameters for geometric transformations
+            angle = max(min(np.random.standard_normal(), 3), -3)  # Small rotation range
+            scale = np.random.uniform(0.95, 1.05)  # Small scale range
+            tx = np.random.uniform(-0.02, 0.02) * width  # Translation as fraction of width
+            ty = np.random.uniform(-0.02, 0.02) * height  # Translation as fraction of height
+            
+            # Calculate center point
+            center = (width / 2, height / 2)
+            
+            # Create transformation matrix
+            M = cv2.getRotationMatrix2D(center, angle, scale)
+            
+            # Add translation
+            M[0, 2] += tx
+            M[1, 2] += ty
+            
+            # Apply transformation
+            image_bgr = cv2.warpAffine(
+                image_bgr, 
+                M, 
+                (width, height),
+                flags=cv2.INTER_LINEAR,
+                borderMode=cv2.BORDER_CONSTANT,
+                borderValue=(255, 255, 255)  # White background for documents
+            )
+        
+
+        ink_phase = [
+            OneOf([InkBleed(p=1), LowInkRandomLines(p=1), LowInkPeriodicLines(p=1), InkMottling(p=1), InkShifter(p=1, text_shift_scale_range=(10, 15))], p=0.2),
+        ]
+
+        paper_phase = [
+            OneOf([Brightness(p=0.2), Jpeg(p=1)])
+        ]
+
+        post_phase = [
+            # Empty on purpose or else augmentations are too strong
+        ]
+
+        augmentation_pipeline = AugraphyPipeline(
+            ink_phase=ink_phase, paper_phase=paper_phase, post_phase=post_phase
+        )
+        
+        # Apply augmentations
+        augmented_image_bgr = augmentation_pipeline(image_bgr)
+       
+        # Convert back to RGB and then to PIL format
+        augmented_image_rgb = cv2.cvtColor(augmented_image_bgr, cv2.COLOR_BGR2RGB)
+        augmented_image_pil = Image.fromarray(augmented_image_rgb)
+        
+        # Update the sample with the augmented image
+        sample["image"] = augmented_image_pil
+          
+        # Double-check PIL image size matches original
+        assert augmented_image_pil.size == image.size, (
+            f"PIL image size changed during augmentation: {image.size} -> {augmented_image_pil.size}"
+        )
+        
+        return sample
 
 @dataclass(frozen=True, slots=True)
 class InstructUserMessages(PipelineStep):
@@ -722,6 +826,16 @@ if __name__ == "__main__":
         default=0,
         help="Index of sample to display in detail",
     )
+    parser.add_argument(
+        "--analyze-tokens",
+        action="store_true",
+        help="Analyze token length distribution across entire dataset",
+    )
+    parser.add_argument(
+        "--save-image",
+        type=str,
+        help="Save the processed image to the specified file path (e.g., output.png)",
+    )
 
     args = parser.parse_args()
 
@@ -796,6 +910,12 @@ if __name__ == "__main__":
             print(f"PDF file: {sample['pdf_path'].name}")
         if "image" in sample and hasattr(sample["image"], "size"):
             print(f"Image size: {sample['image'].size}")
+            
+            # Save image if requested
+            if args.save_image:
+                sample["image"].save(args.save_image)
+                print(f"Saved image to: {args.save_image}")
+                
         if "page_data" in sample:
             print(f"\nPage data: {sample['page_data']}")
         if "messages" in sample:
@@ -884,7 +1004,7 @@ if __name__ == "__main__":
             print(f"  Total sequence length: {total_count}")
 
         # Analyze token length distribution across entire dataset
-        if "input_ids" in sample:
+        if args.analyze_tokens and "input_ids" in sample:
             print(f"\n\n=== Analyzing token length distribution across entire dataset ===")
             print(f"Processing {len(dataset)} samples...")
 

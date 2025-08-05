@@ -125,6 +125,14 @@ class RotationAugmentationConfig(PipelineStepConfig):
 
 
 @dataclass
+class AugraphyBasicAugmentationsConfig(PipelineStepConfig):
+    """Configuration for AugraphyBasicAugmentations step."""
+
+    name: str = "AugraphyBasicAugmentations"
+    probability: float = 0.5  # Overall probability of applying any augmentation
+
+
+@dataclass
 class DatasetItemConfig:
     """Configuration for a single dataset item."""
 
@@ -353,6 +361,7 @@ class Config:
         """
         from olmocr.prompts.prompts import PageResponse
         from olmocr.train.dataloader import (
+            AugraphyBasicAugmentations,
             FilterOutRotatedDocuments,
             FinetuningPrompt,
             FrontMatterOutputFormat,
@@ -455,6 +464,13 @@ class Config:
             elif step_name == "RotationAugmentation":
                 steps.append(
                     RotationAugmentation(
+                        probability=step_config.get("probability", 0.5)
+                    )
+                )
+            
+            elif step_name == "AugraphyBasicAugmentations":
+                steps.append(
+                    AugraphyBasicAugmentations(
                         probability=step_config.get("probability", 0.5)
                     )
                 )
