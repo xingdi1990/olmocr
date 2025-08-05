@@ -92,7 +92,7 @@ b = Beaker.from_env(default_workspace="ai2/olmocr")
 
 # Build the training command
 commands = [
-    "pip install -r gantry-train-requirements.txt",
+    "pip install .[train]",
     "pip install transformers==4.52.4",
     "pip install flash-attn==2.8.0.post2 --no-build-isolation",
     "pip install s5cmd",
