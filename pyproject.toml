@@ -102,7 +102,7 @@ train = [
     "peft",
     "wandb",
     "omegaconf",
-    "einops"
+    "einops",
     "augraphy",
 ]
 
