@@ -5,6 +5,7 @@ set -e
 # Parse command line arguments
 CONFIG="olmocr/train/configs/qwen25_vl_b100_x1_default.yaml"
 SKIP_DOCKER_BUILD=false
+PREEMPTIBLE=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -16,9 +17,13 @@ while [[ $# -gt 0 ]]; do
             SKIP_DOCKER_BUILD=true
             shift
             ;;
+        --preemptible)
+            PREEMPTIBLE=true
+            shift
+            ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: $0 [--config CONFIG_PATH] [--skip-docker-build]"
+            echo "Usage: $0 [--config CONFIG_PATH] [--skip-docker-build] [--preemptible]"
             exit 1
             ;;
     esac
@@ -74,12 +79,13 @@ cat << 'EOF' > /tmp/run_training_experiment.py
 import sys
 from beaker import Beaker, ExperimentSpec, TaskSpec, TaskContext, ResultSpec, TaskResources, ImageSource, Priority, Constraints, EnvVar, DataMount
 
-# Get image tag, beaker user, git branch, git hash, and config from command line
+# Get image tag, beaker user, git branch, git hash, config, and preemptible from command line
 image_tag = sys.argv[1]
 beaker_user = sys.argv[2]
 git_branch = sys.argv[3]
 git_hash = sys.argv[4]
 config = sys.argv[5]
+preemptible = sys.argv[6] == "true"
 
 # Initialize Beaker client
 b = Beaker.from_env(default_workspace="ai2/olmocr")
@@ -104,7 +110,7 @@ task_spec = TaskSpec(
     ],
     context=TaskContext(
         priority=Priority.normal,
-        preemptible=False,
+        preemptible=preemptible,
     ),
     resources=TaskResources(
         gpu_count=1,
@@ -141,7 +147,7 @@ EOF
 
 # Run the Python script to create the experiment
 echo "Creating Beaker experiment..."
-$PYTHON /tmp/run_training_experiment.py $IMAGE_TAG $BEAKER_USER $GIT_BRANCH $GIT_HASH "$CONFIG"
+$PYTHON /tmp/run_training_experiment.py $IMAGE_TAG $BEAKER_USER $GIT_BRANCH $GIT_HASH "$CONFIG" $PREEMPTIBLE
 
 # Clean up temporary file
 rm /tmp/run_training_experiment.py
