@@ -281,7 +281,6 @@ class PDFRenderer(PipelineStep):
     """Pipeline step that renders PDF to image."""
 
     target_longest_image_dim: int
-    image_transform: Optional[Callable] = None
 
     def __call__(self, sample: Sample) -> Sample:
         """Render PDF to image."""
@@ -289,10 +288,6 @@ class PDFRenderer(PipelineStep):
         base64_png = render_pdf_to_base64png(str(sample["pdf_path"]), page_num=1, target_longest_image_dim=self.target_longest_image_dim)
         png_bytes = base64.b64decode(base64_png)
         image = Image.open(BytesIO(png_bytes))
-
-        # Apply transform if provided
-        if self.image_transform:
-            image = self.image_transform(image)
 
         # Update sample
         sample["image"] = image
@@ -524,6 +519,7 @@ class FilterOutRotatedDocuments(PipelineStep):
         return sample
 
 
+
 @dataclass(frozen=True, slots=True)
 class InstructUserMessages(PipelineStep):
     """Creates instruction-following messages format for training."""
@@ -670,20 +666,19 @@ class RandomTokenFlipper(PipelineStep):
 class MarkdownPDFDocumentDataset(BaseMarkdownPDFDataset):
     """Dataset that includes front matter parsing and PDF rendering by default."""
 
-    def __init__(self, root_dir: str | PathLike, target_longest_image_dim: int, image_transform=None, front_matter_class=None):
+    def __init__(self, root_dir: str | PathLike, target_longest_image_dim: int, front_matter_class=None):
         """
         Initialize the dataset with default pipeline steps.
 
         Args:
             root_dir: Path to the root folder containing processed markdown and PDF files
             target_longest_image_dim: Target dimension for the longest side of the image
-            image_transform: Optional transform to apply to the PDF images
             front_matter_class: Optional dataclass type to validate front matter against
         """
         # Create default pipeline steps
         pipeline_steps = [
             FrontMatterParser(front_matter_class),
-            PDFRenderer(target_longest_image_dim, image_transform),
+            PDFRenderer(target_longest_image_dim),
             StaticLengthDocumentAnchoring(target_anchor_text_len=6000),
             FinetuningPrompt(),
             FrontMatterOutputFormat(),

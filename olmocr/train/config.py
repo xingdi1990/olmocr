@@ -386,7 +386,7 @@ class Config:
 
             elif step_name == "PDFRenderer":
                 steps.append(
-                    PDFRenderer(target_longest_image_dim=step_config.get("target_longest_image_dim", 1024), image_transform=None)  # Can be extended later
+                    PDFRenderer(target_longest_image_dim=step_config.get("target_longest_image_dim", 1024))
                 )
 
             elif step_name == "StaticLengthDocumentAnchoring":

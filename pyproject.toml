@@ -106,6 +106,7 @@ train = [
     "s3fs",
     "necessary",
     "einops",
+    "augraphy",
 ]
 
 elo = [
