@@ -143,6 +143,9 @@ class BaseMarkdownPDFDataset(Dataset):
 
                     pbar.update(1)
 
+        # Sort samples by markdown path for consistent ordering across runs
+        self.samples.sort(key=lambda x: x['markdown_path'])
+        
         logger.info(f"Found {valid_count} valid markdown-PDF pairs")
 
         if invalid_pdfs:
