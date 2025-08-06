@@ -135,7 +135,7 @@ task_spec = TaskSpec(
 # Create experiment spec
 experiment_spec = ExperimentSpec(
     description=f"OlmOCR Training Run - Branch: {git_branch}, Commit: {git_hash}",
-    budget="ai2/oe-data",
+    budget="ai2/oe-base",
     tasks=[task_spec],
 )
 
