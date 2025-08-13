@@ -21,7 +21,6 @@ from typing import (
     get_origin,
 )
 
-import cv2
 import numpy as np
 import yaml
 from PIL import Image
@@ -532,6 +531,9 @@ class AugraphyBasicAugmentations(PipelineStep):
         # Check that the image data exists
         if "image" not in sample:
             return sample
+
+        # Import opencv only here
+        import cv2
 
         image = sample["image"]
 
