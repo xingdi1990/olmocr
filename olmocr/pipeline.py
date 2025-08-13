@@ -513,6 +513,8 @@ async def worker(args, work_queue: WorkQueue, semaphore, worker_id):
                     bucket, key = parse_s3_path(output_final_path)
                     workspace_s3.upload_file(temp_path, bucket, key)
                 else:
+                    # Ensure the results directory exists for local workspace
+                    os.makedirs(os.path.dirname(output_final_path), exist_ok=True)
                     shutil.copyfile(temp_path, output_final_path)
             finally:
                 # Clean up the temporary file
