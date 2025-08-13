@@ -1019,8 +1019,8 @@ async def main():
     )
     parser.add_argument(
         "--model",
-        help="Path where the model is located, allenai/olmOCR-7B-0725-FP8 is the default, can be local, s3, or hugging face.",
-        default="allenai/olmOCR-7B-0725-FP8",
+        help="Path where the model is located, allenai/olmOCR-7B-0825-FP8 is the default, can be local, s3, or hugging face.",
+        default="allenai/olmOCR-7B-0825-FP8",
     )
 
     # More detailed config options, usually you shouldn't have to change these
