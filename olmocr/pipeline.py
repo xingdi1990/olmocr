@@ -71,6 +71,7 @@ console_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(level
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 server_logger.addHandler(file_handler)
+server_logger.addHandler(console_handler)
 
 # Quiet logs from pypdf
 logging.getLogger("pypdf").setLevel(logging.ERROR)
@@ -238,7 +239,7 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
                 r"---\nprimary_language: (?:[a-z]{2}|null)\nis_rotation_valid: (?:True|False|true|false)\nrotation_correction: (?:0|90|180|270)\nis_table: (?:True|False|true|false)\nis_diagram: (?:True|False|true|false)\n(?:---|---\n[\s\S]+)"
             )
 
-        logger.info(f"Built page query for {pdf_orig_path}-{page_num}")
+        logger.debug(f"Built page query for {pdf_orig_path}-{page_num}")
 
         try:
             status_code, response_body = await apost(COMPLETION_URL, json_data=query)
@@ -360,7 +361,7 @@ async def process_pdf(args, worker_id: int, pdf_orig_path: str):
             logger.exception(f"Could not count number of pages for {pdf_orig_path}, aborting document")
             return None
 
-        logger.info(f"Got {num_pages} pages to do for {pdf_orig_path} in worker {worker_id}")
+        logger.debug(f"Got {num_pages} pages to do for {pdf_orig_path} in worker {worker_id}")
 
         if args.apply_filter and get_pdf_filter().filter_out_pdf(tf.name):
             logger.info(f"Filtering out pdf {pdf_orig_path}")
@@ -627,11 +628,6 @@ async def vllm_server_task(model_name_or_path, args, semaphore, unknown_args=Non
     async def process_line(line):
         nonlocal last_running_req, last_queue_req, last_semaphore_release, server_printed_ready_message
         server_logger.info(line)
-
-        # if the server hasn't initialized yet, log all the lines to the main logger also, so that the user
-        # can see any warnings/errors more easily
-        if not server_printed_ready_message:
-            logger.info(line)
 
         if "Detected errors during sampling" in line:
             logger.error("Cannot continue, sampling errors detected, model is probably corrupt")
@@ -1076,7 +1072,6 @@ async def main():
 
     # setup the job to work in beaker environment, load secrets, adjust logging, etc.
     if "BEAKER_JOB_NAME" in os.environ:
-        server_logger.addHandler(console_handler)
         cred_path = os.path.join(os.path.expanduser("~"), ".aws", "credentials")
         os.makedirs(os.path.dirname(cred_path), exist_ok=True)
         with open(cred_path, "w") as f:
