@@ -49,7 +49,7 @@ from olmocr.s3_utils import (
 )
 from olmocr.train.dataloader import FrontMatterParser
 from olmocr.version import VERSION
-from olmocr.work_queue import LocalWorkQueue, S3WorkQueue, WorkQueue
+from olmocr.work_queue import WorkQueue, LocalBackend, S3Backend
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -1104,9 +1104,9 @@ async def main():
 
     # Create work queue
     if args.workspace.startswith("s3://"):
-        work_queue = S3WorkQueue(workspace_s3, args.workspace)
+        work_queue = WorkQueue(S3Backend(workspace_s3, args.workspace))
     else:
-        work_queue = LocalWorkQueue(args.workspace)
+        work_queue = WorkQueue(LocalBackend(args.workspace))
 
     if args.pdfs:
         logger.info("Got --pdfs argument, going to add to the work queue")
