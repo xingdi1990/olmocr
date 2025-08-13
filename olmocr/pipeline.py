@@ -49,7 +49,7 @@ from olmocr.s3_utils import (
 )
 from olmocr.train.dataloader import FrontMatterParser
 from olmocr.version import VERSION
-from olmocr.work_queue import WorkQueue, LocalBackend, S3Backend
+from olmocr.work_queue import LocalBackend, S3Backend, WorkQueue
 
 # Initialize logger
 logger = logging.getLogger(__name__)

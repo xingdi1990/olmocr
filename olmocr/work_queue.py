@@ -171,14 +171,12 @@ class WorkQueue:
         logger.info(f"Initialized queue with {self.size:,} work items")
         return self.size
 
-
     async def get_work(self, worker_lock_timeout_secs: int = 1800) -> Optional[WorkItem]:
         """
         Get the next available work item that isn't completed or locked.
         """
         REFRESH_COMPLETED_HASH_CACHE_MAX_ATTEMPTS = 3
         refresh_completed_hash_attempt = 0
-
 
         while True:
             try:
@@ -221,7 +219,7 @@ class WorkQueue:
         """
         # Create done flag in done_flags_dir
         await self.backend.create_done_flag(work_item.hash)
-        
+
         # Remove the worker lock
         await self.backend.delete_worker_lock(work_item.hash)
         self._queue.task_done()
@@ -281,11 +279,7 @@ class LocalBackend(Backend):
         def _list_completed() -> Set[str]:
             if not os.path.isdir(self._done_flags_dir):
                 return set()
-            return {
-                f[len("done_") : -len(".flag")]
-                for f in os.listdir(self._done_flags_dir)
-                if f.startswith("done_") and f.endswith(".flag")
-            }
+            return {f[len("done_") : -len(".flag")] for f in os.listdir(self._done_flags_dir) if f.startswith("done_") and f.endswith(".flag")}
 
         return await asyncio.to_thread(_list_completed)
 
@@ -299,6 +293,7 @@ class LocalBackend(Backend):
 
     async def _get_object_mtime(self, path: str) -> Optional[datetime.datetime]:
         """Internal method to get object mtime."""
+
         def _get_mtime() -> Optional[datetime.datetime]:
             if not os.path.exists(path):
                 return None
@@ -310,17 +305,17 @@ class LocalBackend(Backend):
         """Check if a worker lock is taken and not stale."""
         lock_path = self._get_worker_lock_path(work_hash)
         lock_mtime = await self._get_object_mtime(lock_path)
-        
+
         if not lock_mtime:
             return False
-            
+
         now = datetime.datetime.now(datetime.timezone.utc)
         return (now - lock_mtime).total_seconds() <= worker_lock_timeout_secs
 
     async def create_worker_lock(self, work_hash: str) -> None:
         """Create a worker lock for a work hash."""
         lock_path = self._get_worker_lock_path(work_hash)
-        
+
         def _create() -> None:
             with open(lock_path, "wb"):
                 pass
@@ -330,7 +325,7 @@ class LocalBackend(Backend):
     async def delete_worker_lock(self, work_hash: str) -> None:
         """Delete the worker lock for a work hash if it exists."""
         lock_path = self._get_worker_lock_path(work_hash)
-        
+
         def _delete() -> None:
             if os.path.exists(lock_path):
                 os.remove(lock_path)
@@ -345,7 +340,7 @@ class LocalBackend(Backend):
     async def create_done_flag(self, work_hash: str) -> None:
         """Create a done flag for a work hash."""
         done_flag_path = self._get_done_flag_path(work_hash)
-        
+
         def _create() -> None:
             with open(done_flag_path, "wb"):
                 pass
@@ -406,10 +401,10 @@ class S3Backend(Backend):
         """Check if a worker lock is taken and not stale."""
         lock_path = self._get_worker_lock_path(work_hash)
         lock_mtime = await self._get_object_mtime(lock_path)
-        
+
         if not lock_mtime:
             return False
-            
+
         now = datetime.datetime.now(datetime.timezone.utc)
         return (now - lock_mtime).total_seconds() <= worker_lock_timeout_secs
 

@@ -204,11 +204,11 @@ class TrainingConfig:
     adam_epsilon: float = 1e-8
     weight_decay: float = 0.01
     max_grad_norm: float = 1.0
-    
+
     # Muon optimizer specific settings
     muon_momentum: float = 0.95
     muon_lr_multiplier_head: float = 11.0  # Learning rate multiplier for head parameters
-    muon_lr_multiplier_embed: float = 30.0  # Learning rate multiplier for embedding parameters 
+    muon_lr_multiplier_embed: float = 30.0  # Learning rate multiplier for embedding parameters
     muon_lr_multiplier_scalar: float = 2.0  # Learning rate multiplier for scalar parameters
 
     # Gradient checkpointing
@@ -243,7 +243,7 @@ class TrainingConfig:
     # Data collator settings
     collator_max_token_len: Optional[int] = None
     remove_unused_columns: bool = False  # Important for custom datasets
-    
+
     # Torch compile settings
     torch_compile: bool = False
     torch_compile_backend: str = "inductor"  # "inductor", "aot_eager", "cudagraphs", etc.
@@ -394,9 +394,7 @@ class Config:
                 steps.append(FrontMatterParser(front_matter_class=front_matter_class))
 
             elif step_name == "PDFRenderer":
-                steps.append(
-                    PDFRenderer(target_longest_image_dim=step_config.get("target_longest_image_dim", 1024))
-                )
+                steps.append(PDFRenderer(target_longest_image_dim=step_config.get("target_longest_image_dim", 1024)))
 
             elif step_name == "StaticLengthDocumentAnchoring":
                 steps.append(StaticLengthDocumentAnchoring(target_anchor_text_len=step_config.get("target_anchor_text_len", 6000)))
@@ -417,9 +415,7 @@ class Config:
                 steps.append(FrontMatterOutputFormat())
 
             elif step_name == "InstructUserMessages":
-                steps.append(InstructUserMessages(
-                    prompt_first=step_config.get("prompt_first", False)
-                ))
+                steps.append(InstructUserMessages(prompt_first=step_config.get("prompt_first", False)))
 
             elif step_name == "LatexBracketNormalizer":
                 steps.append(LatexBracketNormalizer())
@@ -457,24 +453,16 @@ class Config:
                         masking_index=step_config.get("masking_index", -100),
                     )
                 )
-            
+
             elif step_name == "FilterOutRotatedDocuments":
                 steps.append(FilterOutRotatedDocuments())
-            
+
             elif step_name == "RotationAugmentation":
-                steps.append(
-                    RotationAugmentation(
-                        probability=step_config.get("probability", 0.5)
-                    )
-                )
-            
+                steps.append(RotationAugmentation(probability=step_config.get("probability", 0.5)))
+
             elif step_name == "AugraphyBasicAugmentations":
-                steps.append(
-                    AugraphyBasicAugmentations(
-                        probability=step_config.get("probability", 0.5)
-                    )
-                )
-            
+                steps.append(AugraphyBasicAugmentations(probability=step_config.get("probability", 0.5)))
+
             else:
                 raise ValueError(f"Unknown pipeline step: {step_name}")
 

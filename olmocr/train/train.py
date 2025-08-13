@@ -4,26 +4,25 @@ Simple script to test OlmOCR dataset loading with YAML configuration.
 
 import argparse
 import logging
-import os
 import math
+import os
 import shutil
+from typing import Any, Dict, Optional
 
 import numpy as np
 import torch
-from torch.utils.data import ConcatDataset, DataLoader
-from torch.optim import AdamW
-from torch.amp import autocast
 import wandb
+from torch.amp import autocast
+from torch.optim import AdamW
+from torch.utils.data import ConcatDataset, DataLoader
 from tqdm import tqdm
-
 from transformers import (
     AutoProcessor,
-    get_scheduler,
     Qwen2_5_VLForConditionalGeneration,
     Qwen2VLForConditionalGeneration,
+    get_scheduler,
 )
 
-from typing import Optional, Dict, Any
 from olmocr.train.config import Config
 from olmocr.train.dataloader import BaseMarkdownPDFDataset
 from olmocr.train.muon import SingleDeviceMuonWithAuxAdam
@@ -35,7 +34,6 @@ logging.basicConfig(
     level=logging.INFO,
 )
 logger = logging.getLogger(__name__)
-
 
 
 class QwenDataCollator:
@@ -80,7 +78,7 @@ class QwenDataCollator:
         # Check if we have any valid samples
         if not batch["input_ids"]:
             return None
-        
+
         # Convert lists to tensors with proper padding
         # Note: For Qwen2-VL, we typically handle variable length sequences
         # The model's processor should handle the padding internally
@@ -107,14 +105,14 @@ def save_checkpoint(
     """Save model, optimizer, scheduler, and training state."""
     checkpoint_dir = os.path.join(output_dir, f"checkpoint-{global_step}")
     os.makedirs(checkpoint_dir, exist_ok=True)
-    
+
     # Save model
     model.save_pretrained(checkpoint_dir)
-    
+
     # Save optimizer and scheduler
     torch.save(optimizer.state_dict(), os.path.join(checkpoint_dir, "optimizer.pt"))
     torch.save(lr_scheduler.state_dict(), os.path.join(checkpoint_dir, "scheduler.pt"))
-    
+
     # Save training state
     state = {
         "epoch": epoch,
@@ -123,15 +121,12 @@ def save_checkpoint(
         "best_metric": best_metric,
     }
     torch.save(state, os.path.join(checkpoint_dir, "training_state.pt"))
-    
+
     logger.info(f"Saved checkpoint to {checkpoint_dir}")
-    
+
     # Enforce save_total_limit by removing oldest checkpoints
     if save_total_limit is not None and save_total_limit > 0:
-        checkpoints = sorted(
-            [d for d in os.listdir(output_dir) if d.startswith("checkpoint-")],
-            key=lambda x: int(x.split("-")[1])
-        )
+        checkpoints = sorted([d for d in os.listdir(output_dir) if d.startswith("checkpoint-")], key=lambda x: int(x.split("-")[1]))
         while len(checkpoints) > save_total_limit:
             oldest = checkpoints.pop(0)
             shutil.rmtree(os.path.join(output_dir, oldest))
@@ -149,10 +144,10 @@ def load_checkpoint(
     """Load model, optimizer, scheduler, and training state from checkpoint."""
     model = model_class.from_pretrained(checkpoint_dir, **init_kwargs)
     model.to(device)
-    
+
     optimizer.load_state_dict(torch.load(os.path.join(checkpoint_dir, "optimizer.pt"), map_location=device))
     lr_scheduler.load_state_dict(torch.load(os.path.join(checkpoint_dir, "scheduler.pt"), map_location=device))
-    
+
     state = torch.load(os.path.join(checkpoint_dir, "training_state.pt"), map_location=device)
     logger.info(f"Resumed from checkpoint: {checkpoint_dir} at epoch {state['epoch']:.2f}, step {state['global_step']}, samples seen {state['samples_seen']}")
     return model, state
@@ -166,11 +161,11 @@ def evaluate_model(
     """Evaluate on all eval datasets and return average loss per dataset."""
     model.eval()
     eval_metrics = {}
-    
+
     for dataset_name, dataloader in eval_dataloaders.items():
         total_loss = 0.0
         num_batches = 0
-        
+
         with torch.no_grad():
             for batch in dataloader:
                 # Skip if batch is None (all samples were filtered out)
@@ -181,16 +176,16 @@ def evaluate_model(
                     outputs = model(**batch)
                 total_loss += outputs.loss.item()
                 num_batches += 1
-        
+
         avg_loss = total_loss / num_batches if num_batches > 0 else 0.0
         eval_metrics[f"eval_{dataset_name}_loss"] = avg_loss
         logger.info(f"Eval {dataset_name} loss: {avg_loss:.4f}")
-    
+
     # Compute overall eval loss as average across datasets (or customize as needed)
     if eval_metrics:
         overall_loss = sum(eval_metrics.values()) / len(eval_metrics)
         eval_metrics["eval_loss"] = overall_loss
-    
+
     return eval_metrics
 
 
@@ -215,11 +210,11 @@ def main():
     if config.project_name:
         os.environ["WANDB_PROJECT"] = config.project_name
         logger.info(f"Setting WANDB_PROJECT to: {config.project_name}")
-    
+
     # Initialize wandb if reporting to it
     if "wandb" in config.training.report_to:
         wandb.init(project=config.project_name, name=config.run_name, config=config.to_dict())
-    
+
     # Load processor for tokenization
     logger.info(f"Loading processor: {config.model.name}")
     processor = AutoProcessor.from_pretrained(
@@ -284,7 +279,6 @@ def main():
         if len(dataset) > 0:
             eval_datasets[dataset_name] = dataset
 
-
     # Log total evaluation samples across all datasets
     total_eval_samples = sum(len(dataset) for dataset in eval_datasets.values())
     logger.info(f"Total evaluation samples across {len(eval_datasets)} datasets: {total_eval_samples}")
@@ -310,14 +304,15 @@ def main():
 
     # Set seeds
     torch.manual_seed(config.training.seed)
-    
+
     # Set up data loader seed worker function
     def seed_worker(worker_id):
         worker_seed = torch.initial_seed() % 2**32
         np.random.seed(worker_seed)
         import random
+
         random.seed(worker_seed)
-    
+
     # Create generator for data loader
     generator = None
     if config.training.data_seed is not None:
@@ -327,7 +322,7 @@ def main():
     # Device setup
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
-    
+
     # Apply torch compile if enabled
     if config.training.torch_compile:
         logger.info(f"Compiling model with torch.compile (backend={config.training.torch_compile_backend}, mode={config.training.torch_compile_mode})")
@@ -365,29 +360,29 @@ def main():
         embed_params = [p for n, p in model.named_parameters() if "embed" in n]
         scalar_params = [p for p in model.parameters() if p.ndim < 2]
         head_params = [p for n, p in model.named_parameters() if "lm_head" in n]
-        
+
         # Create Adam groups with different learning rates
         adam_groups = [
             dict(params=head_params, lr=float(config.training.learning_rate) * config.training.muon_lr_multiplier_head, use_muon=False),
             dict(params=embed_params, lr=float(config.training.learning_rate) * config.training.muon_lr_multiplier_embed, use_muon=False),
-            dict(params=scalar_params, lr=float(config.training.learning_rate) * config.training.muon_lr_multiplier_scalar, use_muon=False)
+            dict(params=scalar_params, lr=float(config.training.learning_rate) * config.training.muon_lr_multiplier_scalar, use_muon=False),
         ]
-        
+
         # Add Adam hyperparameters to groups
         for g in adam_groups:
             g["betas"] = (config.training.adam_beta1, config.training.adam_beta2)
             g["eps"] = float(config.training.adam_epsilon)
             g["weight_decay"] = config.training.weight_decay
-        
+
         # Create Muon group
         muon_group = dict(
             params=hidden_matrix_params,
             lr=float(config.training.learning_rate),
             momentum=config.training.muon_momentum,
             weight_decay=config.training.weight_decay,
-            use_muon=True
+            use_muon=True,
         )
-        
+
         # Combine all groups
         param_groups = [*adam_groups, muon_group]
         optimizer = SingleDeviceMuonWithAuxAdam(param_groups)
@@ -416,7 +411,7 @@ def main():
     global_step = 0
     samples_seen = 0
     best_metric = float("inf") if not config.training.greater_is_better else -float("inf")
-    
+
     if found_resumable_checkpoint:
         model, state = load_checkpoint(model_class, model_init_kwargs, optimizer, lr_scheduler, found_resumable_checkpoint, device)
         global_step = state["global_step"]
@@ -457,7 +452,7 @@ def main():
     current_epoch = samples_seen / len(train_dataset)
     logger.info(f"Starting training from epoch {current_epoch:.2f} (step {global_step}, samples {samples_seen}) to {config.training.num_train_epochs} epochs")
     logger.info(f"Total training steps: {max_train_steps}, Total samples to process: {max_train_samples}")
-    
+
     if samples_seen >= max_train_samples:
         logger.info("Training already completed based on samples seen!")
         logger.info("Skipping to final model save.")
@@ -465,7 +460,7 @@ def main():
         model.train()
         accumulated_loss = 0.0
         num_losses_accumulated = 0
-        
+
         # Create epoch iterator and skip samples if resuming
         epoch_iterator = iter(train_dataloader)
         if samples_seen > 0:
@@ -479,10 +474,10 @@ def main():
                     # We've reached the end of the epoch while skipping, create new iterator
                     epoch_iterator = iter(train_dataloader)
                     break
-        
+
         # Create progress bar
         pbar = tqdm(total=max_train_samples - samples_seen, desc=f"Training from step {global_step}", unit="samples")
-        
+
         while samples_seen < max_train_samples and global_step < max_train_steps:
             try:
                 batch = next(epoch_iterator)
@@ -492,48 +487,43 @@ def main():
                 logger.info(f"Completed epoch {current_epoch:.2f}")
                 epoch_iterator = iter(train_dataloader)
                 batch = next(epoch_iterator)
-            
+
             # Skip if batch is None (all samples were filtered out)
             if batch is None:
                 continue
-            
+
             batch = {k: v.to(device) for k, v in batch.items()}
-            
+
             with autocast(device_type="cuda", enabled=True, dtype=torch.bfloat16):
                 outputs = model(**batch)
             loss = outputs.loss / config.training.gradient_accumulation_steps
             loss.backward()
-            
+
             accumulated_loss += outputs.loss.item()  # Use undivided loss for logging
             num_losses_accumulated += 1
             samples_seen += config.training.per_device_train_batch_size
-            
+
             # Update progress bar
             pbar.update(config.training.per_device_train_batch_size)
-            
+
             # Check if we should do a gradient update
             if samples_seen % samples_per_step == 0 or samples_seen >= max_train_samples:
                 # Clip gradients
                 torch.nn.utils.clip_grad_norm_(model.parameters(), config.training.max_grad_norm)
-                
+
                 # Step optimizer and scheduler
                 optimizer.step()
                 lr_scheduler.step()
                 optimizer.zero_grad()
-                
+
                 global_step += 1
                 current_epoch = samples_seen / len(train_dataset)
-                
+
                 # Update progress bar with current stats
                 current_lr = lr_scheduler.get_last_lr()[0]
                 avg_loss = accumulated_loss / num_losses_accumulated if num_losses_accumulated > 0 else 0
-                pbar.set_postfix({
-                    'loss': f'{avg_loss:.4f}',
-                    'lr': f'{current_lr:.2e}',
-                    'epoch': f'{current_epoch:.2f}',
-                    'step': global_step
-                })
-                
+                pbar.set_postfix({"loss": f"{avg_loss:.4f}", "lr": f"{current_lr:.2e}", "epoch": f"{current_epoch:.2f}", "step": global_step})
+
                 # Logging
                 if config.training.logging_steps > 0 and global_step % config.training.logging_steps == 0:
                     avg_train_loss = accumulated_loss / num_losses_accumulated if num_losses_accumulated > 0 else 0
@@ -546,52 +536,49 @@ def main():
                     logger.info(f"Step {global_step}: epoch={current_epoch:.3f}, loss={avg_train_loss:.4f}, lr={lr_scheduler.get_last_lr()[0]:.2e}")
                     if "wandb" in config.training.report_to:
                         wandb.log(logs, step=global_step)
-                    
+
                     accumulated_loss = 0.0
                     num_losses_accumulated = 0
-            
+
                 # Evaluation
                 if config.training.eval_steps > 0 and global_step % config.training.eval_steps == 0 and global_step > 0:
                     metrics = evaluate_model(model, eval_dataloaders, device)
                     logger.info(f"Evaluation at step {global_step}: {metrics}")
                     if "wandb" in config.training.report_to:
                         wandb.log(metrics, step=global_step)
-                    
+
                     # Update best metric
                     current_metric = metrics.get(config.training.metric_for_best_model, None)
                     if current_metric is not None:
-                        if (config.training.greater_is_better and current_metric > best_metric) or \
-                           (not config.training.greater_is_better and current_metric < best_metric):
+                        if (config.training.greater_is_better and current_metric > best_metric) or (
+                            not config.training.greater_is_better and current_metric < best_metric
+                        ):
                             best_metric = current_metric
-                    
+
                     # Return to training mode
                     model.train()
-                
+
                 # Saving
                 if config.training.save_steps > 0 and global_step % config.training.save_steps == 0:
                     save_checkpoint(
-                        model, optimizer, lr_scheduler, current_epoch, global_step, samples_seen, best_metric,
-                        full_output_dir, config.training.save_total_limit
+                        model, optimizer, lr_scheduler, current_epoch, global_step, samples_seen, best_metric, full_output_dir, config.training.save_total_limit
                     )
-            
+
             # Check if we've reached our training limit
             if samples_seen >= max_train_samples or global_step >= max_train_steps:
                 break
-        
+
         # Close progress bar
         pbar.close()
 
     # Save the final checkpoint with step number
     logger.info(f"Saving final checkpoint at step {global_step}...")
-    save_checkpoint(
-        model, optimizer, lr_scheduler, current_epoch, global_step, samples_seen, best_metric,
-        full_output_dir, config.training.save_total_limit
-    )
-    
+    save_checkpoint(model, optimizer, lr_scheduler, current_epoch, global_step, samples_seen, best_metric, full_output_dir, config.training.save_total_limit)
+
     # Log final training state
     final_epoch = samples_seen / len(train_dataset)
     logger.info(f"Training completed at epoch {final_epoch:.3f}, step {global_step}, samples {samples_seen}")
-    
+
     # Final evaluation
     final_metrics = evaluate_model(model, eval_dataloaders, device)
     logger.info(f"Final evaluation metrics: {final_metrics}")

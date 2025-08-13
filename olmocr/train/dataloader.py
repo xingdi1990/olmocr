@@ -5,13 +5,11 @@ import re
 from abc import ABC, abstractmethod
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, fields
-from functools import reduce
 from io import BytesIO
 from os import PathLike
 from pathlib import Path
 from typing import (
     Any,
-    Callable,
     Dict,
     List,
     Optional,
@@ -144,8 +142,8 @@ class BaseMarkdownPDFDataset(Dataset):
                     pbar.update(1)
 
         # Sort samples by markdown path for consistent ordering across runs
-        self.samples.sort(key=lambda x: x['markdown_path'])
-        
+        self.samples.sort(key=lambda x: x["markdown_path"])
+
         logger.info(f"Found {valid_count} valid markdown-PDF pairs")
 
         if invalid_pdfs:
@@ -178,7 +176,7 @@ class BaseMarkdownPDFDataset(Dataset):
             sample = step(sample)
             if sample is None:
                 return None
-        
+
         return sample
 
 
@@ -440,26 +438,26 @@ class LatexBracketNormalizer(PipelineStep):
 @dataclass(frozen=True, slots=True)
 class RotationAugmentation(PipelineStep):
     """Pipeline step that randomly rotates images for augmentation."""
-    
+
     probability: float = 0.5  # Probability of applying rotation
-    
+
     def __call__(self, sample: Sample) -> Optional[Sample]:
         """Randomly rotate image and update rotation metadata."""
         # Only proceed with given probability
         if np.random.random() > self.probability:
             return sample
-        
+
         # Check if image exists
         if "image" not in sample:
             return sample
-        
+
         # Check if page_data exists (we need to update it)
         if "page_data" not in sample:
             return sample
-        
+
         # Randomly choose a rotation (90, 180, or 270 degrees)
         rotation_degrees = np.random.choice([90, 180, 270])
-        
+
         # Apply rotation to image
         image = sample["image"]
         if rotation_degrees == 90:
@@ -468,13 +466,13 @@ class RotationAugmentation(PipelineStep):
             transpose = Image.Transpose.ROTATE_180
         else:  # 270
             transpose = Image.Transpose.ROTATE_270
-        
+
         rotated_image = image.transpose(transpose)
         sample["image"] = rotated_image
-        
+
         # Update page_data
         page_data = sample["page_data"]
-        
+
         # Create new PageResponse with updated rotation info
         # The rotation_correction should be the inverse of what we applied
         # If we rotated 90 clockwise, we need 270 counter-clockwise to correct it
@@ -484,9 +482,9 @@ class RotationAugmentation(PipelineStep):
             correction = 180
         else:  # 270
             correction = 90
-        
+
         from olmocr.prompts.prompts import PageResponse
-        
+
         new_page_data = PageResponse(
             primary_language=page_data.primary_language,
             is_rotation_valid=False,  # Mark as invalid since we rotated it
@@ -495,7 +493,7 @@ class RotationAugmentation(PipelineStep):
             is_diagram=page_data.is_diagram,
             natural_text=page_data.natural_text,
         )
-        
+
         sample["page_data"] = new_page_data
         return sample
 
@@ -509,24 +507,24 @@ class FilterOutRotatedDocuments(PipelineStep):
         # Check if page_data exists
         if "page_data" not in sample:
             return sample
-        
+
         page_data = sample["page_data"]
-        
+
         # Check if page_data has the required attributes
         if not hasattr(page_data, "is_rotation_valid") or not hasattr(page_data, "rotation_correction"):
             return sample
-        
+
         # Filter out if rotation is invalid or rotation correction is not 0
         if page_data.is_rotation_valid is False or page_data.rotation_correction != 0:
             return None
-        
+
         return sample
 
 
 @dataclass(frozen=True, slots=True)
 class AugraphyBasicAugmentations(PipelineStep):
     """Pipeline step that applies a decent selection of augraphy augmentations to the data"""
-    
+
     probability: float = 0.5  # Overall probability of applying any augmentation
 
     def __call__(self, sample: Sample) -> Optional[Sample]:
@@ -534,103 +532,96 @@ class AugraphyBasicAugmentations(PipelineStep):
         # Check that the image data exists
         if "image" not in sample:
             return sample
-        
+
         image = sample["image"]
-        
+
         # Skip all augmentations based on overall probability
         if np.random.random() > self.probability:
             return sample
-        
+
         # Convert from PIL to BGR for OpenCV/Augraphy
         image_numpy = np.array(image)
         if len(image_numpy.shape) < 3:
             image_bgr = cv2.cvtColor(image_numpy, cv2.COLOR_GRAY2BGR)
         else:
             image_bgr = cv2.cvtColor(image_numpy, cv2.COLOR_RGB2BGR)
-        
+
         # Apply a basic augraphy pipeline
         from augraphy import (
             AugraphyPipeline,
+            Brightness,
             InkBleed,
+            InkMottling,
+            InkShifter,
+            Jpeg,
             LowInkPeriodicLines,
             LowInkRandomLines,
             OneOf,
-            
-            Jpeg,
-            InkMottling,
-            InkShifter,
-            Brightness,
         )
 
-         # Apply geometric transformations first, maintaing scale
+        # Apply geometric transformations first, maintaing scale
         if np.random.random() < 0.50:
             # Get dimensions
             height, width = image_bgr.shape[:2]
-            
+
             # Random parameters for geometric transformations
             angle = max(min(np.random.standard_normal(), 3), -3)  # Small rotation range
             scale = np.random.uniform(0.95, 1.05)  # Small scale range
             tx = np.random.uniform(-0.02, 0.02) * width  # Translation as fraction of width
             ty = np.random.uniform(-0.02, 0.02) * height  # Translation as fraction of height
-            
+
             # Calculate center point
             center = (width / 2, height / 2)
-            
+
             # Create transformation matrix
             M = cv2.getRotationMatrix2D(center, angle, scale)
-            
+
             # Add translation
             M[0, 2] += tx
             M[1, 2] += ty
-            
+
             # Apply transformation
             image_bgr = cv2.warpAffine(
-                image_bgr, 
-                M, 
+                image_bgr,
+                M,
                 (width, height),
                 flags=cv2.INTER_LINEAR,
                 borderMode=cv2.BORDER_CONSTANT,
-                borderValue=(255, 255, 255)  # White background for documents
+                borderValue=(255, 255, 255),  # White background for documents
             )
-        
 
         ink_phase = [
             OneOf([InkBleed(p=1), LowInkRandomLines(p=1), LowInkPeriodicLines(p=1), InkMottling(p=1), InkShifter(p=1, text_shift_scale_range=(10, 15))], p=0.2),
         ]
 
-        paper_phase = [
-            OneOf([Brightness(p=0.2), Jpeg(p=1)])
-        ]
+        paper_phase = [OneOf([Brightness(p=0.2), Jpeg(p=1)])]
 
         post_phase = [
             # Empty on purpose or else augmentations are too strong
         ]
 
-        augmentation_pipeline = AugraphyPipeline(
-            ink_phase=ink_phase, paper_phase=paper_phase, post_phase=post_phase
-        )
-        
+        augmentation_pipeline = AugraphyPipeline(ink_phase=ink_phase, paper_phase=paper_phase, post_phase=post_phase)
+
         # Apply augmentations
         augmented_image_bgr = augmentation_pipeline(image_bgr)
-       
+
         # Convert back to RGB and then to PIL format
         augmented_image_rgb = cv2.cvtColor(augmented_image_bgr, cv2.COLOR_BGR2RGB)
         augmented_image_pil = Image.fromarray(augmented_image_rgb)
-        
+
         # Update the sample with the augmented image
         sample["image"] = augmented_image_pil
-          
+
         # Double-check PIL image size matches original
-        assert augmented_image_pil.size == image.size, (
-            f"PIL image size changed during augmentation: {image.size} -> {augmented_image_pil.size}"
-        )
-        
+        assert augmented_image_pil.size == image.size, f"PIL image size changed during augmentation: {image.size} -> {augmented_image_pil.size}"
+
         return sample
+
 
 @dataclass(frozen=True, slots=True)
 class InstructUserMessages(PipelineStep):
     """Creates instruction-following messages format for training."""
-    
+
     prompt_first: bool = False
 
     def __call__(self, sample: Sample) -> Sample:
@@ -913,12 +904,12 @@ if __name__ == "__main__":
             print(f"PDF file: {sample['pdf_path'].name}")
         if "image" in sample and hasattr(sample["image"], "size"):
             print(f"Image size: {sample['image'].size}")
-            
+
             # Save image if requested
             if args.save_image:
                 sample["image"].save(args.save_image)
                 print(f"Saved image to: {args.save_image}")
-                
+
         if "page_data" in sample:
             print(f"\nPage data: {sample['page_data']}")
         if "messages" in sample:

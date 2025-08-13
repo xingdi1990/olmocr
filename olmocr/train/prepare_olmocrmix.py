@@ -163,7 +163,7 @@ def prepare_olmocr_mix(dataset_path: str, subset: str, split: str, destination: 
                         f.write(natural_text)
                     else:
                         f.write("---")
-                        
+
                 # Look for matching PDF in extracted directory and create symlinks
                 extracted_pdfs_dir = dest_path / "hugging_face" / "pdf_tarballs" / "extracted"
 

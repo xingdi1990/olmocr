@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 from botocore.exceptions import ClientError
 
 # Import the classes we're testing
-from olmocr.work_queue import WorkQueue, S3Backend, WorkItem
+from olmocr.work_queue import S3Backend, WorkItem, WorkQueue
 
 
 class TestS3WorkQueue(unittest.TestCase):
@@ -214,7 +214,7 @@ class TestS3WorkQueue(unittest.TestCase):
         self.assertEqual(len(put_calls), 1)
         done_flag_key = put_calls[0][1]["Key"]
         self.assertTrue(done_flag_key.endswith(f"done_{work_item.hash}.flag"))
-        
+
         # Verify lock file was deleted
         self.s3_client.delete_object.assert_called_once()
         key = self.s3_client.delete_object.call_args[1]["Key"]
