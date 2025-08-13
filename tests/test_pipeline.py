@@ -64,7 +64,7 @@ class TestImageRotation:
             # Extract the image from the result
             messages = result["messages"]
             content = messages[0]["content"]
-            image_url = content[0]["image_url"]["url"]
+            image_url = content[1]["image_url"]["url"]
             image_base64 = image_url.split(",")[1]
             result_img = base64_to_image(image_base64)
 
@@ -88,7 +88,7 @@ class TestImageRotation:
             # Extract the image from the result
             messages = result["messages"]
             content = messages[0]["content"]
-            image_url = content[0]["image_url"]["url"]
+            image_url = content[1]["image_url"]["url"]
             image_base64 = image_url.split(",")[1]
             result_img = base64_to_image(image_base64)
 
@@ -113,7 +113,7 @@ class TestImageRotation:
             # Extract the image from the result
             messages = result["messages"]
             content = messages[0]["content"]
-            image_url = content[0]["image_url"]["url"]
+            image_url = content[1]["image_url"]["url"]
             image_base64 = image_url.split(",")[1]
             result_img = base64_to_image(image_base64)
 
@@ -138,7 +138,7 @@ class TestImageRotation:
             # Extract the image from the result
             messages = result["messages"]
             content = messages[0]["content"]
-            image_url = content[0]["image_url"]["url"]
+            image_url = content[1]["image_url"]["url"]
             image_base64 = image_url.split(",")[1]
             result_img = base64_to_image(image_base64)
 
@@ -178,7 +178,7 @@ class TestImageRotation:
                 # Extract the image from the result
                 messages = result["messages"]
                 content = messages[0]["content"]
-                image_url = content[0]["image_url"]["url"]
+                image_url = content[1]["image_url"]["url"]
                 image_base64 = image_url.split(",")[1]
                 result_img = base64_to_image(image_base64)
 

@@ -99,13 +99,11 @@ train = [
     "torch",
     "torchvision",
     "accelerate",
-    "datasets",
     "peft",
     "wandb",
     "omegaconf",
-    "s3fs",
-    "necessary",
     "einops",
+    "augraphy",
 ]
 
 elo = [

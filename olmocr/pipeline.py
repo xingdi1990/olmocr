@@ -49,7 +49,7 @@ from olmocr.s3_utils import (
 )
 from olmocr.train.dataloader import FrontMatterParser
 from olmocr.version import VERSION
-from olmocr.work_queue import LocalWorkQueue, S3WorkQueue, WorkQueue
+from olmocr.work_queue import LocalBackend, S3Backend, WorkQueue
 
 # Initialize logger
 logger = logging.getLogger(__name__)
@@ -71,6 +71,7 @@ console_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(level
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 server_logger.addHandler(file_handler)
+server_logger.addHandler(console_handler)
 
 # Quiet logs from pypdf
 logging.getLogger("pypdf").setLevel(logging.ERROR)
@@ -136,8 +137,8 @@ async def build_page_query(local_pdf_path: str, page: int, target_longest_image_
             {
                 "role": "user",
                 "content": [
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_base64}"}},
                     {"type": "text", "text": build_no_anchoring_yaml_prompt()},
+                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_base64}"}},
                 ],
             }
         ],
@@ -238,7 +239,7 @@ async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path:
                 r"---\nprimary_language: (?:[a-z]{2}|null)\nis_rotation_valid: (?:True|False|true|false)\nrotation_correction: (?:0|90|180|270)\nis_table: (?:True|False|true|false)\nis_diagram: (?:True|False|true|false)\n(?:---|---\n[\s\S]+)"
             )
 
-        logger.info(f"Built page query for {pdf_orig_path}-{page_num}")
+        logger.debug(f"Built page query for {pdf_orig_path}-{page_num}")
 
         try:
             status_code, response_body = await apost(COMPLETION_URL, json_data=query)
@@ -360,7 +361,7 @@ async def process_pdf(args, worker_id: int, pdf_orig_path: str):
             logger.exception(f"Could not count number of pages for {pdf_orig_path}, aborting document")
             return None
 
-        logger.info(f"Got {num_pages} pages to do for {pdf_orig_path} in worker {worker_id}")
+        logger.debug(f"Got {num_pages} pages to do for {pdf_orig_path} in worker {worker_id}")
 
         if args.apply_filter and get_pdf_filter().filter_out_pdf(tf.name):
             logger.info(f"Filtering out pdf {pdf_orig_path}")
@@ -512,6 +513,8 @@ async def worker(args, work_queue: WorkQueue, semaphore, worker_id):
                     bucket, key = parse_s3_path(output_final_path)
                     workspace_s3.upload_file(temp_path, bucket, key)
                 else:
+                    # Ensure the results directory exists for local workspace
+                    os.makedirs(os.path.dirname(output_final_path), exist_ok=True)
                     shutil.copyfile(temp_path, output_final_path)
             finally:
                 # Clean up the temporary file
@@ -627,11 +630,6 @@ async def vllm_server_task(model_name_or_path, args, semaphore, unknown_args=Non
     async def process_line(line):
         nonlocal last_running_req, last_queue_req, last_semaphore_release, server_printed_ready_message
         server_logger.info(line)
-
-        # if the server hasn't initialized yet, log all the lines to the main logger also, so that the user
-        # can see any warnings/errors more easily
-        if not server_printed_ready_message:
-            logger.info(line)
 
         if "Detected errors during sampling" in line:
             logger.error("Cannot continue, sampling errors detected, model is probably corrupt")
@@ -1021,8 +1019,8 @@ async def main():
     )
     parser.add_argument(
         "--model",
-        help="Path where the model is located, allenai/olmOCR-7B-0725-FP8 is the default, can be local, s3, or hugging face.",
-        default="allenai/olmOCR-7B-0725-FP8",
+        help="Path where the model is located, allenai/olmOCR-7B-0825-FP8 is the default, can be local, s3, or hugging face.",
+        default="allenai/olmOCR-7B-0825-FP8",
     )
 
     # More detailed config options, usually you shouldn't have to change these
@@ -1076,7 +1074,6 @@ async def main():
 
     # setup the job to work in beaker environment, load secrets, adjust logging, etc.
     if "BEAKER_JOB_NAME" in os.environ:
-        server_logger.addHandler(console_handler)
         cred_path = os.path.join(os.path.expanduser("~"), ".aws", "credentials")
         os.makedirs(os.path.dirname(cred_path), exist_ok=True)
         with open(cred_path, "w") as f:
@@ -1109,9 +1106,9 @@ async def main():
 
     # Create work queue
     if args.workspace.startswith("s3://"):
-        work_queue = S3WorkQueue(workspace_s3, args.workspace)
+        work_queue = WorkQueue(S3Backend(workspace_s3, args.workspace))
     else:
-        work_queue = LocalWorkQueue(args.workspace)
+        work_queue = WorkQueue(LocalBackend(args.workspace))
 
     if args.pdfs:
         logger.info("Got --pdfs argument, going to add to the work queue")
