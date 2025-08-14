@@ -84,7 +84,7 @@ pdf_s3 = boto3.client("s3")
 metrics = MetricsKeeper(window=60 * 5)
 tracker = WorkerTracker()
 
-pdf_render_max_workers = asyncio.BoundedSemaphore(int(os.environ.get("BEAKER_ASSIGNED_CPU_COUNT", max(1, multiprocessing.cpu_count() - 2))))
+pdf_render_max_workers = asyncio.BoundedSemaphore(int(float(os.environ.get("BEAKER_ASSIGNED_CPU_COUNT", max(1, multiprocessing.cpu_count() - 2)))))
 
 # Filter object, cached so it will only get loaded when/if you need it
 get_pdf_filter = cache(lambda: PdfFilter(languages_to_keep={Language.ENGLISH, None}, apply_download_spam_check=True, apply_form_check=True))
