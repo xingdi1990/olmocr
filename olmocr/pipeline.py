@@ -624,6 +624,7 @@ async def vllm_server_task(model_name_or_path, args, semaphore, unknown_args=Non
 
     # Shared variables between tasks
     last_running_req, last_queue_req = 0, 0
+    prev_running_req_at_release = 0  # Track running requests at last semaphore release
     server_printed_ready_message = False
     last_semaphore_release = time.time()
 
@@ -660,14 +661,25 @@ async def vllm_server_task(model_name_or_path, args, semaphore, unknown_args=Non
                 logger.warning(f"Got {ex} when reading log line from inference server, skipping")
 
     async def timeout_task():
-        nonlocal last_running_req, last_queue_req, last_semaphore_release
+        nonlocal last_running_req, last_queue_req, last_semaphore_release, prev_running_req_at_release
         try:
             while True:
                 await asyncio.sleep(1)
-                if server_printed_ready_message and last_queue_req == 0 and time.time() - last_semaphore_release > 30 and semaphore.locked():
+                
+                # Check if we should release the semaphore
+                should_release = (
+                    server_printed_ready_message
+                    and last_queue_req == 0
+                    and time.time() - last_semaphore_release > 30
+                    and semaphore.locked()
+                    and (last_running_req == 0 or last_running_req < prev_running_req_at_release)
+                )
+                
+                if should_release:
                     semaphore.release()
+                    prev_running_req_at_release = last_running_req
                     last_semaphore_release = time.time()
-                    logger.info("Semaphore released, allowing a worker to proceed.")
+                    logger.info(f"Semaphore released, allowing a worker to proceed. Running requests: {last_running_req} (prev: {prev_running_req_at_release})")
         except asyncio.CancelledError:
             pass  # Clean up if the task is cancelled
 
