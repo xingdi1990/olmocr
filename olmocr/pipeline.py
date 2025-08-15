@@ -626,13 +626,13 @@ async def vllm_server_task(model_name_or_path, args, semaphore, unknown_args=Non
     atexit.register(_kill_proc)
 
     # Shared variables between tasks
-    last_running_req, last_queue_req = 0, 0
+    last_running_req, peak_running_req, last_queue_req = 0, 0, 0
     running_reqs_decreased = False
     server_printed_ready_message = False
     last_semaphore_release = time.time()
 
     async def process_line(line):
-        nonlocal last_running_req, last_queue_req, running_reqs_decreased, last_semaphore_release, server_printed_ready_message
+        nonlocal last_running_req, last_queue_req, peak_running_req, running_reqs_decreased, last_semaphore_release, server_printed_ready_message
         server_logger.info(line)
 
         if "Detected errors during sampling" in line:
@@ -645,7 +645,11 @@ async def vllm_server_task(model_name_or_path, args, semaphore, unknown_args=Non
 
         if match := re.search(r"Running: (\d+)", line):
             current_running = int(match.group(1))
-            # Check for negative derivative (decrease in running requests), to not overload VLLM
+            # Track peak running requests
+            if current_running > peak_running_req:
+                peak_running_req = current_running
+                logger.info(f"New peak running requests: {peak_running_req}")
+            # Check for negative derivative (decrease in running requests), to not overload VLLM in times of high contention
             if current_running < last_running_req and not running_reqs_decreased:
                 running_reqs_decreased = True
                 logger.info(f"Running requests decreased: {last_running_req} -> {current_running}")
@@ -667,7 +671,7 @@ async def vllm_server_task(model_name_or_path, args, semaphore, unknown_args=Non
                 logger.warning(f"Got {ex} when reading log line from inference server, skipping")
 
     async def timeout_task():
-        nonlocal last_running_req, last_queue_req, last_semaphore_release, running_reqs_decreased
+        nonlocal last_running_req, last_queue_req, peak_running_req, last_semaphore_release, running_reqs_decreased
         try:
             while True:
                 await asyncio.sleep(1)
@@ -675,7 +679,7 @@ async def vllm_server_task(model_name_or_path, args, semaphore, unknown_args=Non
                 # Check if we should release the semaphore
                 should_release = (
                     server_printed_ready_message
-                    and last_queue_req == 0
+                    and last_queue_req <= int(peak_running_req * 0.1)
                     and time.time() - last_semaphore_release > 30
                     and semaphore.locked()
                     and (last_running_req == 0 or running_reqs_decreased)
@@ -685,7 +689,7 @@ async def vllm_server_task(model_name_or_path, args, semaphore, unknown_args=Non
                     semaphore.release()
                     running_reqs_decreased = False  # Reset flag after release
                     last_semaphore_release = time.time()
-                    logger.info(f"Semaphore released, allowing a worker to proceed. Running requests: {last_running_req}")
+                    logger.info(f"Semaphore released at {last_running_req} running {last_queue_req} queued, peak: {peak_running_req})")
         except asyncio.CancelledError:
             pass  # Clean up if the task is cancelled
 
