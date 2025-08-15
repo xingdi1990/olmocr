@@ -611,6 +611,9 @@ async def vllm_server_task(model_name_or_path, args, semaphore, unknown_args=Non
         *cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
+
+        # OMP_NUM_THREADS needs to be 1, otherwise you could have contention if you are running multiple copies of olmOCR on a machine with several GPUS
+        env={**os.environ, "OMP_NUM_THREADS": "1"}, 
     )
 
     # Ensure the subprocess is terminated on exit
@@ -643,7 +646,7 @@ async def vllm_server_task(model_name_or_path, args, semaphore, unknown_args=Non
         if match := re.search(r"Running: (\d+)", line):
             current_running = int(match.group(1))
             # Check for negative derivative (decrease in running requests), to not overload VLLM
-            if current_running < last_running_req:
+            if current_running < last_running_req and not running_reqs_decreased:
                 running_reqs_decreased = True
                 logger.info(f"Running requests decreased: {last_running_req} -> {current_running}")
             last_running_req = current_running
