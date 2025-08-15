@@ -611,9 +611,8 @@ async def vllm_server_task(model_name_or_path, args, semaphore, unknown_args=Non
         *cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
-
         # OMP_NUM_THREADS needs to be 1, otherwise you could have contention if you are running multiple copies of olmOCR on a machine with several GPUS
-        env={**os.environ, "OMP_NUM_THREADS": "1"}, 
+        env={**os.environ, "OMP_NUM_THREADS": "1"},
     )
 
     # Ensure the subprocess is terminated on exit
