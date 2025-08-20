@@ -610,7 +610,6 @@ async def vllm_server_task(model_name_or_path, args, semaphore, unknown_args=Non
     if unknown_args:
         cmd.extend(unknown_args)
 
-    breakpoint()
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         stdout=asyncio.subprocess.PIPE,
