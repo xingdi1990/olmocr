@@ -213,8 +213,8 @@ async def apost(url, json_data):
 
 
 async def process_page(args, worker_id: int, pdf_orig_path: str, pdf_local_path: str, page_num: int) -> PageResult:
-    if args.external_vllm_url:
-        COMPLETION_URL = f"{args.external_vllm_url.rstrip('/')}/v1/chat/completions"
+    if args.server:
+        COMPLETION_URL = f"{args.server.rstrip('/')}/v1/chat/completions"
     else:
         COMPLETION_URL = f"http://localhost:{BASE_SERVER_PORT}/v1/chat/completions"
     MAX_RETRIES = args.max_page_retries
@@ -736,8 +736,8 @@ async def vllm_server_host(model_name_or_path, args, semaphore, unknown_args=Non
 async def vllm_server_ready(args):
     max_attempts = 300
     delay_sec = 1
-    if args.external_vllm_url:
-        url = f"{args.external_vllm_url.rstrip('/')}/v1/models"
+    if args.server:
+        url = f"{args.server.rstrip('/')}/v1/models"
     else:
         url = f"http://localhost:{BASE_SERVER_PORT}/v1/models"
 
@@ -1076,7 +1076,7 @@ async def main():
     vllm_group.add_argument("--data-parallel-size", "-dp", type=int, default=1, help="Data parallel size for vLLM")
     vllm_group.add_argument("--port", type=int, default=30024, help="Port to use for the VLLM server")
     vllm_group.add_argument(
-        "--external-vllm-url", type=str, help="URL of external vLLM server (e.g., http://hostname:port). If provided, skips spawning local vLLM instance"
+        "--server", type=str, help="URL of external vLLM (or other compatible provider) server (e.g., http://hostname:port). If provided, skips spawning local vLLM instance"
     )
 
     # Beaker/job running stuff
@@ -1216,14 +1216,14 @@ async def main():
 
     # If you get this far, then you are doing inference and need a GPU
     # check_sglang_version()
-    if not args.external_vllm_url:
+    if not args.server:
         check_torch_gpu_available()
 
     logger.info(f"Starting pipeline with PID {os.getpid()}")
 
     # Download the model before you do anything else
-    if args.external_vllm_url:
-        logger.info(f"Using external vLLM server at {args.external_vllm_url}")
+    if args.server:
+        logger.info(f"Using external server at {args.server}")
         model_name_or_path = None
     else:
         model_name_or_path = await download_model(args.model)
@@ -1242,7 +1242,7 @@ async def main():
 
     # Start local vLLM instance if not using external one
     vllm_server = None
-    if not args.external_vllm_url:
+    if not args.server:
         vllm_server = asyncio.create_task(vllm_server_host(model_name_or_path, args, semaphore, unknown_args))
 
     await vllm_server_ready(args)
