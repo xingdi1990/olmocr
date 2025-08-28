@@ -196,9 +196,16 @@ echo "Running olmocr benchmarks..."
 python -m olmocr.bench.convert olmocr_pipeline --parallel 50 --dir "$BENCH_DIR"
 
 # Install marker-pdf and run benchmarks
-echo "Installing marker-pdf and running benchmarks..."
-pip install marker-pdf==1.6.1
+echo "Installing marker-pdf version 1.6.2 and running benchmarks..."
+pip install marker-pdf==1.6.2
 python -m olmocr.bench.convert marker --dir "$BENCH_DIR"
+mv "$BENCH_DIR/marker" "$BENCH_DIR/marker1.6.2"
+
+# Install marker-pdf and run benchmarks
+echo "Installing marker-pdf version 1.8.3 and running benchmarks..."
+pip install marker-pdf==1.8.3
+python -m olmocr.bench.convert marker --dir "$BENCH_DIR"
+mv "$BENCH_DIR/marker" "$BENCH_DIR/marker1.8.3"
 
 # Install verovio and run benchmarks
 # echo "Installing verovio and running benchmarks..."
