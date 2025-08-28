@@ -46,7 +46,7 @@ Features:
 
 ### Benchmark
 
-[**olmOCR-Bench**](https://github.com/allenai/olmocr/tree/main/olmocr/bench):
+**olmOCR-Bench**:
 We also ship a comprehensive benchmark suite covering over 7,000 test cases across 1,400 documents to help measure performance of OCR systems. 
 
 <table>
@@ -66,6 +66,18 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
   </thead>
   <tbody>
     <tr>
+      <td align="left">Marker v1.8.3 (base, force_ocr)</td>
+      <td align="center">75.2</td>
+      <td align="center">60.9</td>
+      <td align="center">52.8</td>
+      <td align="center">28.3</td>
+      <td align="center">85.1</td>
+      <td align="center">72.5</td>
+      <td align="center"><strong>84.8<strong></td>
+      <td align="center">98.9</td>
+      <td align="center">69.8 ± 1.0</td>
+    </tr>
+    <tr>
       <td align="left">Marker v1.7.5 (base, force_ocr)</td>
       <td align="center">76.0</td>
       <td align="center">57.9</td>
@@ -73,9 +85,21 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
       <td align="center">27.8</td>
       <td align="center">84.9</td>
       <td align="center">72.9</td>
-      <td align="center"><strong>84.6</strong></td>
+      <td align="center">84.6</td>
       <td align="center">99.1</td>
       <td align="center">70.1 ± 1.1</td>
+    </tr>
+    <tr>
+      <td align="left">MinerU v2.1.10</td>
+      <td align="center">75.7</td>
+      <td align="center">48.9</td>
+      <td align="center">57.6</td>
+      <td align="center">19.2</td>
+      <td align="center"><strong>97.5</strong></td>
+      <td align="center">58.9</td>
+      <td align="center">42.1</td>
+      <td align="center">97.6</td>
+      <td align="center">62.2 ± 1.0</td>
     </tr>
     <tr>
       <td align="left">MinerU v1.3.10</td>
@@ -83,7 +107,7 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
       <td align="center">47.4</td>
       <td align="center">60.9</td>
       <td align="center">17.3</td>
-      <td align="center"><strong>96.6</strong></td>
+      <td align="center">96.6</td>
       <td align="center">59.0</td>
       <td align="center">39.1</td>
       <td align="center">96.6</td>
@@ -137,6 +161,138 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
       <td align="center">98.9</td>
       <td align="center">78.5 ± 1.1</td>
     </tr>       
+  </tbody>
+</table>
+
+**orbit-Bench**
+
+## Results - verified
+
+
+<table>
+  <thead>
+    <tr>
+      <th align="left"><strong>Model</strong></th>
+      <th align="center">absent</th>
+      <th align="center">baseline</th>
+      <th align="center">math</th>
+      <th align="center">order</th>
+      <th align="center">present</th>
+      <th align="center">table</th>
+      <th align="center">overall</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left">MinerU v2.1.10</td>
+      <td align="center"> 94.1 </td>
+      <td align="center">62.7</td>
+      <td align="center">75.0</td>
+      <td align="center"> - </td>
+      <td align="center">83.8</td>
+      <td align="center">16.7</td>
+      <td align="center">78.6 ± 4.2</td>
+    </tr>
+    <tr>
+      <td align="left">Marker v1.8.3 (base, force_ocr)</td>
+      <td align="center"> 91.3 </td>
+      <td align="center">59.5</td>
+      <td align="center">91.7</td>
+      <td align="center"> - </td>
+      <td align="center">88.7</td>
+      <td align="center">19.3</td>
+      <td align="center">81.5 ± 2.9 </td>
+    </tr>
+  </tbody>
+</table>
+
+## Results - all
+
+
+<table>
+  <thead>
+    <tr>
+      <th align="left"><strong>Model</strong></th>
+      <th align="center">absent</th>
+      <th align="center">baseline</th>
+      <th align="center">math</th>
+      <th align="center">order</th>
+      <th align="center">present</th>
+      <th align="center">table</th>
+      <th align="center">overall</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left">Marker v1.8.3 (base, force_ocr)</td>
+      <td align="center">80.8%</td>
+      <td align="center">59.5%</td>
+      <td align="center">72.3%</td>
+      <td align="center">40.9%</td>
+      <td align="center">70.7%</td>
+      <td align="center">15.2%</td>
+      <td align="center">61.2% ± 1.6%</td>
+    </tr>
+    <tr>
+      <td align="left">Marker v1.7.5 (base, force_ocr)</td>
+      <td align="center">81.4%</td>
+      <td align="center">59.6%</td>
+      <td align="center">77.0%</td>
+      <td align="center">40.6%</td>
+      <td align="center">70.2%</td>
+      <td align="center">13.8%</td>
+      <td align="center">60.4% ± 1.6%</td>
+    </tr>
+    <!-- <tr>
+      <td align="left">Marker v1.6.2 (base, force_ocr)</td>
+      <td align="center">80.8%</td>
+      <td align="center">57.4%</td>
+      <td align="center">3.0%</td>
+      <td align="center">36.1%</td>
+      <td align="center">60.8%</td>
+      <td align="center">14.3%</td>
+      <td align="center">44.6% ± 1.4%</td>
+    </tr> -->
+    <tr>
+      <td align="left">MinerU v2.1.10</td>
+      <td align="center">84.9%</td>
+      <td align="center">62.7%</td>
+      <td align="center">66.7%</td>
+      <td align="center">41.1%</td>
+      <td align="center">62.2%</td>
+      <td align="center">6.0%</td>
+      <td align="center">58.8% ± 1.6%</td>
+    </tr>
+    <tr>
+      <td align="left">MinerU v1.3.10</td>
+      <td align="center">83.1%</td>
+      <td align="center">55.2%</td>
+      <td align="center">69.3%</td>
+      <td align="center">42.2%</td>
+      <td align="center">62.3%</td>
+      <td align="center">11.2%</td>
+      <td align="center">58.3% ± 1.6%</td>
+    </tr>
+    <tr>
+      <td align="left">olmocr_pipeline</td>
+      <td align="center">21.1%</td>
+      <td align="center">59.9%</td>
+      <td align="center">19.0%</td>
+      <td align="center">52.0%</td>
+      <td align="center">71.6%</td>
+      <td align="center">2.1%</td>
+      <td align="center">41.2% ± 1.7%</td>
+    </tr>
+    <tr>
+      <td align="left">dotsocr_pipeline</td>
+      <td align="center">48.9%</td>
+      <td align="center">59.7%</td>
+      <td align="center">3.9%</td>
+      <td align="center">27.7%</td>
+      <td align="center">67.1%</td>
+      <td align="center">26.0%</td>
+      <td align="center">FAILED (errors)</td>
+    </tr>
   </tbody>
 </table>
 
