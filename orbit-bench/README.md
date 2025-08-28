@@ -1,35 +1,3 @@
----
-license: odc-by
-tags:
-- text
-configs:
-- config_name: orbit-bench
-  data_files:
-  - split: arxiv_math
-    path:
-    - bench_data/arxiv_math.jsonl
-  - split: en
-    path:
-    - bench_data/en.jsonl
-  - split: fr
-    path:
-    - bench_data/fr.jsonl
-  - split: ja
-    path:
-    - bench_data/ja.jsonl
-  - split: zh
-    path:
-    - bench_data/zh.jsonl
-language:
-- en
-- fr
-- ja
-- zh
-pretty_name: Orbit-bench
-size_categories:
-- 1K<n<10K
----
-
 # Orbit-bench
 
 Orbit-bench is a multilingual OCR benchmark dataset containing 2,960 unit test cases across 5 language splits (English, French, Japanese, Chinese, and arXiv math papers).
