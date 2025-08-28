@@ -1,6 +1,0 @@
-(6) 【大株主の状況】  
-2023年3月31日現在  
-
-<table><tr><td></td><td></td><td></td><td>93FF* 0#(%)</td></tr><tr><td>ltZ#% E##R 1*)</td><td>Grgin Court.,Elgin-AoenuecaP.on Box 448 (3111)</td><td>3, 034, 227, 762</td><td>78.19</td></tr><tr><td>+ INCJ</td><td>131</td><td>214, 000, 000</td><td>5.51</td></tr><tr><td>xAt ()</td><td>*2T113</td><td>66, 060, 700</td><td>1.70</td></tr><tr><td></td><td>r 491100</td><td>34, 965, 000</td><td>0.90</td></tr><tr><td>JP MORGAN CHASE BANK 385781 # #+l# 1*#)</td><td>25 BANK STREET, CANARY WHARF, LONDON, E14 5JP, UNITED KINGDOM (#B2] 151yA)</td><td>12, 691, 114</td><td>0.33</td></tr><tr><td></td><td>*5T3-1375 r 7 T 312</td><td>9, 627, 000</td><td>0.25</td></tr><tr><td># #t</td><td></td><td>9, 432, 700</td><td>0.24</td></tr><tr><td>y+JyFT3JVT#A</td><td>*##3T715F y J$ 2#FEJV</td><td>6, 355, 697</td><td>0.16</td></tr><tr><td>SSBTC CLIENT OMNIB US ACCOUNT</td><td>ONE LINCOLN STREET, BOSTON MA USA O2 111 (311)</td><td>5,419, 072</td><td>0.14</td></tr><tr><td>*) #F</td><td>*5T3-1375</td><td>5, 392, 000</td><td>0.14</td></tr><tr><td></td><td>A 7T 310</td><td></td><td></td></tr><tr><td></td><td></td><td>3, 398, 171, 045</td><td>87.56</td></tr></table>
-
-(注）上記 $\mathcal { O }$ 所有株式数のうち、信託業務に係る株式数は、次のとおりであります。日本マスタートラスト信託銀行株式会社

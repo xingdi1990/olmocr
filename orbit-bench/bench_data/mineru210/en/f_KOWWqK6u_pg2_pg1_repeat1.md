@@ -1,2 +1,0 @@
-![](images/e94aac6930cb2ff131b6f0aface0e1cd08f488acca1174209dba4ce682f0d16f.jpg)  
-Mr. Manhar R. Bhansali, Chairman & Managing Director, receiving the “PIONEER OF THE YEAR” Award instituted by IDCA (Indian Diamond & Colorstone Association), 56 West, $4 5 ^ { \mathrm { t h } }$ Street, New York, NY 10036 on $5 ^ { \mathrm { t h } }$ June, 2010 at Las Vegas, U.S.A.

@@ -1,5 +1,0 @@
-Au cours des cinq prochains exercices, un certain nombre de contrats viendront à échéance relativement à nos centrales hydroélectriques en Amérique du Nord. Selon les prix de marché actuels de l'énergie et des produits accessoires, nous prévoyons une incidence positive nette sur les flux de trésorerie.
-
-En ce qui concerne le portefeuille en Colombie, nous concentrer sur l'obtention de contrats à long terme tout en maintenant un certain pourcentage de production non contractuelle de manière à atténuer le risque hydrologique.
-
-La majorité des contrats d'achat d'électricité à long terme d'Energie Brookfield relatifs à nos entreprises en Amérique du Nord et en Europe sont conclus avec des contreparties solvables ou de première qualité. L'exposition économique au prorata de la production visée par contrat s'établit comme suit : organismes de réglementation de l'électricité (37%), sociétés de distribution (22%), utilisateurs commerciaux et industriels (29%) et Brookfield (12 %).

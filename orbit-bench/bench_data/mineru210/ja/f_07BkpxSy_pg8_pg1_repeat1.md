@@ -1,9 +1,0 @@
-<table><tr><td></td><td></td><td></td><td>* O*</td><td>#(%)</td><td></td></tr><tr><td>(#*7) JDI Display America, Inc. ()1. 3</td><td>* f) 7 tJl=F yN</td><td>200 FUSD</td><td>F134v10</td><td>100.0</td><td>tVF$#;LtF13V T0ttty*+. 0#1</td></tr><tr><td>JDI Europe GmbH ()1.3</td><td>FTy</td><td>5,000 FEUR</td><td>F134v10</td><td>100.0</td><td>V-Ft$#;LtF13V TQAo+?++*+.</td></tr><tr><td>JDI Korea Inc. ()1</td><td>y yrj</td><td>600 EJKRW</td><td>F13fv10</td><td>100.0</td><td>+V-J$##LtF13V TOt?Tty*t. #1</td></tr><tr><td>JDIE China Inc.</td><td></td><td>2.550</td><td></td><td>100.0</td><td>tJV-F$##LtF13FV T0ttt)*+. #1</td></tr><tr><td>JDI Hong Kong Limited ()1. 3</td><td></td><td>1, 500 FHKD</td><td>F137V10</td><td>100.0</td><td>V-Ft$#;LtF13V TOttty*t. 0#1</td></tr><tr><td>Nanox Philippines Inc. () 1</td><td>71)ey</td><td>954</td><td></td><td>100.0</td><td>#1</td></tr><tr><td>JDI Taiwan Inc. () 1</td><td></td><td>3,570 E7NTD</td><td>F13fv10</td><td>100.0</td><td>+V-Ft#;#LtF13V To*+++&#x27;*+.</td></tr><tr><td>ZO1*</td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>() l`tt (7) 4</td><td></td><td></td><td></td><td></td><td></td></tr></table>
-
-(注) 1．特定子会社に該当しております。2．有価証券届出書又は有価証券報告書を提出している会社はありません。3．JDI Hong Kong Limited、JDI Europe GmbH及びJDI Display America, Inc.については、売上高(連結会社相互間の内部売上高を除く。)の連結売上高に占める割合 $\ddot { \Omega } 1 0 \%$ を超えております。主要な損益情報等
-
-JDI Hong Kong Limited JDI Europe GmbH JDI Display America,Inc.
-
-(1) 売上高 114,658百万円 55,097百万円 51,406百万円(2) 経常利益 37百万円 2,271百万円 651百万円(3) 当期純利益 22百万円 1,542百万円 472百万円(4) 純資産額 4,963百万円 10,182百万円 3,283百万円(5) 総資産額 17,480百万円 25,638百万円 19,432百万円
-
-4．いちごの状況については、「第5　経理の状況　1　連結財務諸表等　(1)連結財務諸表　注記事項 （関連当事者情報）」において記載しているため、記載を省略しております。

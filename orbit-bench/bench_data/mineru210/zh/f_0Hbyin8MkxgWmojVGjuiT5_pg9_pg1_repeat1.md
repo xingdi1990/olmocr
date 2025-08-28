@@ -1,7 +1,0 @@
-# 4 股东情况
-
-# 4.1 普通股股东总数、表决权恢复的优先股股东总数和持有特别表决权股份的股东总数及前 10名股东情况
-
-单位: 股  
-
-<table><tr><td colspan="4">#i()</td><td colspan="4">14,167</td></tr><tr><td colspan="4"></td><td colspan="4">10,172</td></tr><tr><td colspan="4">(F)    </td><td colspan="4">0</td></tr><tr><td colspan="4">(F) #E*t</td><td colspan="4">0</td></tr><tr><td colspan="4">N#(F) ## (F)</td><td colspan="4">0</td></tr><tr><td colspan="4">B(F)</td><td colspan="4">0</td></tr><tr><td colspan="8"></td></tr><tr><td>(F)</td><td>#R</td><td>#K#Kt #</td><td colspan="2">(%)</td><td colspan="2">t </td><td></td></tr><tr><td>MEMSLink</td><td>0</td><td>80,800,000</td><td>20.20</td><td>80,800,000</td><td></td><td>#</td><td>t# yF 0</td></tr><tr><td>Corporation dt 7j  F if F </td><td>0</td><td> 80,000,000</td><td>20.00</td><td>80,000,000</td><td>F</td><td>0</td><td></td></tr><tr><td>FRa] dt E z I 4  </td><td>0</td><td>53,920,000</td><td>13.48</td><td>53,920,000</td><td>F</td><td>0</td><td># #</td></tr><tr><td>FtR lRa] E $  FRaJ X</td><td>0</td><td>14,000,000</td><td>3.50</td><td>14,000,000</td><td>F</td><td>0</td><td># i # E</td></tr><tr><td>tA Il (FRAk)</td><td></td><td></td><td></td><td></td><td></td><td></td><td>*</td></tr><tr><td></td><td>0</td><td>11,520,000</td><td>2.88</td><td>11,520,000</td><td>F</td><td>0</td><td>R</td></tr></table>
