@@ -1,0 +1,17 @@
+# ENVIRONMENT  
+
+By growing and operating our business in a sustainable way, we are contributing to the health of the planet and the global economy, and ensuring the world is a better place for humankind’s next generation.  
+
+For years, Pico has been an industry leader in promoting the sustainable design and execution of exhibitions and events. We are a LEED Silver member and a member of both the Emirates Green Building Council and the U.S. Green Building Council. We are also certified with ISO 20121, ISO 14001 and OHSAS 18001 standards. We actively encourage our clients to choose sustainable project options, like adopting the $' 3 R 5 ^ { \prime }$ – reduce, reuse and recycle – at every stage of their events.  
+
+In our production processes, we are constantly exploring new technology and methods to reduce the reliance on raw materials, enhance the usage of pre-fabricated platforms and steel modular systems, and switch from oil-based to water-based paints whenever possible. These changes will take time to implement, as reversing established industry practices is a long-term process; however, we are committed to these initiatives and will share our experiences and best practices with the rest of the Group.  
+
+Operations-wise, we employ a range of energy saving initiatives. Our Hong Kong office now uses LED energy saving lights, with timers installed to control air conditioning and lighting in unused zones. These efforts will create momentum to develop more sustained initiatives to contribute positively to caring for the environment in the places where we operate.  
+
+Since 2015, Pico’s offices around the world have been supporting WWF’s Earth Hour initiative. Pico is proud that our people are actively taking steps – by encouraging businesses and individuals to reduce their energy consumption – to become part of the solution to the pressing issue of climate change.  
+
+<html><body><table><tr><td colspan="3">Pico Global Care in Action</td></tr><tr><td colspan="3">CREATING A SUSTAINABLE FUTURE</td></tr><tr><td>Engaging with our EMPLOYEES Taking care of our PEOPLE while building their character</td><td>Engaging with our COMMUNITY Working with and nurturing the COMMUNITIES we operate within</td><td>Engaging with our ENVIRONMENT Helping our clients' businesses grow and operate in a SUSTAINABLE way</td></tr><tr><td colspan="3">SUSTAINABILITY INITIATIVES</td></tr><tr><td>Employment Health and Safety Learningand Development Labour standards</td><td>Voluntary work to support local charitable organisations Create employment opportunities for special need groups Engage clients and vendors as stakeholders in these initiatives</td><td>Implement the 3Rs REDUCE REUSE RECYCLE in both our production and operational processes</td></tr></table></body></html>  
+
+The Pico Group is committed to working with our business partners in long-term, mutually respectful relationships, now and in the future. By putting all our efforts into creating optimal results for our clients, stakeholders, communities and the planet, we aim to sustain and build a better world for all of us as we drive positive change for our people, our partners and the planet.  
+
+![](tmp7nccv9g2/adda60a08e76c60fa98e890365cb74a8690fee7fdc3186c6617e4526d86f26a7.jpg)  

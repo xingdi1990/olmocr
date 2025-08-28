@@ -1,0 +1,5 @@
+# Notes to the Consolidated Financial Statements 綜合財務報表附註
+
+26.
+
+<table><tr><td>Mj F xvJJJ TX*L&lt;F1J I for the year ended 31 December 2016 #=+-++==+-#</td></tr><tr><td>N-CONTROLLING INTERESTS 26.F()</td></tr><tr><td>NTINUED)</td></tr><tr><td>Yiju Creative (b)</td></tr><tr><td>For the period from. date of acquisition to.</td></tr><tr><td>31 December 2016</td></tr><tr><td>4#A#=F +=A=+-AE</td></tr><tr><td>RMB&#x27;000</td></tr><tr><td>XE#Ft</td></tr><tr><td>120</td></tr><tr><td>Revenue Loss for the period (9,022)</td></tr><tr><td>Total comprehensive  5   8</td></tr><tr><td>loss for the period (9,022)</td></tr><tr><td>Loss and total comprehensive loss allocated to NCI (note).</td></tr><tr><td></td></tr><tr><td>Cash flow generated from operating activities 635</td></tr><tr><td>Cash flow used in</td></tr><tr><td>investing activities (168)</td></tr><tr><td>Net cash inflow 467</td></tr><tr><td></td></tr><tr><td></td></tr><tr><td>2016</td></tr><tr><td>=*-</td></tr><tr><td></td></tr><tr><td>RMB&#x27;000</td></tr><tr><td>AR#Ft</td></tr><tr><td></td></tr><tr><td>As at 31 December</td></tr><tr><td>+=A=+-A 4,119</td></tr></table>

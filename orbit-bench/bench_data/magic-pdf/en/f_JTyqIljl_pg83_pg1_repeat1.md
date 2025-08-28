@@ -1,0 +1,25 @@
+# Notes to the Consolidated Financial Statements 31 December 2016  
+
+# 3. SUMMARY OF SIGNIFICANT ACCOUNTING POLICIES (Continued)  
+
+# 3.21 Dividends  
+
+Final dividends are recognised as a liability when they are approved by the shareholders in a general meeting.  
+
+Interim dividends are simultaneously proposed and declared, because the Company’s memorandum and articles of association grant the directors the authority to declare interim dividends. Consequently, interim dividends are recognised immediately as a liability when they are proposed and declared.  
+
+# 3.22 Operating lease  
+
+Leases where substantially all the rewards and risks of ownership of assets remain with the lessor are accounted for as operating leases. Where the Group is the lessor, assets leased by the Group under operating leases are included in non-current assets, and rentals receivable under the operating leases are credited to the statement of profit or loss on the straight-line basis over the lease terms. Where the Group is the lessee, rentals payable under operating leases net of any incentives received from the lessor are charged to assets cost or the statement of profit or loss on the straight-line basis over the lease terms.  
+
+# 3.23 Segment reporting  
+
+Operating segments are reported in a manner consistent with the internal reporting provided to the chief operating decision-maker. The chief operating decision-maker, who is responsible for allocating resources and assessing performance of the operating segments, has been identified as the Directors in the Board of Directors that makes strategic decisions.  
+
+# 3.24 Government grants  
+
+Grants from the government are recognised at their fair value where there is a reasonable assurance that the grant will be received and the Group will comply with all attached conditions.  
+
+Government grants relating to costs are deferred and recognised in the statement of profit or loss over the period necessary to match them with the costs that they are intended to compensate.  
+
+Government grants relating to property, plant and equipment are included in non-current liabilities as deferred government grants and are credited to the statement of profit or loss on a straight-line basis over the expected lives of the related assets.  

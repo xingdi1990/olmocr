@@ -1,0 +1,18 @@
+# Valuation Techniques  
+
+The fair value of financial instruments that are not traded in an active market (for example, over-the-counter derivatives) is determined by using valuation techniques. These valuation techniques maximize the use of observable market data where it is available and rely as little as possible on entity specific estimates. If all significant inputs required to fair value an instrument are observable, the instrument is included in level 2. If one or more of the significant inputs is not based on observable market data, the instrument is included in level 3.  
+
+Specific valuation techniques used to value financial instruments include:  
+
+Š Quoted market prices or dealer quotes for similar instruments;   
+Š The fair value of cross-currency interest rate swaps and foreign exchange contracts are calculated as the present value of the estimated future cash flows based on observable yield curves;   
+The fair value of other receivables considers estimated future cash flows, current market interest rates and non-performance risk; and   
+Š The fair value of contingent consideration is calculated based on estimates of future revenue performance.  
+
+# Offsetting Financial Assets and Financial Liabilities  
+
+The Company is subject to master netting arrangements with certain counterparties. Certain of these arrangements allow for the netting of assets and liabilities in the ordinary course of business and are reflected on a net basis in the consolidated statement of financial position. In other circumstances, netting is permitted only in the event of bankruptcy or default of either party to the agreement, and such amounts are not netted in the consolidated statement of financial position. The following table sets forth balances that are subject to master netting arrangements, however there were no offsetting amounts as of December 31, 2023 or 2022.  
+
+<html><body><table><tr><td></td><td>Gross Financial Gross Financial Liabilities Netted</td><td>Net Financial Assets in theConsolidated Statement of Financial</td><td>Related Financial Liabilities Not</td><td></td></tr><tr><td>Financial assets Derivative financial assets</td><td>Assets Against Assets 123</td><td>Position</td><td>Netted 123 (1)</td><td>Net Amount 123</td></tr><tr><td>Cash and cash equivalents</td><td>63</td><td></td><td>63 (2)</td><td>63</td></tr><tr><td>December 31,23</td><td>186</td><td></td><td>186</td><td>186</td></tr><tr><td></td><td></td><td></td><td>388 (1)</td><td>388</td></tr><tr><td>Derivative financial assets Cash and cash equivalents</td><td>388 21</td><td></td><td>21 (2)</td><td>21</td></tr><tr><td>December 31,</td><td>409</td><td></td><td>409</td><td>409</td></tr><tr><td></td><td></td><td>Net Financial Liabilities in</td><td></td><td></td></tr><tr><td>Financial liabilities</td><td>Gross Financial Gross Financial Assets Netted Liabilities Against Liabilities</td><td>theConsolidated Statementof Financial Position</td><td>Related Financial Assets Not Netted</td><td>Net Amount</td></tr><tr><td>Derivative financial liabilities</td><td>32</td><td>1 32 (3)</td><td></td><td>32</td></tr><tr><td>December31,2023</td><td>32</td><td>32</td><td></td><td>32</td></tr><tr><td>Derivative financial liabilities</td><td>37</td><td>37 (3)</td><td></td><td>37</td></tr><tr><td>December31,</td><td>37</td><td>37</td><td></td><td>37</td></tr></table></body></html>
+
+(1) Included within “Other financial assets”, current or long-term as appropriate, in the consolidated statement of financial position. (2) Included within “Cash and cash equivalents” in the consolidated statement of financial position. (3) Included within “Other financial liabilities”, current or long-term as appropriate, in the consolidated statement of financial position  

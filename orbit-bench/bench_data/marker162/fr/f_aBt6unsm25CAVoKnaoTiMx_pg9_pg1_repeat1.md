@@ -1,0 +1,15 @@
+## Céréales
+
+Les activités de la Compagnie relatives au transport des pour cent des produits tiés du transport de marchandises en vrac et 20 pour cent de l'ensemble des produits tirés du transport de marchandises en 2023.
+
+Le réseu de céréales de la Compagnie est unes de fer en Amérque du Nord, puisqu'il est stratégiquement positionné au cœur des régions de production de céréales de l'Oues Plaines des États-Unis. La Compagnie offre à ses dients un avantage sur le plan du service, soit le transport de céréales à bord de main) (trains à haute efficacité) de 8 500 pieds, équipés de wagonstrémies de grande capacté qui permettent à la Compagnie d'ficaces aux agriculteurs, aux expéditeurs, ainsi qu'à l'ensemble des intervenants sur la chaîne d'approvisionnement en céréales. Le train HEP® de 8 500 pieds peut transporter environ 40 pour cent plus de cééales que le train céréalier de génération précédente.
+
+Le graphique suivant présente, en pourcentage, les produits de la Compagnie tirés du Canada et aux États-Unis en 2023:
+
+![](_page_0_Figure_5.jpeg)
+
+La marchandise cééalère canadienne que transporte la Compagnie se comme le blé, le blé dur, le canola et les légumineuss à qraines, de même que de produits transformés et les tourteaux. Les activités de ce secteur sont concentrées dans les Prairies canadiennes (Saskatchewan, Manitoba et Alberta), les céréales pour l'essentiel vers l'ouest au port de Vancouver, en Colombie-Briannique, et vers l'est au port de Thunder Bay, en Ontario, d'où elles sont également expédiées aux États-Unis et vers l'est du Canada pour la consommation intérieure.
+
+Les activités de transport de céréales en provennent un secteur d'activité qui est réglementé par le gouvernement canadien et assujetti à la Loi sur les transports au Canada (« LTC »). Cette activité à un revenu admissible maximal (« RAM »). Selon la LTC, les transporteurs peuvent ixer leurs propes tarifs pour les déplacements individuels. Le RAM régit cependant les transporteurs ferroviaires selon une formule de considération les volumes totaux, la distance parcourue, le revenu moyen par onne et les ajustements pour tenir compte de l'inflation s'applique aux expéditions de céréales de l'Ouest canadien destinées à l'exportation vers les ports de Vancouver et de Thunder Bay.
+
+La marchandise céréalère américaine que transporte la Compose de cééales entières, comme le maïs, le blé et le soya, et de produits transformés, comme les tourteaux, les alimaux et les huiles. Les activités de ce secteur sont concentrées dans les Grandes Plaines des États-Unis et le Midwest anéricain. La Compagnie achericaines vers des installations au Mexique, les terminaux d'exportation de la côte nord-ouest du Pacifique des États-Unis et diverses autres destinations partout aux Etats-Unis et au Canada pour la consommation intérieure.

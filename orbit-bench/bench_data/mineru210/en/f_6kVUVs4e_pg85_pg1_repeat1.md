@@ -1,0 +1,26 @@
+# Notes to Consolidated Financial Statements as at March 31,
+
+5. Unsecured Loans (Refer Note 26) Term Loan from Bank Buyer’s Credit from Bank Short Term Loan from Banks Inter Corporate Deposit Interest accrued and due Tot al
+
+(Currency : Indian Rupee)   
+
+<table><tr><td>2010</td><td>2009</td></tr><tr><td>3,000,000,000</td><td>3,000,000,000</td></tr><tr><td>2,517,694,577</td><td>2,163,024,160</td></tr><tr><td>179,258,000</td><td>1,000,000,000</td></tr><tr><td></td><td>2,617,676,875</td></tr><tr><td>32,517,134</td><td>13,918,417</td></tr><tr><td>5,729,469,711</td><td>8,794,619,452</td></tr></table>
+
+# 6. IXE D ASSETS (At Cost )
+
+<table><tr><td rowspan="2"></td><td colspan="4">GROSS BLOCK</td><td colspan="4">DEPRECIATION / AMORTIZATION</td><td colspan="2">NET BLOCK</td></tr><tr><td>As at April 1, 2009</td><td>Additions</td><td>Sale/ Adjustment</td><td>As at March 31, 2010</td><td>Up to March 31, 2009</td><td>For the year</td><td>Sale/ Adjustment</td><td>Up to March 31, 2010</td><td>As at March 31, 2010</td><td>As at March 31, 2009</td></tr><tr><td>Intangible Assets</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>Goodwill</td><td>451,177,637</td><td></td><td></td><td>451,177,637</td><td>203,029,936</td><td>90,235,527</td><td></td><td>293,265,463</td><td>157,912,174</td><td>248,147,701</td></tr><tr><td>License fees</td><td>117,362,250</td><td></td><td></td><td>117,362,250</td><td>57,604,338</td><td>13,472,450</td><td></td><td>71,076,788</td><td>46,285,462</td><td>59,757,912</td></tr><tr><td>Software</td><td>193,653,479</td><td>21,190,351</td><td></td><td>214,843,830</td><td>107,154,668</td><td>32,668,187</td><td></td><td>139,822,855</td><td>75,020,975</td><td>86,498,811</td></tr><tr><td>Total (A)</td><td>762,193,366</td><td>21,190,351</td><td></td><td>783,383,717</td><td>367,788,942</td><td>136,376,164</td><td></td><td>504,165,106</td><td>279,218,611</td><td>394,404,424</td></tr><tr><td>Tangible Assets</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>Plant and Machinery</td><td>1,877,594,758</td><td>826,274,557</td><td></td><td>2,703,869,315</td><td>575,341,594</td><td>338,223,493</td><td></td><td>913,565,087</td><td>1,790,304,228</td><td>1,302,253,164</td></tr><tr><td>Consumer Premises Equipments (CPE)</td><td>11,379,394,284</td><td>4,077,079,752</td><td> 800,552,712</td><td>14,655,921,324</td><td>3,611,700,244</td><td>2,732,087,582</td><td>527,374,453</td><td>5,816,413,373</td><td>8,839,507,951</td><td>7,767,694,040</td></tr><tr><td>Computers</td><td>56,743,634</td><td>4,925,666</td><td>1,390,401</td><td>60,278,899</td><td>20,025,413</td><td>8,468,048</td><td>1,321,158</td><td>27,172,303</td><td>33,106,596</td><td>36,718,221</td></tr><tr><td>Equipments</td><td>46,371,280</td><td>1,895,428</td><td>504,318</td><td>47,762,390</td><td>5,092,321</td><td>2,305,035</td><td>198,773</td><td>7,198,583</td><td>40,563,807</td><td>41,278,959</td></tr><tr><td>Furniture and Fixtures</td><td>18,963,951</td><td>1,032,332</td><td></td><td>19,996,283</td><td>3,469,975</td><td>1,686,216</td><td></td><td>5,156,191</td><td>14,840,092</td><td>15,493,976</td></tr><tr><td>Vehicles</td><td>23,508,157</td><td>5,461,547</td><td>2,564,482</td><td>26,405,222</td><td>6,539,325</td><td>2,481,458</td><td>873,367</td><td>8,147,416</td><td>18,257,806</td><td>16,968,832</td></tr><tr><td>Leasehold Improvements</td><td>46,280,275</td><td>179,820</td><td></td><td>46,460,095</td><td>10,252,193</td><td>5,825,254</td><td></td><td>16,077,447</td><td>30,382,648</td><td>36,028,082</td></tr><tr><td>Total (B)</td><td>13,448,856,339</td><td>4,916,849,102</td><td>805,011,913</td><td>17,560,693,528</td><td>4,232,421,065</td><td>3,091,077,086</td><td>529,767,751</td><td>6,793,730,400</td><td>10,766,963,128</td><td>9,216,435,274</td></tr><tr><td>Total (A+B)</td><td>14,211,049,705</td><td>4,938,039,453</td><td>805,011,913</td><td>18,344,077,245</td><td>4,600,210,007</td><td>3,227,453,250</td><td>529,767,751</td><td>7,297,895,506</td><td>11,046,181,739</td><td>9,610,839,698</td></tr><tr><td>Previous Year</td><td>9,119,469,678</td><td> 5,099,690,503</td><td>8,110,476</td><td>14,211,049,705</td><td>2,313,562,186</td><td>2,288,852,616</td><td>2,204,795</td><td>4,600,210,007</td><td>9,610,839,698</td><td></td></tr></table>
+
+Note: (1) Details of assets given on Operating Lease and Finance Lease are given in Note 33 (2) Depreciation for the year includes Rs. 148,420 (Rs 253,782) taken to pre-operative expenses (Refer Note 29.3) (3) Refer Note 30.6 for foreign currency exchange difference capitalised/decapitalised during the year.
+
+# 7. Investm ents
+
+Long Term (At Cost) - Unquoted (Non-Trade)   
+NSC VIII issue   
+(Pledged with Sales Tax Authorities)   
+Short Term - Unquoted   
+Mutual Fund\* (Refer Note 28)   
+(Net Assets Value Rs. 1,565,478,734)
+
+<table><tr><td>2010</td><td>2009</td></tr><tr><td>25,500</td><td>25,500</td></tr><tr><td>1,561,055,688</td><td></td></tr><tr><td>1,561,081,188</td><td>25,500</td></tr><tr><td>1,561,081,188</td><td>25,500</td></tr></table>
+
+Aggregate Book value of unquoted investments \* Includes Rs. 1,310,000,000 out of Rights Issue and Rs. 250,000,000 out of GDR Issue proceeds (Refer Note 34 and 35)

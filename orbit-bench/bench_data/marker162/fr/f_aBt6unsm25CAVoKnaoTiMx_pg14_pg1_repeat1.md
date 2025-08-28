@@ -1,0 +1,23 @@
+contribue à atténuer l'incidence de la montée de supplément carburant s'appliquent à chaque expédition et sont essentiellement fonction du prix du carburant des autoroutes au Canada et aux États-Unis et du prix du carburant diesel vendu par Petróleos Mexicanos (« PEMEX ») TAR Irapuato au Mexique. Ils volumes de fret et les prix du carburant. Les produits tirés du supplément carburant représentent environ 13 pour cent de la Compagne a tirés du transport de marchandises en 2023. La Compagnie est également asujettie à des mécansmes d'imposition du carbone et à des redains territoires où elle exerce des activités, dont les coûts sont transférés à l'expéditeur. Par conséquent, les produits tirés du supplément comprennent les taxes sur le carbone et les redevances.
+
+Les produits tirés du transport de marchands produits tirés du supplément carburant de 1 623 M\$ pour 2023, ce qui représente une hausse de 320 M\$, ou de 25 pour ent, par produits de 1 303 M\$ pour la période correspondante de 2022. Cette hausse est avant tout attribuable à l'éffet de l'effet favorable du moment de la constation des économies réalisées sur le programme d'ajustement au prix du carburant de la Compagnie, à l'effet favorations du change et à l'accroissement des volumes. Elle a été en partie contrebalancée par la diminution des prix du carburant.
+
+### Clients importants
+
+Pour les exercices clos et 2022, les produits et les activités de la Compagnie n'ont dépendu d'aucun client important.
+
+### Concurrence
+
+ La Companie exerce ses activités dans les donaines du transport terrestre et des services logistiques. A ce titre, elle est assujettie à la concurrence d'autres transporteurs ferroviaires, des transporteurs mariimes et des entreprises de transport par chalands ainsi que de transport par pipeline. Selon le marché, les transporteurs routiers et les autres concurrents peuvent exercer une pression sur les prix et les prix et les services. La Compagnie évalue continuellement le soncurrence sur le marché. Elle prend ensuite les mesures qu'elle juge appropriés pour offir un service concurrentiel sur le marché. Ces mesurent la mise au point de nouvelles solutions, telles que des installations de transbordement, de nouveaux services ferroviaires et d'autres services logistiques.
+
+## Caractère saisonnier
+
+Le volume transporté de certaines marchandis qui en sont tirés sont plus importants à certaines périodes de l'année. Les produits sont généralement plus bas au cours du premier des conditions météorologiques hivernales, qui entraînent une réduction de la charge utile selon le plan d'exploitation hivernal ainsi que la longueur des trains, la fermeture du Port de Thunder Bay et une réduction du trafic de marchandises de détail. Au cours des deuxième trimestres, les produits s'améliorent par rapport au premier trimestre, étant donné que le volume d'engrais est habituelleme trimestre et que la demande de biens de construction atteint son pont cuminant au cours du troisième trimeste. C'est généme trimestre que les produits sont les plus élevés, surtout en raison de l'acheminent des céclées, de l'épandage d'engrais à l'automne et de l'intensification de la demande de marchandises de détail transportés par rail. Le bénéfice d'exploitations saisonnières. Le bénéice d'exploitation est habituellement plus faible au premier trimestre, parce que les produits tris du transport moins élevés, tandis que les charges d'exploitation sont plus élevées à ce moment en raison des conditions hivernales.
+
+# Réglementation gouvernementale
+
+ Les activités ferroviaires de la Compagnie s'ais lois, à une réglementation et à des règles fédérales étendues dans les pays où elle est active, ce qui a une incidence directe sur la façon de gérer les activités ferroviaires et commerciales.
+
+### Canada
+
+Les activités d'exploitation ferroviaire de la Canada sont assujetties à la réglementation économique de l'Office des transports du Canada (l « Office ») en vertu des pouvoirs qui la LTC. La LTC établit une obliqation à titre de transporteur public et elle réglemente indirectement les tarifs en donnant aux expéditeurs l'accès à des mécans en matière de prix de transport, y compris les frais connexes, et l'accès à des prix d'interconnexion de longue distance, ains qu'à des mécanismes réglementaires pour les recours en matière de niveau de service. La LTC établit également des céréales canadiennes destinées à l'éxportation et d'autres produits

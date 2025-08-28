@@ -1,0 +1,15 @@
+Le tableau suivant présente de l’information par secteur relative à certains éléments de l’état consolidé de la situation financière de notre société ainsi que le rapprochement des soldes au prorata de l’état consolidé de la situation financière, en regroupant les éléments comprenant les placements d’Énergie Brookfield dans des entreprises associées et en tenant compte de la portion de chaque poste attribuable aux participations ne donnant pas le contrôle :
+
+(EN MILLIONS)   
+Au 31 décembre 2023   
+Trésorerie et équivalents de trésorerie   
+Immobilisations corporelles   
+Total de l’actif   
+Total des passifs   
+Au 31 décembre 2022   
+Trésorerie et équivalents de trésorerie   
+Immobilisations corporelles   
+Total de l’actif   
+Total des passifs
+
+<table><tr><td colspan="9">Attribuable aux porteurs de parts</td><td rowspan="2" colspan="2">Apport des</td></tr><tr><td></td><td>Hydroelectricite</td><td></td><td></td><td>solaire destinee Energie</td><td></td><td></td><td></td><td>participations Attribuable comptabilisees selon la participations</td></tr><tr><td>Amerique du Nord</td><td></td><td></td><td>Energie</td><td>aux reseaux</td><td>Energie decentralisee</td><td>Solutions</td><td></td><td></td><td>methode de la mise en</td><td>ne donnant pas le</td><td></td></tr><tr><td></td><td>Bresil</td><td>Colombie</td><td> eolienne</td><td>publics</td><td>et stockage</td><td> durables</td><td>Siege social</td><td>Total</td><td> equivalence</td><td>controle</td><td> Selon les IFRS</td></tr><tr><td>77 $</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>15 134</td><td>20 S</td><td>12 S</td><td>225 $</td><td>123 s</td><td>50 s</td><td>30 s</td><td>3S</td><td>540 S</td><td>(85) S</td><td>686 S</td><td>1141 S</td></tr><tr><td>16 143</td><td>1 694</td><td>2 490</td><td>6 024</td><td>3 635</td><td>2 386</td><td>341</td><td>-</td><td>31 704</td><td>(1 578)</td><td>33 879</td><td>64 005</td></tr><tr><td>9 231</td><td>1 880 531</td><td>2 738 1 645</td><td>6 802 4 727</td><td>4 518 3 484</td><td>2 842 1 705</td><td>1 540 1 126</td><td>257 3 159</td><td>36 720 25 608</td><td>(1 529) (1 529)</td><td>40 937 22 070</td><td>76 128 46 149</td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>55 $</td><td>15 $</td><td>14 $</td><td>150 $</td><td>139 $</td><td>61 S</td><td>11 $</td><td>-$</td><td>445 $</td><td>(43) S</td><td>596 S</td><td>998 $</td></tr><tr><td>15 331</td><td>1 743</td><td>1 826</td><td>4 853</td><td>3 046</td><td>2 110</td><td>227</td><td></td><td>29 136</td><td>(1 165)</td><td>26 312</td><td>54 283</td></tr><tr><td>16 971</td><td>1 880</td><td>2 036</td><td>5 565</td><td>3 520</td><td>2 416</td><td>378</td><td>581</td><td>33 347</td><td>(587)</td><td>31 351</td><td>64 111</td></tr><tr><td>9 456</td><td>892</td><td>625</td><td>3 709</td><td>2 874</td><td>1 322</td><td>113</td><td>2 827</td><td>21 818</td><td>(577)</td><td>16 584</td><td>37 825</td></tr></table>

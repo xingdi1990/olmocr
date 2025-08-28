@@ -1,0 +1,36 @@
+## RUBRIQUE 15. ANNEXES ET TABLEAU COMPLÉMENTAIRE DES ÉTATS FINANCIERS
+
+Les documents qui suivent figurent dans le présent rapport annuel :
+
+a) États financiers
+
+> Les états financiers inclus dans ce dépôt sont l'index aux états financiers consolidés à la rubrique 8, États financiers et données supplémentaires.
+
+Tableaux des états financiers b)
+
+Tableau complémentaire II – Comptes de contrepartie et comptes admissibles
+
+| len millions<br>de dollars<br>canadiens)             | Solde<br>d'ouverture au<br>1er janvier                                                        | Effet de<br>l'acquisition<br>de KCS | Ajouts portés<br>aux charges autres réductions | Paiements et | Effet du change | Solde de<br>clôture au<br>31 décembre |
+|------------------------------------------------------|-----------------------------------------------------------------------------------------------|-------------------------------------|------------------------------------------------|--------------|-----------------|---------------------------------------|
+|                                                      | Charges à payer au titre des responsabilités pour préjudice personnel et autres réclamations" |                                     |                                                |              |                 |                                       |
+| 2021                                                 | 126 S                                                                                         | ಕಿ<br>-                             | 114 S                                          | (117) \$     | ಕ<br>-          | 123 \$                                |
+| 2022                                                 | 123 \$                                                                                        | S<br>-                              | 101 \$                                         | (94)  \$     | 2 \$            | 132 \$                                |
+| 2023                                                 | 132 \$                                                                                        | 68                                  | 190 \$                                         | (202) \$     | (1) \$          | 187 \$                                |
+| Provision pour mesures environnementales correctives |                                                                                               |                                     |                                                |              |                 |                                       |
+| 2021                                                 | 80                                                                                            | રે                                  | 10 \$                                          | (10)  \$     | (1) \$          | 79 \$                                 |
+| 2022                                                 | 79 \$                                                                                         | ಕ<br>-                              | 8 \$                                           | (8)          | 4 8             | 83 \$                                 |
+| 2023                                                 | 83  \$                                                                                        | 147 \$                              | 8 \$                                           | (15) \$      | (3) રૂ          | 220 \$                                |
+
+^ Compend les demandes d'indemisstion des réclanations au titre de la FELA, les rédanations pour maladie polessionnelle, pour dommages matériels et autres.
+
+## C) Annexes
+
+La liste des annexes est fourne dans l'index qui suit. Les annexes comprennent les contrats de régimes de rémunération et les ententes à inclure à titre d'annexes au formulaire 10-K selon la rubrique 601(10)(iii) du Règlement S-K.
+
+| Annexes | Description                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 2       | Plan d'acquisition, de réorganisation, d'arrangement, de liquidation ou de relève                                                                                                                                                                                                                                                                                                                                                            |
+| 2.1     | Entente et plan de fusion, datés du 21 mars 2021, entre la sociéé Chemin de fer Canadien Pacifique Limitée, Cyqnus Merger<br>Sub 1 Corporation, Cygnus Merger Sub 2 Corporation et Kansas City Southern (intégrés par renvoi à l'annexe 2.1 du rapport<br>sur formulaire 8-K de la société Chemin de fer Canadien Pacifique Limitée déposé auprès de la Securities and Exchange<br>Commission le 21 mars 2021, dossier 001-01342).           |
+| 2.2     | Entente et plan de fusion, datés du 15 septembre 2021, entre la société Chemin de fer Canadien Pacifique Limitée, Cyqus<br>Merger Sub 1 Corporation, Cygnus Merger Sub 2 Corporation et Kansas City Southern (intégrés par renvoi à l'annexe 2.1 du<br>rapport sur formulaire 8-K de la société Chemin de fer Canadien Pacifique Limitée déposé auprès de la Securities and Exchange<br>Commission le 16 septembre 2021, dossier 001-01342). |
+| 3       | Statuts de constitution et règlements                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 3.1     | Certificat et statuts de constitution à jour de la sociéé Chemin de fer Canadien Pacifique Limitée (intégrés par renvoi à<br>l'annexe 99.2 du rapport sur formulaire 6-K de la société Chemin de fer Canadien Pacifique Limitée déposé auprès de la<br>Securities and Exchange Commission le 22 octobre 2015, dossier 001-01342).                                                                                                            |

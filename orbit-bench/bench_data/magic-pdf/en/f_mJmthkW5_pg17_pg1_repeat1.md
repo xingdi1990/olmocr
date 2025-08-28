@@ -1,0 +1,11 @@
+Mr Lee had also served as a member of the panel of arbitrators of the China I n t e r n a t i o n a l E c o n o m i c a n d T r a d e Arbitration Commission of the China Council for the Promotion of International Trade in Beijing.  
+
+Mr Lee is a member of the International Council of the Louvre as well as an Ambassador for the Louvre in China.  
+
+Mr Lee graduated from Cornell University in the United States in 1975 with a bachelor’s degree in Political Science.  
+
+Mr Chan, aged 63, is an Executive Director, the Project Director of PCPD, a member of PCPD’s Executive Committee and is a Director of certain PCPD subsidiaries. He became a director of PCPD in August 2005. Mr Chan is responsible for managing various property projects of PCPD and its subsidiaries. He was responsible for the project execution of the Cyberport project and has overall responsibility for all aspects of the construction works. Mr Chan has become an Independent Non-Executive Director of Beijing Properties (Holdings) Limited since June 2011 and a NonExecutive Director of Viva China Holdings Limited since June 2013.  
+
+Prior to joining  PCCW  in  October  2002, Mr Chan was a practising architect and had worked for a major developer in Hong Kong, with comprehensive experience in design, planning and land matters, design development and construction management of major investment properties, which included a wide range of industrial and warehousing, commercial, retail and residential developments in Hong Kong and overseas. Mr Chan possesses a wide spectrum of experience in the real estate industry and has been active in the real estate business for more than 38 years.  
+
+Mr Chan holds a Bachelor of Arts in Architectural Studies degree from The University of Hong Kong (“HKU”), a Bachelor of Architecture degree from University of Dundee in Scotland and an Executive Master of Business Administration degree from Tsinghua University. He is qualified as the Authorised Person (List I) and Registered Architect in Hong Kong, and is a member of The Hong Kong Institute of Architects, The Royal Institute of British Architects and The Australian Institute of Architects.  

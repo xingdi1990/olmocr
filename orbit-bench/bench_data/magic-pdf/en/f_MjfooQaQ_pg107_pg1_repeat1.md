@@ -1,0 +1,11 @@
+# 28. ASSETS CLASSIFIED AS HELD FOR SALE  
+
+Pursuant to an agreement dated 30 September 2015 entered into between a subsidiary of the Company, Zhong Bu (Centresin) Adhesive & Chemical Co., Ltd. (“Zhong Bu (Centresin)”) and an independent third party (the “Purchaser”), Zhong Bu (Centresin) disposed of $100 \%$ interest in two wholly-owned subsidiaries, You Cheng Development Limited (“You Cheng”) and 中部樹脂（廣州）有限公司 (Zhong Bu Centresin (Guangzhou) Company Limited) (“Zhong Bu Centresin (Guangzhou)”) for a total cash consideration of RMB20,800,000 resulting in a gain on disposal of subsidiaries of HK\$6,766,000.  
+
+You Cheng was an investment holding company and Zhong Bu Centresin (Guangzhou) was a factory construction in progress. The disposal was completed on 20 October 2015. As at 30 September 2015, the relevant assets and liabilities of You Cheng and Zhong Bu Centresin (Guangzhou) are classified to assets classified as held for sale and liabilities associated with assets classified as held for sale respectively in accordance with HKFRS 5 “Non-current assets held for sale and discontinued operations”. Details of the relevant assets and liabilities of You Cheng and Zhong Bu Centresin (Guangzhou) as at 30 September 2015 are as follow:  
+
+<html><body><table><tr><td></td><td>HK$'000</td></tr><tr><td></td><td></td></tr><tr><td>Property, plant and equipment (note 19)</td><td>5,051</td></tr><tr><td>Land use right (note 20)</td><td>15,172</td></tr><tr><td>Other receivables</td><td>123</td></tr><tr><td>Bank and cash balances</td><td>386</td></tr><tr><td>Total assets classified as held for sale</td><td>20,732</td></tr></table></body></html>  
+
+# 29. TRADE, BILLS AND OTHER PAYABLES  
+
+<html><body><table><tr><td></td><td>2016 HK$'000</td><td>2015 HK$'000</td></tr><tr><td>Trade payables</td><td>25,284</td><td>32,559</td></tr><tr><td>Bills payables - secured</td><td>1,653</td><td>294</td></tr><tr><td>Customers’ deposits received Accruals Others</td><td>26,937 1,141 23,888 474</td><td>32,853 1,246 23,265 2,963</td></tr></table></body></html>  

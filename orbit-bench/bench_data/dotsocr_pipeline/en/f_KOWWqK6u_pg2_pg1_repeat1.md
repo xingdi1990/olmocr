@@ -1,0 +1,1 @@
+[{"bbox": [266, 355, 1184, 1574], "category": "Picture"}, {"bbox": [396, 1586, 1057, 1687], "category": "Caption", "text": "Mr. Manhar R. Bhansali, Chairman & Managing Director, receiving the \"PIONEER OF THE YEAR\" Award instituted by IDCA (Indian Diamond & Colorstone Association), 56 West, 45th Street, New York, NY 10036 on 5th June, 2010 at Las Vegas, U.S.A."}]

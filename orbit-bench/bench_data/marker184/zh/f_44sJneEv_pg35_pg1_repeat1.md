@@ -1,0 +1,25 @@
+## Environmental, Social and Governance Report 環境、社會及管治報告
+
+The routine work of the Group always involves the intellectual property rights of customers, suppliers and the Group, therefore protection of intellectual property rights is extremely important to the Group. The Group adds protective clauses to the contracts entered into with customers and suppliers to safeguard the intellectual property rights. The Group's legal department also reviews every operational contract to ensure that the contract safeguard the intellectual property rights of each other. Furthermore, The Group also request technical specialists to sign strict confidentiality agreements. The Group also complies with relevant legislation of data privacy. All confidential data of customers can only be assessed by the staffs who are responsible for the projects for relevant clients
+
+With respect to fair advertising, the Group requires that employees of sales department must provide customer with accurate and true information on the Group's services. Hotline and e-mail are also available for customers' enquiries on service details in order to provide better before-and-aftersale services.
+
+## **Anti-corruption**
+
+All of the Group's operations comply with local and national legislation on standards of conduct, such as with the Prevention of Bribery Ordinance in Hong Kong and relevant legislation on anti-corruption and bribery in mainland China.
+
+The Group requires employees to strictly conform to code of business ethics and put any corruption bribe behaviour to an end as stipulated in the employment contracts. In the cases of conflict of interest, it must be reported to the Group's management. Employees who engage in business operations and represent the Company's professional image, are strictly prohibited to use business opportunities or power for personal interest or benefit.
+
+Public tendering will be made for any project in larger sum of amount where at least three suppliers are invited for tender. Service contracts in different amount are required to be examined and approved by different management.
+
+本集團的日常營運中經常牽涉到使用客戶、供應商或本集 團自身擁有的知識產權,因此保護知識產權為本集團極其 重要的任務。本集團與客戶或供應商訂立合約時均會在合 約條款中加入對知識產權的保護條款,而本集團法律部門 亦會審核所有營運的合約,確保合約條款保障了雙方的知 識產權。此外,本集團亦要求技術專才簽訂嚴格的保密協 議。本集團亦已遵守所有有關資料保密的法律。所有客戶 的機密資料只可以由負責相關客戶的項目工作的員工存取。
+
+公平宣傳訊息方面,本集團規定,所有銷售部員工在銷售 時須向客戶提供準確及真實的服務訊息。本集團亦設立足 夠溝通渠道包括電話及電郵供客戶查詢服務詳情,提供完 善售前及售後服務。
+
+## 反貪污
+
+本集團所有的業務均遵守當地及國家法例的操守準則,例 如香港的防止賄賂條例以及中國內地相關反貪腐法例。
+
+在僱用合約中,本集團要求員工嚴格遵守商業道德準則, 杜絕任何貪污及賄賂行為。如有利益衝突,需要及時向本 集團管理層申報。參與業務營運及代表本公司的專業形象 的員工,嚴禁利用商機或職權取得個人利益或好處。
+
+就所涉金額較大的項目,本集團會作公開招標,激請最少 三家供應商投標;不同的服務合約金額,須由不同級別的 管理層審批。

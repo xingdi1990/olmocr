@@ -1,0 +1,23 @@
+The Company assesses the sensitivity of key assumptions at least annually by stressing the impact on the model. While management ulilizes its best judgment and information available, the ultimate is dependent upon a variety of factors beyond our control which are interest the most significant being the macroeconomic forecasts. The Company's forecast of economic conditions considers baseline, favorable, and adverse scenarios. As economic conditions of of estimated loan defaults and losses, and therefore the allowance, could change significantly. Economic conditions more favorable than forecasted could lead to reductions in the allowance, and conversely conditions more adverse than forecasted could require increases in the amount of the allowance. Changes in the same direction or magnitude across all segments of our loan portfolio and deterioration in some quantitative inprovement in others. The Company selects the economic forecast that is most reflective of expectations at that point in time, and changes could significantly impact the calculated credit losses.
+
+For segments that rely on a peer group to develop baseline loss ratistical regression is utilized to relate historical macro-economic variables to historical credit loss experience of a per group of banks. These models are then utilized to forecast for see based on expected tuture behavior of the same macro-economic variables. Adustments to the made using qualitative factors. These factors include: (1) borrower's financial condity to pay; (3) nature and volume of financial asses; (4) value of the underlying collateral; (5) lending policies and procedures; (6) quality of the experience, ability, and depth of staff; (8) regulatory and legal environment; (9) changes in market conditions; and (10) changes in economic conditions.
+
+For loans that do not share risk characteristics these loans on an individual basis based on various factors. Factors that may be considered are borrower delinquency trends and nonaccrual status, probability of foreclosure or note sale, changes in the borrower's circumstances or cash collections, borrowers including of the ban or collateral. The expected credit loss is measured based on net realizable value, that is, the difference between the discounted value of the expected future cash flows, based on the original effective interest rate, and the amortized cost basis of the loans, expected credit loss is measured as the difference between the amortized cost basis of the loan and the fair value of the collateral, less estimated costs to sell.
+
+## Uncertainties Regarding the Estimate
+
+Estimating the timing and amounts of theses is subject to significant management judgment as these projected cash flows the estimates discussed above and factors that are relective of current or future expected conditions. These estimates of current overall economic conditions, incretific specific conditions. Volatlity in certain credit metrics and differences between expected and actual outcomes are to be expected.
+
+Customers may not repay their loans according to the collateral securing the payment of those loans may be insufficient to pay any remaining loan balance. Bank regulators periodically review our allowance for credit losses and may require us to increase our provision for credit losses or loan charge-offs.
+
+## Impact on Financial Condition and Results of Operations
+
+If our assumptions prove to be incorrect, the allowance for credit losses may not be sufficient to cover expected losses in the loan portloing resulting in additions to the allowance. Future additions to the allowance may be necessary based on changes in economic, market or other conditions. Changes in estimates could result in the allowance through charges to earnings would materially decrease our net income.
+
+We may experience significant credit losses if borrowers experience financial difficulties, which could have a material on our operating results.
+
+In addition, various requires, as an integral part of the examination process, periodically review the allowance for credit losses. Such agencies may require the Company to recognize adjustments to the allowance based on the information available to them at the time of their examination.
+
+## Recently Issued Accounting Pronouncements
+
+See Note 2 of our consolidated financial statements, which are included beginning on page 93 of this report for a discussion of recently issued accounting pronouncements that have been or us that will require enhanced disclosures in our linancial statements in future periods.

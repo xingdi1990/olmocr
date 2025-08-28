@@ -1,0 +1,19 @@
+Au premier trimestre de 2023, les partenaires institutionnels d'Energie Brookfield ont concu la vente d'une participation de 78 % dans un portefeuille hydroélectrique en exploitation aux États-Unis d'une puissance de 378 MW, dont une tranche de 28 % a été vendue à des sociétés affiliées de Brookfield Corporation. Energie Brookfield a conservé sa participation de 22 % dans le placement, n'a reçu aucun produit tiré de la vente. Après la clôture de la vente, Enokfield a cessé d'inclure cette participation dans son périmètre de consolidation et la comptabilise plutôt selon la méthode de la mise en équivalence.
+
+Au cours du deuxième trimestre de 2023, Energie Brookfield, avec des partenaires institutionnels, a conclu la vente d'actifs d'énergie éolienne aux États-Unis qui ont été acquis en 2022.
+
+Au cours du troisième trimestre de 2023, Énergie Brookfield, avec des partenaires institutionnels, a conclu la vente d'une participation de 100% dans un portefeuille d'actifs éoliens d'une puissance de 95 MW et d'une participation de 100 % dans un actif d'énergie solaire en Uruguay d'une puissance de 26 MW.
+
+## TRANSACTIONS ENTRE PARTIES LIEES
+
+Les transactions entre parties liées d'Energie Brookfield se font dans le cours normal des activités et sont comptabilisées à la valeur d'échange. Les transactions entre parties liées d'Énergie Brookfield se font principalement avec Brookfield Corporation.
+
+Energie Brookfield vend de l'électricité à Brookfield aux termes d'une unique convention d'achat d'électricité (CAÉ) à long terme visant ses centrales hydroélectriques de New York.
+
+En 2011, au moment de la constitution d'Energie Brookfield a transféré certains projets en développement à Energie Brookfield sans contrepartie initiale, tout en ayant le droit à une contrepartie variable sur les activités commerciales ou la vente de ces projets.
+
+Energie Brookfield a conclu des conventions de vote avec Brookfield aux termes desquelles Energie Brookfield a pris le contrôle des entités qui détiennent certaines activités de production d'énergie renouvelable. Energie Brookfield a également convention de vote avec les membres du consortium dans le cadre de ses activités en Colombie. Ces conventions de vote confèrent à Energie Brookfield le droit de donner des directives dans le cadre de l'élection des membres du conseil d'administration des entités concernées, et, par conséquent, le contrôle de ces mêmes entités. Energie Brookfield inclut donc les comptes de ces entités dans son périmètre de consolidation.
+
+Énergie Brookfield participe, avec des partenaires institutionnels, au Brookfield Americas Infrastructure Fund, au Brookfield Infrastructure Fund II, au Brookfield Infrastructure Fund III, au Brookfield Infrastructure Fund IV, au Brookfield Infrastructure Fund V, au Brookfield Infrastructure Income Fund, au Brookfield Global Transition Fund I, au Brookfield Global Transition Fund II et au Brookfield Infrastructure Debt Fund (les « fonds privés »), chacun de ces fonds étant soutenu par Brookfield et y étant lié. Énergie Brookfield, avec ses partenaires institutionnels, a accès à du financement au moyen des facilités de crédit des fonds privés.
+
+De temps à autre, afin de permettre que les activités d'investissement réalisées rapidement et de façon efficace, Energie Brookfield financera des dépôts ou engagera d'autres coûts et charges (y compris en recourant à des facilités de crédit afin d'utiliser, de soutenir, de garantir ou d'émettre de crédit) à l'égard d'un investissement qui sera par la suite partagé entre des véhicules, des consortiums ou des sociétés de personnes soutenus par Brookfield (y compris des fonds privés, des coentreprises et des arrangements semblables), Énergie Brookfield et des coinvestisseurs ou effectué en totalité par l'un de ceux-ci.

@@ -1,0 +1,19 @@
+# Réévaluation des actifs de production d’énergie  
+
+Description de la question  
+
+La société en commandite évalue les actifs de production d’énergie (classés à titre d’immobilisations corporelles) selon le modèle de réévaluation d’IAS 16, Immobilisations corporelles. Au 31 décembre 2023, le montant des immobilisations corporelles présenté à l’état consolidé de la situation financière s’élevait $\dot { \mathrm { ~ a ~ } } 6 4 0 0 5$ millions \$. La réévaluation des immobilisations corporelles comptabilisée à l’état consolidé du résultat global totalisait une perte de 133 millions \$, tandis qu’une perte totale de 164 millions $\$ 5$ a été comptabilisée au compte consolidé de résultat pour l’exercice 2023. Comme il est mentionné aux alinéas g), r)(i) et s)(iii) de la note 1 et à la note 12, « Immobilisations corporelles à la juste valeur », des états financiers consolidés, l’évaluation des estimations et des hypothèses quant au rendement futur des actifs de production d’énergie fait l’objet d’estimations et de jugements importants de la part de la direction.  
+
+La direction adopte une approche binaire comportant un modèle d’analyse des flux de trésorerie actualisés ainsi qu’une évaluation du marché pour établir la juste valeur des actifs de production d’énergie de la société en commandite. Les modèles d’analyse des flux de trésorerie actualisés comportent les principales hypothèses suivantes : les prix futurs de l’électricité, les valeurs finales, le taux d’actualisation, la production moyenne à long terme prévue ainsi que les charges d’exploitation et les dépenses d’investissement estimées.  
+
+L’audit de l’évaluation des actifs de production d’énergie est complexe et a nécessité la participation de spécialistes en raison de la nature des principales hypothèses décrites ci-dessus, qui reposent sur une grande part de jugement. Des changements apportés à ces hypothèses pourraient avoir une incidence importante sur la juste valeur des actifs de production d’énergie.  
+
+Façon dont   
+nous avons   
+traité la   
+question dans le cadre de   
+l’audit  
+
+Nous avons acquis une compréhension, évalué la conception et testé l’efficacité du fonctionnement des contrôles sur les procédés de la direction pour établir la juste valeur des actifs de production d’énergie. Nous avons testé les contrôles sur la revue par la direction des modèles d’évaluation, y compris les contrôles sur la revue et l’approbation de toutes les principales hypothèses.  
+
+Pour tester la juste valeur des actifs de production d’énergie, nos procédures d’audit ont compris, entre autres, l’évaluation de la méthode d’évaluation appliquée par la société en commandite, des principales hypothèses utilisées ainsi que des tests de l’exhaustivité et de l’exactitude des données sous-jacentes des principales hypothèses. Pour chaque actif de production d’énergie, nous avons analysé les principaux facteurs de changement de la juste valeur, y compris les prix futurs de l’électricité, les valeurs finales et les taux d’actualisation. Avec le soutien de nos spécialistes en évaluation, nous avons examiné l’analyse de l’évaluation effectuée par la direction et apprécié les estimations des prix futurs de l’électricité en fonction de prix à plus court terme cotés par des courtiers et de prévisions à plus long terme du marché formulées par la direction selon la région et l’actif de production d’énergie. Nous avons également fait appel à nos spécialistes en évaluation dans le cadre de l’appréciation des valeurs finales et des taux d’actualisation, qui ont pris en considération les taux d’intérêt de référence, l’emplacement géographique, le fait que l’actif est visé ou non par un contrat et le type de technologie.  

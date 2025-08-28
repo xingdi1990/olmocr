@@ -1,0 +1,32 @@
+## **EMPRUNTS**
+
+Le tableau suivant présente les composantes des obligations liées à la dette, le profil global relatif aux échéances et les taux d'intérêt moyens de nos emprunts et facilités de crédit au prorata aux 31 décembre :
+
+|                                                                                                       | 2023                            |                      |                  | 2022                            |                      |                    |
+|-------------------------------------------------------------------------------------------------------|---------------------------------|----------------------|------------------|---------------------------------|----------------------|--------------------|
+|                                                                                                       | Moyenne pondérée                |                      |                  | Moyenne pondérée                |                      |                    |
+| (EN MILLIONS, SAUF INDICATION CONTRAIRE)                                                              | Taux<br>d'intérêt<br>$(\%)^{1}$ | Durée<br>(en années) | $\text{Total}^1$ | Taux<br>d'intérêt<br>$(\%)^{1}$ | Durée<br>(en années) | Total <sup>1</sup> |
+| Emprunts de la société mère                                                                           |                                 |                      |                  |                                 |                      |                    |
+| Facilités de crédit                                                                                   | S. 0.                           | 5                    | - \$             | s. o.                           | 5                    | $-$ \$             |
+| Papier commercial                                                                                     | 6,0                             | $\leq 1$             | 183              | 5,1                             | $\leq 1$             | 249                |
+| Billets à moyen terme                                                                                 | 4,3                             | 10                   | 2 660            | 4,1                             | 11                   | 2 307              |
+| Emprunts sans recours au prorata <sup>2, 3</sup>                                                      |                                 |                      |                  |                                 |                      |                    |
+| Hydroélectricité                                                                                      | 6,0                             | 12                   | 5 2 1 5          | 5,7                             | 13                   | 5 150              |
+| Énergie éolienne                                                                                      | 5,0                             | 9                    | 2 408            | 4,6                             | 9                    | 1 935              |
+| Énergie solaire destinée aux réseaux publics                                                          | 5,1                             | 13                   | 2 596            | 3,6                             | 13                   | 2 367              |
+| Énergie décentralisée et stockage                                                                     | 4,5                             | 8                    | 917              | 4,3                             | 9                    | 897                |
+| Solutions durables                                                                                    | 6.6                             | 7                    | 391              |                                 |                      |                    |
+|                                                                                                       | 5,4                             | 12                   | 11 527           | 4,9                             | 12                   | 10 349             |
+|                                                                                                       |                                 |                      | 14 370 \$        |                                 |                      | 12 905 \$          |
+| Coûts de financement non amortis au prorata, déduction faite des primes<br>non amorties               |                                 |                      | (88)             |                                 |                      | (64)               |
+|                                                                                                       |                                 |                      | 14 282           |                                 |                      | 12 841             |
+| Emprunts comptabilisés selon la méthode de la mise en équivalence<br>(987)                            |                                 |                      |                  |                                 |                      | (373)              |
+| Participations ne donnant pas le contrôle et autres <sup>4</sup><br>16 407                            |                                 |                      |                  |                                 | 12 382               |                    |
+| Selon les états financiers IFRS<br>29 702 \$                                                          |                                 |                      |                  |                                 |                      | 24 850 \$          |
+| 1)<br>Comprend le rendement en trésorerie lié aux financements donnant droit à des avantages fiscaux. |                                 |                      |                  |                                 |                      |                    |
+
+2) Comprennent les ajustements de financements à l'échelle des projets après le 31 décembre 2023.
+
+3) Se reporter à la « Partie 9 - Présentation aux parties prenantes et mesure du rendement » pour de plus amples renseignements sur la dette au prorata.
+
+4) Comprennent les passifs donnant droit à des avantages fiscaux.

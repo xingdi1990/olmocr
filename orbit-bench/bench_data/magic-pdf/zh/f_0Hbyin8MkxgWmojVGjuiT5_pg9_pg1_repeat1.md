@@ -1,0 +1,8 @@
+# 4 股东情况  
+
+# 4.1 普通股股东总数、表决权恢复的优先股股东总数和持有特别表决权股份的股东总数及前 10名股东情况  
+
+单位: 股  
+
+
+<html><body><table><tr><td colspan="4">截至报告期末普通股股东总数(户)</td><td colspan="4">14,167</td></tr><tr><td colspan="4">年度报告披露日前上一月末的普通股股东总数</td><td colspan="4">10,172</td></tr><tr><td colspan="4">（户) 截至报告期末表决权恢复的优先股股东总数</td><td colspan="4">0</td></tr><tr><td colspan="4">（户） 年度报告披露日前上一月末表决权恢复的优先 股股东总数（户）</td><td colspan="4">0</td></tr><tr><td colspan="4">截至报告期末持有特别表决权股份的股东总数 （户）</td><td colspan="4">0</td></tr><tr><td colspan="4">年度报告披露日前上一月末持有特别表决权股 份的股东总数（户）</td><td colspan="4">0</td></tr><tr><td colspan="8">前十名股东持股情况</td></tr><tr><td>股东名称 （全称）</td><td>报告 期内 增减</td><td>期末持股 比例 数量 (%)</td><td>持有有限售条件 股份数量</td><td colspan="2">股份 状态</td><td>质押、标记或 冻结情况 数量</td><td>股东 性质</td></tr><tr><td>MEMSLink</td><td>0</td><td>80,800,000</td><td>20.20</td><td>80,800,000</td><td>无</td><td>0</td><td>境外 法人</td></tr><tr><td>Corporation 北方电子研究院有 限公司</td><td>0</td><td>80,000,000</td><td>20.00</td><td>80,000,000</td><td>无</td><td>0</td><td>国有 法人</td></tr><tr><td>北京芯动联科微电 子技术有限公司</td><td>0</td><td>53,920,000</td><td>13.48</td><td>53,920,000</td><td>无</td><td>0</td><td>境内 非国 有法</td></tr><tr><td>上海宝鼎投资管理 有限公司一绍兴宝 鼎久磊投资合伙企</td><td>0</td><td>14,000,000</td><td>3.50</td><td>14,000,000</td><td>无</td><td>0</td><td>人 境内 非国 有法</td></tr><tr><td>业（有限合伙） 宣佩琦</td><td>0</td><td>11,520,000</td><td>2.88</td><td>11,520,000</td><td>无</td><td>0</td><td>人 境内 自然 人</td></tr></table></body></html>  

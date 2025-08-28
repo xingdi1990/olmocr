@@ -1,0 +1,3 @@
+(単位：百万円)  
+
+<table><tr><td></td><td>* ( 202141 202241 2022331)</td></tr><tr><td>Mk3#tyy17-</td><td> 2023331)</td></tr><tr><td>K##$#(&gt;)</td><td>20, 136</td></tr><tr><td></td><td>28, 000 35, 883</td></tr><tr><td>l3</td><td>380</td></tr><tr><td>1)-3#$0ilx3</td><td>598 435</td></tr><tr><td>##F#J#OF1l x 3</td><td></td></tr><tr><td></td><td>^0</td></tr><tr><td>Mx3#tyy17-</td><td>78 14,769 27, 685</td></tr><tr><td></td><td>2,400</td></tr><tr><td></td><td>3, 017 4,407 25, 185</td></tr><tr><td></td><td>55, 347 50, 939 25, 754</td></tr><tr><td></td><td>*1 50, 939 *1</td></tr></table>

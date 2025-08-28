@@ -1,0 +1,9 @@
+# RUBRIQUE 5. MARCHÉ POUR LA NÉGOCIATION DES ACTIONS ORDINAIRES DE LA SOCIÉTÉ INSCRITE, QUESTIONS CONNEXES CONCERNANT LES ACTIONNAIRES ET RACHATS D’ACTIONS PAR LA SOCIÉTÉ INSCRITE  
+
+# Information sur les actions  
+
+Les actions ordinaires sont inscrites à la TSX ainsi qu’au NYSE sous le symbole « CP ».  
+
+# Capital-actions  
+
+Au 26 février 2024, soit la dernière date à laquelle il était possible d’établir les données avant la date du présent rapport annuel sur formulaire $1 0 - 1 ,$ la Compagnie comptait 932 428 454 actions ordinaires émises et en circulation et aucune action privilégiée émise et en circulation pour 15 190 détenteurs d’actions ordinaires inscrits. En outre, la Compagnie a un Régime incitatif d’options sur actions pour les cadres (« RIOAC »), en vertu duquel des options d’achat d’actions sont attribuées à des dirigeants et à des employés clés aux fins d’achat d’actions ordinaires. Toutes les données sur le nombre d’options contenues aux présentes sont présentées en fonction du nombre d’actions visées par les options. Au 26 février 2024, 6 992 378 options étaient en cours aux termes du RIOAC ainsi que des contrats d’options distincts conclus avec M. Keith Creel. 20 940 714 options sont disponibles aux fins d’attribution future en vertu du RIOAC de la Compagnie. La Compagnie offre aussi un régime d’options sur actions pour les administrateurs (« ROAA »), en vertu duquel des options sont attribuées aux administrateurs aux fins d’achat d’actions ordinaires. Il n’y a pas d’options en circulation aux termes du ROAA, pour lequel 1 700 000 options sont disponibles aux fins d’attribution dans l’avenir.  
