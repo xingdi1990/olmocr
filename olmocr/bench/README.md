@@ -303,7 +303,7 @@ pip install -e .[bench]
 playwright install chromium
 
 # Now clone the benchmark data from hugging face, this includes the PDFs and JSON annotation data
-huggingface-cli download --repo-type dataset --resume-download allenai/olmOCR-bench --local-dir ./olmOCR-bench
+huggingface-cli download --repo-type dataset --resume-download allenai/olmOCR-bench --local-dir ./olmOCR-bench --max-workers 1
 ```
 
 Convert your documents
