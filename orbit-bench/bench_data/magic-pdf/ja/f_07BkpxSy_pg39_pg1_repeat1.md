@@ -1,7 +1,0 @@
-( 6) 【大株主の状況】  
-2023年3月31日現在  
-
-
-<html><body><table><tr><td>氏名又は名称</td><td>住所</td><td>所有株式数 (株)</td><td>凳行济株式 （自己株式を除 有式数 の割合(%)</td></tr><tr><td>いちこ（常任代理人香港上海銀 行東京支店）</td><td>El gin Court. El gin Avenue， P.Q Box 448 Grand Caynan,KY1-1106， Caynan Isl ands （東京都中央区日本橋3丁目11番1号）</td><td>3,034,227,762</td><td>78. 19</td></tr><tr><td>株式会社INg 日本マスタートラスト信託銀行株 式会社（信託口）</td><td>東京都港区虎門1丁目3番1号 東京都港区浜松町2丁目11番3号</td><td>214,000,000 66,060,700</td><td>5.51 1. 70</td></tr><tr><td>日亜化学工業株式会社</td><td>德島鼎阿南市上中町岡491番地100</td><td>34,965,000</td><td>0.90</td></tr><tr><td>JPMDRGAN CHASEBANK 385781 （常任代理人株式会社み泛銀</td><td>25BANK STREET，CANARYWHARF，LONDON E145JP，UNTEDKINGDOM（東京都港区2丁</td><td>12, 691, 114</td><td>0.33</td></tr><tr><td>行决济當業部） 羽田タートルサービス株式会社</td><td>目15番1号品川インターイA棟） 東京都大田区羽田5丁目3－1ス力イラサ</td><td></td><td></td></tr><tr><td>内海章雄</td><td>イ12階</td><td>9,627,000</td><td>0.25</td></tr><tr><td></td><td>東京都大田区 東京都港区西新橋3丁目7番1号イ</td><td>9, 432, 700</td><td>0.24</td></tr><tr><td>パンイスレイ持株会 SSBTC CLIENTOMNIBUSACCOUNT</td><td>ク第2新橋ル</td><td>6, 355, 697</td><td>0.16</td></tr><tr><td>（常任代理人香港上海銀行東京 支店）</td><td>ONE LI NCOLN STREET，BOSTON MA USA 02 111 （東京都中央区日本橋3丁目11番1号）</td><td>5, 419, 072</td><td>0. 14</td></tr><tr><td>内海晴和企画株式会社</td><td>東京都大田区羽田5丁目3－1ス力イラサ 10階</td><td>5,392, 000</td><td>0. 14</td></tr><tr><td>计</td><td></td><td>3,398, 171,045</td><td>87.56</td></tr></table></body></html>
-
-( 注）上記の所有株式数のうち、信託業務に係る株式数は、次のとおりであります。日本マスタートラスト信託銀行株式会社  
