@@ -174,14 +174,14 @@ python -m olmocr.bench.benchmark --dir ./olmOCR-bench/bench_data
       <td align="center">44.6% ± 1.4%</td>
     </tr>
     <tr>
-      <td align="left">olmocr_pipeline</td>
-      <td align="center">21.1%</td>
-      <td align="center">59.9%</td>
-      <td align="center">19.0%</td>
-      <td align="center">52.0%</td>
-      <td align="center">71.6%</td>
-      <td align="center">2.1%</td>
-      <td align="center">41.2% ± 1.7%</td>
+      <td align="left">olmocr v0.3.3</td>
+      <td align="center">91.3%</td>
+      <td align="center">61.7%</td>
+      <td align="center">78.0%</td>
+      <td align="center">43.2%</td>
+      <td align="center">72.6%</td>
+      <td align="center">30.5%</td>
+      <td align="center">65.4% ± 1.6%</td>
     </tr>
     <tr>
       <td align="left">dotsocr_pipeline</td>
