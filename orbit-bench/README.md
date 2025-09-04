@@ -63,7 +63,7 @@ pip show olmocr
 
 # convert using the same engine as olmOCR pipeline.py uses, see the olmocr/bench/runners directory for options
 ```bash
-python -m olmocr.bench.convert olmocr_pipeline --dir ./olmOCR-bench/bench_data
+python -m olmocr.bench.convert olmocr_pipeline --dir ./orbit-bench/bench_data
 ```
 # or use convert_all.sh to run OCR with many common frameworks all at once, API keys will be required
 ```bash
@@ -73,7 +73,7 @@ python -m olmocr.bench.convert olmocr_pipeline --dir ./olmOCR-bench/bench_data
 Now run the benchmark
 
 ```python
-python -m olmocr.bench.benchmark --dir ./olmOCR-bench/bench_data
+python -m olmocr.bench.benchmark --dir ./orbit-bench/bench_data
 ```
 
 ## Results - verified
@@ -134,7 +134,7 @@ python -m olmocr.bench.benchmark --dir ./olmOCR-bench/bench_data
   </thead>
   <tbody>
     <tr>
-      <td align="left">Marker v1.8.4</td>
+      <td align="left">Marker v1.8.3 (base, force_ocr)</td>
       <td align="center">80.8%</td>
       <td align="center">59.5%</td>
       <td align="center">72.3%</td>
@@ -144,27 +144,17 @@ python -m olmocr.bench.benchmark --dir ./olmOCR-bench/bench_data
       <td align="center">61.2% ± 1.6%</td>
     </tr>
     <tr>
-      <td align="left">MinerU v2.1.10 (auto)</td>
-      <td align="center">84.9%</td>
-      <td align="center">62.7%</td>
-      <td align="center">66.7%</td>
-      <td align="center">41.1%</td>
-      <td align="center">62.2%</td>
-      <td align="center">6.0%</td>
-      <td align="center">58.8% ± 1.6%</td>
+      <td align="left">Marker v1.7.5 (base, force_ocr)</td>
+      <td align="center">81.4%</td>
+      <td align="center">59.6%</td>
+      <td align="center">77.0%</td>
+      <td align="center">40.6%</td>
+      <td align="center">70.2%</td>
+      <td align="center">13.8%</td>
+      <td align="center">60.4% ± 1.6%</td>
     </tr>
     <tr>
-      <td align="left">MinerU v1.3.10 (auto)</td>
-      <td align="center">83.1%</td>
-      <td align="center">55.2%</td>
-      <td align="center">69.3%</td>
-      <td align="center">42.2%</td>
-      <td align="center">62.3%</td>
-      <td align="center">11.2%</td>
-      <td align="center">58.3% ± 1.6%</td>
-    </tr>
-    <tr>
-      <td align="left">Marker v1.6.2</td>
+      <td align="left">Marker v1.6.2 (base, force_ocr)</td>
       <td align="center">80.8%</td>
       <td align="center">57.4%</td>
       <td align="center">3.0%</td>
@@ -174,14 +164,34 @@ python -m olmocr.bench.benchmark --dir ./olmOCR-bench/bench_data
       <td align="center">44.6% ± 1.4%</td>
     </tr>
     <tr>
-      <td align="left">olmocr v0.3.3</td>
-      <td align="center">91.3%</td>
-      <td align="center">61.7%</td>
-      <td align="center">78.0%</td>
-      <td align="center">43.2%</td>
-      <td align="center">72.6%</td>
-      <td align="center">30.5%</td>
-      <td align="center">65.4% ± 1.6%</td>
+      <td align="left">MinerU v2.1.10</td>
+      <td align="center">84.9%</td>
+      <td align="center">62.7%</td>
+      <td align="center">66.7%</td>
+      <td align="center">41.1%</td>
+      <td align="center">62.2%</td>
+      <td align="center">6.0%</td>
+      <td align="center">58.8% ± 1.6%</td>
+    </tr>
+    <tr>
+      <td align="left">MinerU v1.3.10</td>
+      <td align="center">83.1%</td>
+      <td align="center">55.2%</td>
+      <td align="center">69.3%</td>
+      <td align="center">42.2%</td>
+      <td align="center">62.3%</td>
+      <td align="center">11.2%</td>
+      <td align="center">58.3% ± 1.6%</td>
+    </tr>
+    <tr>
+      <td align="left">olmocr_pipeline</td>
+      <td align="center">21.1%</td>
+      <td align="center">59.9%</td>
+      <td align="center">19.0%</td>
+      <td align="center">52.0%</td>
+      <td align="center">71.6%</td>
+      <td align="center">2.1%</td>
+      <td align="center">41.2% ± 1.7%</td>
     </tr>
     <tr>
       <td align="left">dotsocr_pipeline</td>

@@ -49,252 +49,64 @@ Features:
 **olmOCR-Bench**:
 We also ship a comprehensive benchmark suite covering over 7,000 test cases across 1,400 documents to help measure performance of OCR systems. 
 
-<table>
-  <thead>
-    <tr>
-      <th align="left"><strong>Model</strong></th>
-      <th align="center">ArXiv</th>
-      <th align="center">Old Scans Math</th>
-      <th align="center">Tables</th>
-      <th align="center">Old Scans</th>
-      <th align="center">Headers and Footers</th>
-      <th align="center">Multi column</th>
-      <th align="center">Long tiny text</th>
-      <th align="center">Base</th>
-      <th align="center">Overall</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td align="left">Marker v1.8.3 (base, force_ocr)</td>
-      <td align="center">75.2</td>
-      <td align="center">60.9</td>
-      <td align="center">52.8</td>
-      <td align="center">28.3</td>
-      <td align="center">85.1</td>
-      <td align="center">72.5</td>
-      <td align="center"><strong>84.8<strong></td>
-      <td align="center">98.9</td>
-      <td align="center">69.8 ± 1.0</td>
-    </tr>
-    <tr>
-      <td align="left">Marker v1.7.5 (base, force_ocr)</td>
-      <td align="center">76.0</td>
-      <td align="center">57.9</td>
-      <td align="center">57.6</td>
-      <td align="center">27.8</td>
-      <td align="center">84.9</td>
-      <td align="center">72.9</td>
-      <td align="center">84.6</td>
-      <td align="center">99.1</td>
-      <td align="center">70.1 ± 1.1</td>
-    </tr>
-    <tr>
-      <td align="left">MinerU v2.1.10</td>
-      <td align="center">75.7</td>
-      <td align="center">48.9</td>
-      <td align="center">57.6</td>
-      <td align="center">19.2</td>
-      <td align="center"><strong>97.5</strong></td>
-      <td align="center">58.9</td>
-      <td align="center">42.1</td>
-      <td align="center">97.6</td>
-      <td align="center">62.2 ± 1.0</td>
-    </tr>
-    <tr>
-      <td align="left">MinerU v1.3.10</td>
-      <td align="center">75.4</td>
-      <td align="center">47.4</td>
-      <td align="center">60.9</td>
-      <td align="center">17.3</td>
-      <td align="center">96.6</td>
-      <td align="center">59.0</td>
-      <td align="center">39.1</td>
-      <td align="center">96.6</td>
-      <td align="center">61.5 ± 1.1</td>
-    </tr>
-    <tr>
-      <td align="left">Mistral OCR API</td>
-      <td align="center">77.2</td>
-      <td align="center">67.5</td>
-      <td align="center">60.6</td>
-      <td align="center">29.3</td>
-      <td align="center">93.6</td>
-      <td align="center">71.3</td>
-      <td align="center">77.1</td>
-      <td align="center">99.4</td>
-      <td align="center">72.0 ± 1.1</td>
-    </tr>
-    <tr>
-      <td align="left">olmOCR v0.1.75 (Anchored)</td>
-      <td align="center">74.9</td>
-      <td align="center">71.2</td>
-      <td align="center">71.0</td>
-      <td align="center">42.2</td>
-      <td align="center">94.5</td>
-      <td align="center">78.3</td>
-      <td align="center">73.3</td>
-      <td align="center">98.3</td>
-      <td align="center">75.5 ± 1.0</td>
-    </tr>
-    <tr>
-      <td align="left">olmOCR v0.2.0</td>
-      <td align="center"><strong>78.8</strong></td>
-      <td align="center">77.5</td>
-      <td align="center">71.9</td>
-      <td align="center"><strong>45.4</strong></td>
-      <td align="center">94.2</td>
-      <td align="center"><strong>78.6</strong></td>
-      <td align="center">81.4</td>
-      <td align="center"><strong>99.8</strong></td>
-      <td align="center"><strong>78.5 ± 1.1</strong></td>
-    </tr>
-    <tr>
-      <td align="left">olmOCR v0.3.0</td>
-      <td align="center">78.6</td>
-      <td align="center"><strong>79.9</strong></td>
-      <td align="center">72.9</td>
-      <td align="center">43.9</td>
-      <td align="center">95.1</td>
-      <td align="center">77.3</td>
-      <td align="center">81.2</td>
-      <td align="center">98.9</td>
-      <td align="center">78.5 ± 1.1</td>
-    </tr>       
-  </tbody>
-</table>
-
-**orbit-Bench**
-
-## Results - verified
+| Model                            | ArXiv | Old Scans Math | Tables | Old Scans | Headers and Footers | Multi column | Long tiny text | Base | Overall        |
+| :------------------------------- | :---: | :------------: | :----: | :-------: | :-----------------: | :----------: | :------------: | :--: | :------------: |
+| Marker v1.8.3 (base, force_ocr)  | 75.2  |      60.9      |  52.8  |   28.3    |        85.1         |     72.5     |      84.8      | 98.9 | 69.8 ± 1.0    |
+| Marker v1.7.5 (base, force_ocr)  | 76.0  |      57.9      |  57.6  |   27.8    |        84.9         |     72.9     |      84.6      | 99.1 | 70.1 ± 1.1    |
+| MinerU v2.1.10                   | 75.7  |      48.9      |  57.6  |   19.2    |     **97.5**        |     58.9     |      42.1      | 97.6 | 62.2 ± 1.0    |
+| MinerU v1.3.10                   | 75.4  |      47.4      |  60.9  |   17.3    |        96.6         |     59.0     |      39.1      | 96.6 | 61.5 ± 1.1    |
+| Mistral OCR API                  | 77.2  |      67.5      |  60.6  |   29.3    |        93.6         |     71.3     |      77.1      | 99.4 | 72.0 ± 1.1    |
+| olmOCR v0.1.75 (Anchored)        | 74.9  |      71.2      |  71.0  |   42.2    |        94.5         |     78.3     |      73.3      | 98.3 | 75.5 ± 1.0    |
+| olmOCR v0.2.0                    | 78.8  |      77.5      |  71.9  | **45.4**  |        94.2         |     78.6     |      81.4      | **99.8** | 78.5 ± 1.1 |
+| olmOCR v0.3.0                    | 78.6  |   **79.9**     |  72.9  |   43.9    |        95.1         |     77.3     |      81.2      | 98.9 | 78.5 ± 1.1    |
+| dotsocr_nohf *                   | **82.6** |      68.3      |  **87.1**  |   42.6    |        90.3         |   **82.7**   |   **82.1**    | 99.2 | 79.4 ± 1.0    |
+| -------------------------------- | ------ | -------------- | ------ | -------- | ------------------- | ------------ | -------------- | ---- | ------------- |
+| dots.ocr                         | 82.1  |      64.2      | 88.3|   40.9    |        94.1         |     82.4     |      81.2      | 99.5 | 79.1 ± 1.0    |
 
 
-<table>
-  <thead>
-    <tr>
-      <th align="left"><strong>Model</strong></th>
-      <th align="center">absent</th>
-      <th align="center">baseline</th>
-      <th align="center">math</th>
-      <th align="center">order</th>
-      <th align="center">present</th>
-      <th align="center">table</th>
-      <th align="center">overall</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td align="left">MinerU v2.1.10</td>
-      <td align="center"> 94.1 </td>
-      <td align="center">62.7</td>
-      <td align="center">75.0</td>
-      <td align="center"> - </td>
-      <td align="center">83.8</td>
-      <td align="center">16.7</td>
-      <td align="center">78.6 ± 4.2</td>
-    </tr>
-    <tr>
-      <td align="left">Marker v1.8.3 (base, force_ocr)</td>
-      <td align="center"> 91.3 </td>
-      <td align="center">59.5</td>
-      <td align="center">91.7</td>
-      <td align="center"> - </td>
-      <td align="center">88.7</td>
-      <td align="center">19.3</td>
-      <td align="center">81.5 ± 2.9 </td>
-    </tr>
-  </tbody>
-</table>
+
+| Model             | absent | baseline |   math   |   order  |  present |   table  |   overall  |
+| :---------------- | :----: | :------: | :------: | :------: | :------: | :------: | :--------: |
+| marker v1.7.5     |  83.8  |   99.0   |   73.7   |   64.4   |   60.1   |   57.0   | 70.2 ± 1.1 |
+| marker v1.8.3     |  84.0  |   98.9   |   73.2   |   63.9   |   60.5   |   52.7   | 69.8 ± 1.1 |
+| magic-pdf v1.3.10 |  96.4  |   96.4   |   71.6   |   49.8   |   26.9   |   60.5   | 61.5 ± 1.1 |
+| mineru v2.1.10    |  97.2  |   97.6   |   72.1   |   49.8   |   29.7   |   57.5   | 62.2 ± 1.1 |
+| olmOCR v0.3.0     |  96.4  |   98.9   |   78.7   |   68.9   |   65.6   |   71.3   | 78.3 ± 1.0 |
+| dotsocr\_nohf *    |  90.2  | **99.2** | **80.7** | **73.8** | **65.5** | **87.1** |  **80.2 ± 1.0**  |
+
+* dotsocr\_nohf fails on missing markdown on 9 files, the results are reported with those ignores.
+
+**orbit-Bench** 
 
 ## Results - all
 
+### Language Breakdown
 
-<table>
-  <thead>
-    <tr>
-      <th align="left"><strong>Model</strong></th>
-      <th align="center">absent</th>
-      <th align="center">baseline</th>
-      <th align="center">math</th>
-      <th align="center">order</th>
-      <th align="center">present</th>
-      <th align="center">table</th>
-      <th align="center">overall</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td align="left">Marker v1.8.3 (base, force_ocr)</td>
-      <td align="center">80.8%</td>
-      <td align="center">59.5%</td>
-      <td align="center">72.3%</td>
-      <td align="center">40.9%</td>
-      <td align="center">70.7%</td>
-      <td align="center">15.2%</td>
-      <td align="center">61.2% ± 1.6%</td>
-    </tr>
-    <tr>
-      <td align="left">Marker v1.7.5 (base, force_ocr)</td>
-      <td align="center">81.4%</td>
-      <td align="center">59.6%</td>
-      <td align="center">77.0%</td>
-      <td align="center">40.6%</td>
-      <td align="center">70.2%</td>
-      <td align="center">13.8%</td>
-      <td align="center">60.4% ± 1.6%</td>
-    </tr>
-    <!-- <tr>
-      <td align="left">Marker v1.6.2 (base, force_ocr)</td>
-      <td align="center">80.8%</td>
-      <td align="center">57.4%</td>
-      <td align="center">3.0%</td>
-      <td align="center">36.1%</td>
-      <td align="center">60.8%</td>
-      <td align="center">14.3%</td>
-      <td align="center">44.6% ± 1.4%</td>
-    </tr> -->
-    <tr>
-      <td align="left">MinerU v2.1.10</td>
-      <td align="center">84.9%</td>
-      <td align="center">62.7%</td>
-      <td align="center">66.7%</td>
-      <td align="center">41.1%</td>
-      <td align="center">62.2%</td>
-      <td align="center">6.0%</td>
-      <td align="center">58.8% ± 1.6%</td>
-    </tr>
-    <tr>
-      <td align="left">MinerU v1.3.10</td>
-      <td align="center">83.1%</td>
-      <td align="center">55.2%</td>
-      <td align="center">69.3%</td>
-      <td align="center">42.2%</td>
-      <td align="center">62.3%</td>
-      <td align="center">11.2%</td>
-      <td align="center">58.3% ± 1.6%</td>
-    </tr>
-    <tr>
-      <td align="left">olmocr_pipeline</td>
-      <td align="center">21.1%</td>
-      <td align="center">59.9%</td>
-      <td align="center">19.0%</td>
-      <td align="center">52.0%</td>
-      <td align="center">71.6%</td>
-      <td align="center">2.1%</td>
-      <td align="center">41.2% ± 1.7%</td>
-    </tr>
-    <tr>
-      <td align="left">dotsocr_pipeline</td>
-      <td align="center">48.9%</td>
-      <td align="center">59.7%</td>
-      <td align="center">3.9%</td>
-      <td align="center">27.7%</td>
-      <td align="center">67.1%</td>
-      <td align="center">26.0%</td>
-      <td align="center">FAILED (errors)</td>
-    </tr>
-  </tbody>
-</table>
+| Model             |   en   |   fr   |   ja   |   zh   | arxiv_math | baseline |    overall    |
+| :---------------- | :----: | :----: | :----: | :----: | :--------: | :------: | :-----------: |
+| Marker v1.8.3     | 61.0  | 69.6  | **49.9** | 46.5  | **83.5** | 59.5   | 61.7 ± 1.6 |
+| Marker v1.7.5     | 60.4  | 69.3  | **49.9** | 46.1  | 77.0     | 59.6   | 60.4 ± 1.7 |
+| MinerU v2.1.10    | 63.7  | 63.0  | 45.2  | 44.4  | 76.0     | **62.7** | 59.2 ± 1.7 |
+| MinerU v1.3.10    | 63.0  | 65.1  | 43.9  | 47.0  | 77.5     | 55.2   | 58.6 ± 1.7 |
+| olmocr v0.3.0     | **72.2** | **73.0** | 48.8  | **58.7** | 78.0     | 61.7   | 65.4 ± 1.6 |
+| dotsocr_nohf      | 70.0  | 72.7  | **52.7** | 56.1  | **84.0** | 59.8   | **65.9 ± 1.5** |
+<!-- | Marker v1.6.2     | 56.0  | 59.0  | 49.0  | 45.3  |  3.5     | 57.4   | 45.0 ± 1.5 | -->
+
+---
+
+### Category Breakdown
+
+| Model             | absent | baseline |  math  | order | present | table |   overall    |
+| :---------------- | :----: | :------: | :----: | :---: | :-----: | :---: | :----------: |
+| Marker v1.8.3     | 80.8  |  59.5   | **83.5** | 40.9 |  70.7  | 15.2 | 61.7 ± 1.6 |
+| Marker v1.7.5     | 81.4  |  59.6   | 77.0  | 40.6 |  70.2  | 13.8 | 60.4 ± 1.7 |
+| MinerU v2.1.10    | 84.9  | **62.7** | 76.0  | 41.1 |  62.2  |  6.0 | 59.2 ± 1.7 |
+| MinerU v1.3.10    | 83.1  |  55.2   | 77.5  | 42.2 |  62.3  | 11.2 | 58.6 ± 1.7 |
+| olmocr v0.3.0     | **91.3** |  61.7   | 78.0  | **43.2** | **72.6** | 30.5 | 65.4 ± 1.6 |
+| dotsocr_nohf      | 85.5  |  59.8   | **84.0** | 42.1 |  72.1  | **42.4** | **65.9 ± 1.5** |
+<!-- | Marker v1.6.2     | 80.8  |  57.4   |  3.5  | 36.1 |  60.8  | 14.3 | 45.0 ± 1.5 | --> 
+
+
 
 
 ### Installation
