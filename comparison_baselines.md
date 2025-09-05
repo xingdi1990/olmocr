@@ -2,6 +2,7 @@
 * LlamaParse: we use the balanced version.
 * Azure: we use the api version 2024-11-30
 * OlmOCR: we use allenai/olmOCR-7B-0825-FP8
+* DotsOCR: https://huggingface.co/rednote-hilab/dots.ocr
 
 ![GT](./pictures/f_0AibR1dz_page9_0.jpg)
 
