@@ -226,6 +226,7 @@ if __name__ == "__main__":
         "nanonetsocr": ("olmocr.bench.runners.run_nanonetsocr", "run_nanonetsocr"),
         "marker": ("olmocr.bench.runners.run_marker", "run_marker"),
         "mineru": ("olmocr.bench.runners.run_mineru", "run_mineru"),
+        "mineru_vlm_server": ("olmocr.bench.runners.run_mineru_vlm_sglang_server", "run_mineru_vlm_sglang_server"),
         "chatgpt": ("olmocr.bench.runners.run_chatgpt", "run_chatgpt"),
         "gemini": ("olmocr.bench.runners.run_gemini", "run_gemini"),
         "mistral": ("olmocr.bench.runners.run_mistral", "run_mistral"),
