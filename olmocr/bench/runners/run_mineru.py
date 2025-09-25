@@ -44,7 +44,7 @@ def run_mineru(pdf_path: str, page_num: int = 1) -> str:
                 pdf_file_names=[os.path.basename(pdf_to_process)],
                 pdf_bytes_list=[pdf_bytes],
                 p_lang_list=["en"],  # Default to English
-                backend="pipeline",  
+                backend="vlm-sglang-engine",  
                 parse_method="auto",  # Auto-detect parsing method
             )
 
