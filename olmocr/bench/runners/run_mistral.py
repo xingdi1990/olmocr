@@ -58,7 +58,7 @@ def run_mistral(pdf_path: str, page_num: int = 1) -> str:
         signed_url = client.files.get_signed_url(file_id=uploaded_pdf.id)
 
         ocr_response = client.ocr.process(
-            model="mistral-ocr-2503",
+            model="mistral-ocr-2505", # 2503 is the old model, 2505 is the new model
             document={
                 "type": "document_url",
                 "document_url": signed_url.url,
