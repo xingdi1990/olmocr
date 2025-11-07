@@ -1,6 +1,3 @@
-# Ignore everything in bench_data except .jsonl files and pdfs directory
-/bench_data/*
-/bench_data_v1/*
-# !/bench_data/*.jsonl
-# !/bench_data/pdfs/
-# !/bench_data/pdfs/**/*
+# Ignore everything in bench_data and bench_data_v1
+/bench_data/
+/bench_data_v1/
