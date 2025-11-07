@@ -1,3 +1,6 @@
 # Ignore everything in bench_data and bench_data_v1
 /bench_data/
 /bench_data_v1/
+
+# Ignore nested git repository
+/OmniDocBench/
