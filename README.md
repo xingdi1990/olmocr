@@ -127,26 +127,21 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
 
 
 **OmniDocBench**
+we use the latest OmniDocBench v1.5
 
 #### The end-to-end evaluation results of different tasks.
 
-| **Model<br>Type** | **Methods** | **Overall<sup>Edit</sup>↓**<br>*EN* | **Overall<sup>Edit</sup>↓**<br>*ZH* | **Text<sup>Edit</sup>↓**<br>*EN* | **Text<sup>Edit</sup>↓**<br>*ZH* | **Formula<sup>Edit</sup>↓**<br>*EN* | **Formula<sup>Edit</sup>↓**<br>*ZH* | **Table<sup>TEDS</sup>↑**<br>*EN* | **Table<sup>TEDS</sup>↑**<br>*ZH* | **Table<sup>Edit</sup>↓**<br>*EN* | **Table<sup>Edit</sup>↓**<br>*ZH* | **Read Order<sup>Edit</sup>↓**<br>*EN* | **Read Order<sup>Edit</sup>↓**<br>*ZH* |
+| Model Type | Methods | Overall EN ↓ | Overall ZH ↓ | Text EN ↓ | Text ZH ↓ | Formula EN ↓ | Formula ZH ↓ | Table TEDS EN ↑ | Table TEDS ZH ↑ | Table Edit EN ↓ | Table Edit ZH ↓ | Read Order EN ↓ | Read Order ZH ↓ |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Integrated<br>methods** | MinerU | 0.150 | 0.357 | 0.061 | 0.215 | 0.278 | 0.577 | 78.6 | 62.1 | 0.180 | 0.344 | 0.079 | 0.292 |
-| | Marker | 0.336 | 0.556 | 0.080 | 0.315 | 0.530 | 0.883 | 67.6 | 49.2 | 0.619 | 0.685 | 0.114 | 0.340 |
-| **VLM<br>all-in-one** | MinerU 2 | 0.139 | 0.240 | 0.047 | 0.109 | 0.297 | 0.536 | 82.5 | 79.0 | 0.141 | 0.195 | 0.069 | 0.118 |
-| | Mistral OCR | 0.268 | 0.439 | 0.072 | 0.325 | 0.318 | 0.495 | 75.8 | 63.6 | 0.600 | 0.650 | 0.083 | 0.284 |
-| | **dots.ocr** | **0.125** | **0.160** | **0.032** | **0.066** | 0.329 | 0.416 | **88.6** | 89.0 | **0.099** | 0.092 | **0.040** | **0.067** |
-| | deepseekocr-base | 0.137 | 0.24 | 0.054 | 0.205 | 0.267 | 0.474 | | | 0.163 | 0.1 | 0.064 | 0.181 |
-| | deepseekocr-gundam | 0.127 | 0.181 | 0.043 | 0.097 | 0.269 | 0.432 | | | 0.134 | 0.089 | 0.062 | 0.103 |
+| Integrated methods | MinerU 2.5.3 | 0.536 | 0.522 | 0.053 | 0.097 | 0.310 | 0.603 | 59.3 | 79.9 | 0.559 | 0.429 | 0.036 | 0.076 |
+| VLM all-in-one |  |  |  |  |  |  |  |  |  |  |  |  |  |
 
 #### The end-to-end text recognition performance across 9 PDF page types.
 
-| **Model<br>Type** | **Models** | **Book** | **Slides** | **Financial<br>Report** | **Textbook** | **Exam<br>Paper** | **Magazine** | **Academic<br>Papers** | **Notes** | **Newspaper** | **Overall** |
+| Model Type | Models | Book | Slides | Financial Report | Textbook | Exam Paper | Magazine | Academic Papers | Notes | Newspaper | Overall |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Integrated<br>methods** | MinerU | 0.055 | 0.124 | <u>0.033</u> | 0.102 | 0.159 | **0.072** | <u>0.025</u> | 0.984 | 0.171 | 0.206 |
-| | Marker | 0.074 | 0.340 | 0.089 | 0.319 | 0.452 | 0.153 | 0.059 | 0.651 | 0.192 | 0.274 |
-| **VLM<br>all-in-one** | **dots.ocr** | **0.031** | **0.047** | **0.011** | 0.082 | **0.079** | **0.028** | **0.029** | 0.109 | **0.056** | **0.055** |
+| Integrated methods | MinerU 2.5.3 |  |  |  |  |  |  |  |  |  | |
+| VLM all-in-one |  |  |  |  |  |  |  |  |  |  |  |
 
 > **Notes:** 
 > - The metrics are from [MonkeyOCR](https://github.com/Yuliang-Liu/MonkeyOCR), [OmniDocBench](https://github.com/opendatalab/OmniDocBench), and our own internal evaluations.
