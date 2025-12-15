@@ -1,48 +1,4 @@
-<div align="center">
-  <!-- <img src="https://github.com/allenai/OLMo/assets/8812459/774ac485-a535-4768-8f7c-db7be20f5cc3" width="300"/> -->
-<img src="https://github.com/user-attachments/assets/d70c8644-3e64-4230-98c3-c52fddaeccb6" alt="olmOCR Logo" width="300"/>
-<hr/>
-</div>
-<p align="center">
-  <a href="https://github.com/allenai/OLMo/blob/main/LICENSE">
-    <img alt="GitHub License" src="https://img.shields.io/github/license/allenai/OLMo">
-  </a>
-  <a href="https://github.com/allenai/olmocr/releases">
-    <img alt="GitHub release" src="https://img.shields.io/github/release/allenai/olmocr.svg">
-  </a>
-  <a href="https://olmocr.allenai.org/papers/olmocr.pdf">
-    <img alt="Tech Report" src="https://img.shields.io/badge/Paper-olmOCR-blue">
-  </a>
-  <a href="https://olmocr.allenai.org">
-    <img alt="Demo" src="https://img.shields.io/badge/Ai2-Demo-F0529C">
-  </a>
-  <a href="https://discord.gg/sZq3jTNVNG">
-    <img alt="Discord" src="https://img.shields.io/badge/Discord%20-%20blue?style=flat&logo=discord&label=Ai2&color=%235B65E9">
-  </a>
-</p>
-
 A toolkit for converting PDFs and other image-based document formats into clean, readable, plain text format.
-
-Try the online demo: [https://olmocr.allenai.org/](https://olmocr.allenai.org/)
-
-Features:
- - Convert PDF, PNG, and JPEG based documents into clean Markdown
- - Support for equations, tables, handwriting, and complex formatting
- - Automatically removes headers and footers
- - Convert into text with a natural reading order, even in the presence of
-   figures, multi-column layouts, and insets
- - Efficient, less than $200 USD per million pages converted
- - (Based on a 7B parameter VLM, so it requires a GPU)
-
-### News
- - August 13, 2025 - v0.3.0 - [New model release](https://huggingface.co/allenai/olmOCR-7B-0825-FP8), fixes auto-rotation detection, and hallucinations on blank documents.
- - July 24, 2025 - v0.2.1 - [New model release](https://huggingface.co/allenai/olmOCR-7B-0725-FP8), scores 3 points higher on [olmOCR-Bench](https://github.com/allenai/olmocr/tree/main/olmocr/bench), also runs significantly faster because it's default FP8, and needs much fewer retries per document.
- - July 23, 2025 - v0.2.0 - New cleaned up [trainer code](https://github.com/allenai/olmocr/tree/main/olmocr/train), makes it much simpler to train olmOCR models yourself.
- - June 17, 2025 - v0.1.75 - Switch from sglang to vllm based inference pipeline, updated docker image to CUDA 12.8.
- - May 23, 2025 - v0.1.70 - Official docker support and images are now available! [See Docker usage](#using-docker)
- - May 19, 2025 - v0.1.68 - [olmOCR-Bench](https://github.com/allenai/olmocr/tree/main/olmocr/bench) launch, scoring 77.4. Launch includes 2 point performance boost in olmOCR pipeline due to bug fixes with prompts.
- - Mar 17, 2025 - v0.1.60 - Performance improvements due to better temperature selection in sampling.
- - Feb 25, 2025 - v0.1.58 -  Initial public launch and demo.
 
 ### Benchmark
 
@@ -64,7 +20,7 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
 |                    | deepseekocr-gundam               |  77.3 |      69.7      |   79.6   |    32.5   |         95.8        |     66.2     |      77.6      |   97.6   |   74.5 ± 1.1   |
 |                    | deepseekocr-base                 |  71.2 |      65.1      |   75.3   |    28.9   |         96.1        |     64.1     |      59.5      |   97.2   |   69.7 ± 1.1   |
 |                    | mineru_vlm (2.0-0.9B)            |  72.5 |      67.0      |   74.0   |    30.8   |         95.5        |     59.8     |      81.2      |   98.1   |   72.4 ± 1.0   |
-|                    | mineru_vlm (2.5-1.2B)            |  **83.2** |      79.7      |   86.3   |    33.7   |         96.5        |     65.5     |      80.1      |   94.3   |   76.3 ± 1.0   |
+|                    | mineru_vlm (2.5.3-1.2B)            |  **83.2** |      79.7      |   86.3   |    33.7   |         96.5        |     65.5     |      80.1      |   94.3   |   76.3 ± 1.0   |
 <!-- Mistral OCR API  2503            |  77.2 |      67.5      |   60.6   |    29.3   |         93.6        |     71.3     |      77.1      |   99.4   |   72.0 ± 1.1   | -->
 <!-- | olmOCR v0.1.75 (Anchored)        |  74.9 |      71.2      |   71.0   |    42.2   |         94.5        |     78.3     |      73.3      |   98.3   |   75.5 ± 1.0   | -->
 
@@ -82,7 +38,7 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
 |                    | deepseekocr-gundam      |   95.5   |   97.6   |   76.2   |   58.6   |   57.1   |   79.6   |   74.5 ± 1.1    |
 |                    | deepseekocr-base        |   96.0   |   97.2   |   70.4   |   56.0   |   44.5   |   75.3   |   69.7 ± 1.1    |
 |                    | mineru_vlm (2.0-0.9B)   |   95.4   |   98.1   |   71.8   |   52.9   |   58.7   |   73.9   |   72.4 ± 1.0    |
-|                    | mineru_vlm (2.5-1.2B)   |   96.1   |   94.4   |   **81.5**   |   58.4   |   58.8   |   86.3   |   76.3 ± 1.0   |
+|                    | mineru_vlm (2.5.3-1.2B)   |   96.1   |   94.4   |   **81.5**   |   58.4   |   58.8   |   86.3   |   76.3 ± 1.0   |
 
 * dotsocr_nohf fails on missing markdown on 9 files, the results are reported with those ignores.
 
@@ -103,7 +59,7 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
 |                     | deepseekocr-gundam    |   65.8   |   70.0   |   52.4   |   53.5   |   76.5      |   59.7   |   63.0 ± 1.6    |
 |                     | deepseekocr-base      |   65.4   |   70.6   |   52.3   |   53.7   |   66.5      |   59.3   |   61.3 ± 1.7    |
 |                     | mineru_vlm (2.0-0.9B) |   66.0   |   55.7   |   38.9   |   55.4   |   75.0      |   58.6   |   58.3 ± 1.7    |
-|                     | mineru_vlm (2.5-1.2B) |   69.9   |   67.5   |   39.4   |   57.0   |   82.0      |   57.6   |   62.2 ± 1.5    |
+|                     | mineru_vlm (2.5.3-1.2B) |   69.9   |   67.5   |   39.4   |   57.0   |   82.0      |   57.6   |   62.2 ± 1.5    |
 <!-- |                     | Mistral-OCR 2503    |   60.0   |   65.8   |   50.8   |   48.0   |   74.0      |   59.9   |   59.7 ± 1.6    | -->
 <!-- | Marker v1.6.2 | 56.0 | 59.0 | 49.0 | 45.3 | 3.5 | 57.4 | 45.0 ± 1.5 | -->
 
@@ -121,7 +77,7 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
 |                     | deepseekocr-gundam     |   84.0   |   59.7   |   76.5   |   41.2   |   70.6   |   33.6   |   63.0 ± 1.6    |
 |                     | deepseekocr-base       |   85.1   |   59.3   |   66.5   |   41.2   |   70.5   |   32.4   |   61.3 ± 1.7    |
 |                     | mineru_vlm (2.0-0.9B) |   81.4   |   58.6   |   75.0   |   37.9   |   53.6   |   34.3   |   58.3 ± 1.7    |
-|                     | mineru_vlm (2.5-1.2B) |   85.7   |   57.6   |   82.0   |   42.2   |   59.5   |   35.7   |   62.2 ± 1.5    |
+|                     | mineru_vlm (2.5.3-1.2B) |   85.7   |   57.6   |   82.0   |   42.2   |   59.5   |   35.7   |   62.2 ± 1.5    |
 <!-- |                     | Mistral-OCR 2503    |   83.6   |   59.9   |   74.0   |   41.7   |   65.6   |   14.8   |   59.7 ± 1.6    | -->
 <!-- | Marker v1.6.2     | 80.8  |  57.4   |  3.5  | 36.1 |  60.8  | 14.3 | 45.0 ± 1.5 | -->
 
@@ -129,19 +85,35 @@ We also ship a comprehensive benchmark suite covering over 7,000 test cases acro
 **OmniDocBench**
 we use the latest OmniDocBench v1.5
 
-#### The end-to-end evaluation results of different tasks.
+| Model Type | Methods | Size | Overall↑ | Text<sup>Edit</sup>↓ | Formula<sup>CDM</sup>↑ | Table<sup>TEDS</sup>↑ | Table<sup>TEDS-S</sup>↑ | Read Order<sup>Edit</sup>↓ |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Integrated methods** | PP-StructureV3 | - | 86.73 | 0.073 | 85.79 | 81.68 | 89.48 | 0.073 |
+| | Mineru2-pipeline | - | 75.51 | 0.209 | 76.55 | 70.90 | 79.11 | 0.225 |
+| | Marker-1.8.2 | - | 71.30 | 0.206 | 76.66 | 57.88 | 71.17 | 0.250 |
+| **VLM all-in-one** | PaddleOCR-VL | 0.9B | **92.86** | **0.035** | **91.22** | **90.89** | **94.76** | **0.043** |
+| | mineru_vlm (2.5.3-1.2B) | 1.2B | 88.96 | 0.064 | 85.33 | 87.94 | 91.72 | 0.063 |
+| | olmOCR | 7B | 81.79 | 0.096 | 86.04 | 68.92 | 74.77 | 0.121 |
+| | Mistral OCR | - | 78.83 | 0.164 | 82.84 | 70.03 | 78.04 | 0.144 |
+| | dots.ocr | 3B | 88.41 | 0.048 | 83.22 | 86.78 | 90.62 | 0.053 |
+| | Deepseek-OCR | 3B | 87.01 | 0.073 | 83.37 | 84.97 | 88.80 | 0.086 |
+<!-- | | MinerU2.5 | 1.2B | <ins>90.67</ins> | <ins>0.047</ins> | <ins>88.46</ins> | <ins>88.22</ins> | <ins>92.38</ins> | <ins>0.044</ins> | -->
+<!-- | | MonkeyOCR-pro-3B | 3B | 88.85 | 0.075 | 87.25 | 86.78 | 90.63 | 0.128 | -->
+<!-- | | OCRVerse | 4B | 88.56 | 0.058 | 86.91 | 84.55 | 88.45 | 0.071 | -->
+<!-- | | MonkeyOCR-3B | 3B | 87.13 | 0.075 | 87.45 | 81.39 | 85.92 | 0.129 | -->
+<!-- | | MonkeyOCR-pro-1.2B | 1.2B | 86.96 | 0.084 | 85.02 | 84.24 | 89.02 | 0.130 |
+| | Nanonets-OCR-s | 3B | 85.59 | 0.093 | 85.90 | 80.14 | 85.57 | 0.108 | -->
+<!-- | | MinerU2-VLM | 0.9B | 85.56 | 0.078 | 80.95 | 83.54 | 87.66 | 0.086 | -->
+<!-- | | Dolphin-1.5 | 0.3B | 83.21 | 0.092 | 80.78 | 78.06 | 84.10 | 0.080 |
+| | POINTS-Reader | 3B | 80.98 | 0.134 | 79.20 | 77.13 | 81.66 | 0.145 |
+| | OCRFlux | 3B | 74.82 | 0.193 | 68.03 | 75.75 | 80.23 | 0.202 |
+| | Dolphin | 0.3B | 74.67 | 0.125 | 67.85 | 68.70 | 77.77 | 0.124 | -->
 
-| Model Type | Methods | Overall EN ↓ | Overall ZH ↓ | Text EN ↓ | Text ZH ↓ | Formula EN ↓ | Formula ZH ↓ | Table TEDS EN ↑ | Table TEDS ZH ↑ | Table Edit EN ↓ | Table Edit ZH ↓ | Read Order EN ↓ | Read Order ZH ↓ |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| Integrated methods | MinerU 2.5.3 | 0.536 | 0.522 | 0.053 | 0.097 | 0.310 | 0.603 | 59.3 | 79.9 | 0.559 | 0.429 | 0.036 | 0.076 |
-| VLM all-in-one |  |  |  |  |  |  |  |  |  |  |  |  |  |
-
-#### The end-to-end text recognition performance across 9 PDF page types.
-
-| Model Type | Models | Book | Slides | Financial Report | Textbook | Exam Paper | Magazine | Academic Papers | Notes | Newspaper | Overall |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| Integrated methods | MinerU 2.5.3 |  |  |  |  |  |  |  |  |  | |
-| VLM all-in-one |  |  |  |  |  |  |  |  |  |  |  |
+<!-- | **General VLMs** | Qwen3-VL-235B-A22B-Instruct | 235B | 89.15 | 0.069 | 88.14 | 86.21 | 90.55 | 0.068 |
+| | Gemini-2.5 Pro | - | 88.03 | 0.075 | 85.82 | 85.71 | 90.29 | 0.097 |
+| | Qwen2.5-VL | 72B | 87.02 | 0.094 | 88.27 | 82.15 | 86.22 | 0.102 |
+| | InternVL3.5 | 241B | 82.67 | 0.142 | 87.23 | 75.00 | 81.28 | 0.125 |
+| | InternVL3 | 78B | 80.33 | 0.131 | 83.42 | 70.64 | 77.74 | 0.113 |
+| | GPT-4o | - | 75.02 | 0.217 | 79.70 | 67.07 | 76.09 | 0.148 | -->
 
 > **Notes:** 
 > - The metrics are from [MonkeyOCR](https://github.com/Yuliang-Liu/MonkeyOCR), [OmniDocBench](https://github.com/opendatalab/OmniDocBench), and our own internal evaluations.
